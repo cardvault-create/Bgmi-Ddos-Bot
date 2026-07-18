@@ -27,12 +27,15 @@ logger = logging.getLogger(__name__)
 
 print(AttackUtils.get_banner())
 
-# Initialize bot
+# ============================================
+# ✅ FIX: Bot ab global scope mein create nahi hoga
+# Pehle client object banao, start baad mein karo
+# ============================================
 bot = TelegramClient(
     os.path.join(config.SESSION_DIR, 'bot'),
     config.API_ID,
     config.API_HASH
-).start(bot_token=config.BOT_TOKEN)
+)
 
 # Attack instances
 attackers = {
@@ -126,9 +129,6 @@ async def button_handler(event):
         # Default values
         duration = config.DEFAULT_DURATION
         threads = config.MAX_THREADS
-        
-        # Check if user wants custom values (stored in user data)
-        # For simplicity, using defaults
         
         method_names = {
             'tcp': '🔹 TCP FLOOD',
@@ -406,6 +406,9 @@ async def info_command(event):
 # MAIN
 # ============================================
 async def main():
+    # ✅ FIX: Bot yahan start karo, same event loop mein
+    await bot.start(bot_token=config.BOT_TOKEN)
+    
     print(f"{Fore.GREEN}[✓] Bot Started!{Style.RESET_ALL}")
     print(f"{Fore.CYAN}[+] Target: {config.TARGET_IP}:{config.TARGET_PORT}{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}[+] Max Duration: {config.MAX_DURATION}s | Threads: {config.MAX_THREADS}{Style.RESET_ALL}")
