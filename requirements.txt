@@ -1,5 +1,0 @@
-telethon==1.36.0
-requests==2.31.0
-colorama==0.4.6
-asyncio==3.4.3
-flask==3.0.0
