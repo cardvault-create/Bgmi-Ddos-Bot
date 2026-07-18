@@ -3,14 +3,14 @@ import os
 # ============================================
 # 🔐 TELEGRAM API CONFIGURATION
 # ============================================
-API_ID = 1234567                # my.telegram.org se lein
-API_HASH = "your_api_hash_here"
-BOT_TOKEN = "your_bot_token_here"  # @BotFather se
+API_ID = 35140329                # my.telegram.org se lein
+API_HASH = "011f638e4acadee178c59afffc80193d"
+BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"  # @BotFather se
 
 # ============================================
 # 👤 AUTHORIZED USERS
 # ============================================
-AUTHORIZED_USERS = [123456789]  # Apna Telegram ID
+AUTHORIZED_USERS = [1987818347]  # Apna Telegram ID
 
 # ============================================
 # 🎯 DEFAULT TARGET (Apna test server daalein)
