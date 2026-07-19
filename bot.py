@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - FINAL
-Popup Fixed | DM Link | All Working
+Popup Working | Stylish Text | DM Link | All Features
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -249,7 +249,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("popup_link_fixed_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("final_working_popup_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ KEYBOARDS ═══════════════
 def user_kb():
@@ -582,11 +582,10 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.answer()
         return
     
-    # REDEEM POPUP - MUST BE FIRST!
+    # REDEEM POPUP - SIMPLE + WORKING
     if data == "redeem_popup":
         await cb.answer(
             "🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡\n\n"
-            "━━━━━━━━━━━━━━━━━━━\n\n"
             "🔑 𝙃𝙤𝙬 𝙏𝙤 𝙍𝙚𝙙𝙚𝙚𝙢 𝙆𝙚𝙮?\n\n"
             "1️⃣ 𝙂𝙚𝙩 𝙆𝙚𝙮 𝙁𝙧𝙤𝙢 𝘼𝙙𝙢𝙞𝙣\n"
             f"📲 @{OWNER_USERNAME}\n\n"
@@ -594,12 +593,8 @@ async def callbacks(client, cb: CallbackQuery):
             "/redeem YOUR_KEY\n\n"
             "3️⃣ 𝙀𝙭𝙖𝙢𝙥𝙡𝙚:\n"
             "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
-            "━━━━━━━━━━━━━━━━━━━\n\n"
-            "💡 𝙆𝙚𝙮 𝙁𝙤𝙧𝙢𝙖𝙩:\n"
-            "BGMI-XXXX-XXXX-XXXXXXXX\n\n"
             "⏱️ 𝘿𝙪𝙧𝙖𝙩𝙞𝙤𝙣𝙨:\n"
             "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
-            "━━━━━━━━━━━━━━━━━━━\n\n"
             "💎 𝙋𝙧𝙚𝙢𝙞𝙪𝙢 = 𝙋𝙤𝙬𝙚𝙧!",
             show_alert=True
         )
@@ -778,7 +773,7 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💎 PREMIUM BGMI ATTACK BOT 💎      ║
-║  POPUP FIXED | LINK WORKING         ║
+║  POPUP WORKING | STYLISH TEXT       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
