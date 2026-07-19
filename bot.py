@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT - FINAL
-Clean UI | Auto Keys | History | Video | Premium
+💎 PREMIUM BGMI ATTACK BOT - FINAL FIXED
+Fast Reply | Bold Text | Popup | Video | Link
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -248,7 +248,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("final_premium_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("final_fixed_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ KEYBOARDS ═══════════════
 def user_kb():
@@ -348,7 +348,7 @@ async def start_cmd(client, msg):
             "💎 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
             "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
             "📋 /redeem KEY\n"
-            f"📲 @{OWNER_USERNAME}"
+            f"📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ"
         )
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🛒 𝘽𝙪𝙔-𝙆𝙚𝙔 🔑", url=f"https://t.me/{OWNER_USERNAME}")],
@@ -399,7 +399,7 @@ async def redeem_cmd(client, msg):
     
     parts = msg.text.split()
     if len(parts) != 2:
-        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 @{OWNER_USERNAME}")
+        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ")
     
     key = parts[1].upper()
     success, result = redeem_key_code(key, uid)
@@ -409,7 +409,7 @@ async def redeem_cmd(client, msg):
         text = f"🎉 KEY REDEEMED!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
         await send_vid(msg.chat.id, text, None, vid)
     else:
-        await msg.reply_text(f"❌ {result}\n\n📲 @{OWNER_USERNAME}")
+        await msg.reply_text(f"❌ {result}\n\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ")
 
 # ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
@@ -510,32 +510,32 @@ async def stop_cmd(client, msg):
 async def add_video_cmd(client, msg):
     if msg.from_user.id != OWNER_ID: return
     if msg.reply_to_message and msg.reply_to_message.video:
-        s = await msg.reply_text("⏳ Downloading...")
+        s = await msg.reply_text("📂 𝘼𝙙𝙙𝙞𝙣𝙜 𝙑𝙞𝙙𝙚𝙤 📸")
         try:
             path = await msg.reply_to_message.download()
             vid = add_vid(path)
             text = (
-                "✅ VIDEO ADDED SUCCESSFULLY! ✅\n\n"
+                "✅ 𝙑𝙄𝘿𝙀𝙊 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔! ✅\n\n"
                 f"{LINE}\n"
-                f"🆔 Video ID: {vid}\n"
-                f"📁 Name: {os.path.basename(path)[:30]}\n"
-                f"📹 Total Videos: {len(get_vids())}\n"
+                f"🆔 𝙑𝙞𝙙𝙚𝙤 𝙄𝘿: {vid}\n"
+                f"📁 𝙉𝙖𝙢𝙚: {os.path.basename(path)[:30]}\n"
+                f"📹 𝙏𝙤𝙩𝙖𝙡 𝙑𝙞𝙙𝙚𝙤𝙨: {len(get_vids())}\n"
                 f"{LINE}\n\n"
-                "🎲 Video will play randomly!\n"
-                "📋 /videos to see all videos"
+                "🎲 𝙑𝙞𝙙𝙚𝙤 𝙬𝙞𝙡𝙡 𝙥𝙡𝙖𝙮 𝙧𝙖𝙣𝙙𝙤𝙢𝙡𝙮!\n"
+                "📋 /videos 𝙩𝙤 𝙨𝙚𝙚 𝙖𝙡𝙡 𝙫𝙞𝙙𝙚𝙤𝙨"
             )
             await s.edit_text(text, reply_markup=video_kb())
         except Exception as e:
-            await s.edit_text(f"❌ Error: {e}")
+            await s.edit_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
     else:
-        await msg.reply_text("❌ Reply to a video!")
+        await msg.reply_text("❌ 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙫𝙞𝙙𝙚𝙤!")
 
 @app.on_message(filters.command("videos"))
 async def list_vids_cmd(client, msg):
     if not check_access(msg.from_user.id)[0]: return
     vids = get_vids()
-    if not vids: return await msg.reply_text("📹 No videos!")
-    text = f"📹 Videos ({len(vids)}):\n\n"
+    if not vids: return await msg.reply_text("📹 𝙉𝙤 𝙫𝙞𝙙𝙚𝙤𝙨!")
+    text = f"📹 𝙑𝙞𝙙𝙚𝙤𝙨 ({len(vids)}):\n\n"
     for v in vids[:15]: text += f"#{v['id']} {v['name'][:30]}\n"
     await msg.reply_text(text)
 
@@ -543,20 +543,20 @@ async def list_vids_cmd(client, msg):
 async def del_vid_cmd(client, msg):
     if msg.from_user.id != OWNER_ID: return
     parts = msg.text.split()
-    if len(parts) != 2: return await msg.reply_text("❌ /delvideo ID")
+    if len(parts) != 2: return await msg.reply_text("❌ /delvideo 𝙄𝘿")
     try:
         if del_vid(int(parts[1])):
-            await msg.reply_text(f"✅ Video #{parts[1]} deleted!\n📹 Remaining: {len(get_vids())}")
+            await msg.reply_text(f"✅ 𝙑𝙞𝙙𝙚𝙤 #{parts[1]} 𝙙𝙚𝙡𝙚𝙩𝙚𝙙!\n📹 𝙍𝙚𝙢𝙖𝙞𝙣𝙞𝙣𝙜: {len(get_vids())}")
         else:
-            await msg.reply_text("❌ Not found!")
+            await msg.reply_text("❌ 𝙉𝙤𝙩 𝙛𝙤𝙪𝙣𝙙!")
     except:
-        await msg.reply_text("❌ Invalid ID!")
+        await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙄𝘿!")
 
 @app.on_message(filters.command("clearvideos"))
 async def clear_vids_cmd(client, msg):
     if msg.from_user.id != OWNER_ID: return
     n = clear_vids()
-    await msg.reply_text(f"🗑️ {n} videos cleared!")
+    await msg.reply_text(f"🗑️ {n} 𝙫𝙞𝙙𝙚𝙤𝙨 𝙘𝙡𝙚𝙖𝙧𝙚𝙙!")
 
 @app.on_message(filters.command("genkey"))
 async def gen_key_cmd(client, msg):
@@ -566,17 +566,16 @@ async def gen_key_cmd(client, msg):
     name, time_str = parts[1], parts[2]
     key_code, duration = create_key(name, time_str)
     if key_code:
-        await msg.reply_text(f"🔑 KEY GENERATED!\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 /redeem {key_code}")
+        await msg.reply_text(f"🔑 𝙆𝙀𝙔 𝙂𝙀𝙉𝙀𝙍𝘼𝙏𝙀𝘿!\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 /redeem {key_code}")
     else:
-        await msg.reply_text("❌ Invalid time! Use: 30m, 24h, 7d, 2w, 1mo")
+        await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
 # ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
     data = cb.data; uid = cb.from_user.id
-    await cb.answer()
     
-    if data == "sep": return
+    if data == "sep": await cb.answer(); return
     
     # ═══════════ REDEEM POPUP ═══════════
     if data == "redeem_popup":
@@ -601,6 +600,8 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
+    await cb.answer()
+    
     # ═══════════ BACK ═══════════
     if data == "back":
         await start_cmd(client, cb.message)
@@ -610,7 +611,7 @@ async def callbacks(client, cb: CallbackQuery):
     
     if data == "back_admin":
         if uid != OWNER_ID: return
-        await cb.message.edit_text("👑 ADMIN PANEL\n\n🔽 Select:", reply_markup=admin_kb())
+        await cb.message.edit_text("👑 𝘼𝘿𝙈𝙄𝙉 𝙋𝘼𝙉𝙀𝙇\n\n🔽 Select:", reply_markup=admin_kb())
         return
     
     # ═══════════ STOP ATTACK ═══════════
@@ -619,28 +620,28 @@ async def callbacks(client, cb: CallbackQuery):
         if attacking and (uid == attack_user or uid == OWNER_ID):
             attacker.on = False; attacking = False
             vid = rand_vid()
-            text = f"⛔ ATTACK STOPPED!\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
+            text = f"⛔ 𝘼𝙏𝙏𝘼𝘾𝙆 𝙎𝙏𝙊𝙋𝙋𝙀𝘿!\n\n📦 {attacker.pkts:,} 𝙥𝙖𝙘𝙠𝙚𝙩𝙨\n\n🔄 /attack IP PORT TIME"
             await send_vid(cb.message.chat.id, text, None, vid)
             try: await cb.message.delete()
             except: pass
         else:
-            await cb.answer("💤 No attack running!", show_alert=True)
+            await cb.answer("💤 𝙉𝙤 𝙖𝙩𝙩𝙖𝙘𝙠 𝙧𝙪𝙣𝙣𝙞𝙣𝙜!", show_alert=True)
         return
     
     # ═══════════ STATUS ═══════════
     if data == "status_btn":
         if attacking:
             e = time.time() - ainfo['start']
-            await cb.answer(f"🟢 ATTACKING!\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} pkts", show_alert=True)
+            await cb.answer(f"🟢 𝘼𝙏𝙏𝘼𝘾𝙆𝙄𝙉𝙂!\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} 𝙥𝙠𝙩𝙨", show_alert=True)
         else:
-            await cb.answer("💤 IDLE", show_alert=True)
+            await cb.answer("💤 𝙄𝘿𝙇𝙀", show_alert=True)
         return
     
     # ═══════════ ATTACK MENU ═══════════
     if data == "attack_menu":
         info = get_user_info(uid)
         await cb.message.edit_text(
-            f"💀 ATTACK MENU\n\n{LINE}\n"
+            f"💀 𝘼𝙏𝙏𝘼𝘾𝙆 𝙈𝙀𝙉𝙐\n\n{LINE}\n"
             f"⚔️ /attack IP PORT TIME\n"
             f"📋 /attack 1.2.3.4 8080 120\n"
             f"{LINE}\n"
@@ -656,19 +657,19 @@ async def callbacks(client, cb: CallbackQuery):
         info = get_user_info(uid)
         history = get_user_history(uid)
         
-        text = f"ℹ️ USER INFO\n\n{LINE}\n"
+        text = f"ℹ️ 𝙐𝙎𝙀𝙍 𝙄𝙉𝙁𝙊\n\n{LINE}\n"
         text += f"👤 {cb.from_user.first_name}\n"
         text += f"🆔 {uid}\n"
         text += f"💳 {info['type']}\n"
         
-        if info.get("remaining"): text += f"⏳ Remaining: {info['remaining']}\n"
+        if info.get("remaining"): text += f"⏳ 𝙍𝙚𝙢𝙖𝙞𝙣𝙞𝙣𝙜: {info['remaining']}\n"
         if info.get("expiry"):
             try:
                 exp = datetime.fromisoformat(info["expiry"])
-                text += f"📅 Expires: {exp.strftime('%d %b, %I:%M %p')}\n"
+                text += f"📅 𝙀𝙭𝙥𝙞𝙧𝙚𝙨: {exp.strftime('%d %b, %I:%M %p')}\n"
             except: pass
         
-        text += f"\n{LINE}\n📊 ATTACK HISTORY:\n"
+        text += f"\n{LINE}\n📊 𝘼𝙏𝙏𝘼𝘾𝙆 𝙃𝙄𝙎𝙏𝙊𝙍𝙔:\n"
         
         if history:
             for h in history[-5:]:
@@ -677,9 +678,9 @@ async def callbacks(client, cb: CallbackQuery):
                     text += f"• {t} - {h['action']}\n  {h['details'][:40]}\n"
                 except: pass
         else:
-            text += "• No attacks yet!\n"
+            text += "• 𝙉𝙤 𝙖𝙩𝙩𝙖𝙘𝙠𝙨 𝙮𝙚𝙩!\n"
         
-        text += f"\n{LINE}\n📹 Videos: {len(get_vids())}"
+        text += f"\n{LINE}\n📹 𝙑𝙞𝙙𝙚𝙤𝙨: {len(get_vids())}"
         
         await cb.message.edit_text(text, reply_markup=back_kb())
         return
@@ -690,19 +691,19 @@ async def callbacks(client, cb: CallbackQuery):
         if access:
             info = get_user_info(uid)
             await cb.message.edit_text(
-                f"✅ ACCESS ACTIVE!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!",
+                f"✅ 𝘼𝘾𝘾𝙀𝙎𝙎 𝘼𝘾𝙏𝙄𝙑𝙀!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!",
                 reply_markup=back_kb()
             )
         else:
             await cb.message.edit_text(
-                f"🔑 REDEEM KEY\n\n{LINE}\n"
+                f"🔑 𝙍𝙀𝘿𝙀𝙀𝙈 𝙆𝙀𝙔\n\n{LINE}\n"
                 f"📋 /redeem KEY\n"
                 f"🔑 /redeem BGMI-XXXX-XXXX-XXXX\n"
-                f"{LINE}\n📲 @{OWNER_USERNAME}\n\n"
+                f"{LINE}\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ\n\n"
                 f"⏱️ 30m | 24h | 7d | 2w | 1mo",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-                    [InlineKeyboardButton("📲 Contact-FaThEr", url=f"https://t.me/{OWNER_USERNAME}")],
+                    [InlineKeyboardButton("📲 𝘾𝙤𝙣𝙩𝙖𝙘𝙩-𝙁𝙖𝙏𝙝𝙀𝙧", url=f"https://t.me/{OWNER_USERNAME}")],
                     [InlineKeyboardButton("🔙 BACK", callback_data="back")],
                 ])
             )
@@ -710,56 +711,56 @@ async def callbacks(client, cb: CallbackQuery):
     
     # ═══════════ VIDEO MENU ═══════════
     if data == "video_menu":
-        if uid != OWNER_ID: await cb.answer("Owner only!"); return
+        if uid != OWNER_ID: await cb.answer("𝙊𝙬𝙣𝙚𝙧 𝙤𝙣𝙡𝙮!"); return
         await cb.message.edit_text(
-            f"🎬 VIDEO MANAGER\n\n{LINE}\n📹 Total: {len(get_vids())}\n{LINE}\n🔽 Select:",
+            f"🎬 𝙑𝙄𝘿𝙀𝙊 𝙈𝘼𝙉𝘼𝙂𝙀𝙍\n\n{LINE}\n📹 Total: {len(get_vids())}\n{LINE}\n🔽 Select:",
             reply_markup=video_kb()
         )
         return
     
     if data == "v_add":
-        await cb.message.edit_text("📤 Reply to a video with /addvideo", reply_markup=back_admin_kb())
+        await cb.message.edit_text("📤 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙫𝙞𝙙𝙚𝙤 𝙬𝙞𝙩𝙝 /addvideo", reply_markup=back_admin_kb())
         return
     
     if data == "v_del":
-        await cb.message.edit_text("🗑️ Use: /delvideo ID\n📋 /videos to see IDs", reply_markup=back_admin_kb())
+        await cb.message.edit_text("🗑️ 𝙐𝙨𝙚: /delvideo ID\n📋 /videos 𝙩𝙤 𝙨𝙚𝙚 𝙄𝘿𝙨", reply_markup=back_admin_kb())
         return
     
     if data == "v_clear":
         n = clear_vids()
-        await cb.message.edit_text(f"🗑️ {n} videos cleared!", reply_markup=back_admin_kb())
+        await cb.message.edit_text(f"🗑️ {n} 𝙫𝙞𝙙𝙚𝙤𝙨 𝙘𝙡𝙚𝙖𝙧𝙚𝙙!", reply_markup=back_admin_kb())
         return
     
     if data == "v_list":
         vids = get_vids()
         if not vids:
-            await cb.message.edit_text("📹 No videos!", reply_markup=back_admin_kb())
+            await cb.message.edit_text("📹 𝙉𝙤 𝙫𝙞𝙙𝙚𝙤𝙨!", reply_markup=back_admin_kb())
         else:
-            text = f"📹 Videos ({len(vids)}):\n\n"
+            text = f"📹 𝙑𝙞𝙙𝙚𝙤𝙨 ({len(vids)}):\n\n"
             for v in vids[:15]: text += f"#{v['id']} {v['name'][:30]}\n"
             await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
     
     if data == "v_help":
         await cb.message.edit_text(
-            f"ℹ️ VIDEO HELP\n\n{LINE}\n"
-            f"📤 Add: Reply + /addvideo\n"
-            f"📋 List: /videos\n"
-            f"🗑️ Delete: /delvideo ID\n"
-            f"🧹 Clear: /clearvideos\n{LINE}",
+            f"ℹ️ 𝙑𝙄𝘿𝙀𝙊 𝙃𝙀𝙇𝙋\n\n{LINE}\n"
+            f"📤 𝘼𝙙𝙙: 𝙍𝙚𝙥𝙡𝙮 + /addvideo\n"
+            f"📋 𝙇𝙞𝙨𝙩: /videos\n"
+            f"🗑️ 𝘿𝙚𝙡𝙚𝙩𝙚: /delvideo ID\n"
+            f"🧹 𝘾𝙡𝙚𝙖𝙧: /clearvideos\n{LINE}",
             reply_markup=back_admin_kb()
         )
         return
     
     # ═══════════ ADMIN MENU ═══════════
     if data == "admin_menu":
-        if uid != OWNER_ID: await cb.answer("Owner only!"); return
-        await cb.message.edit_text("👑 ADMIN PANEL\n\n🔽 Select:", reply_markup=admin_kb())
+        if uid != OWNER_ID: await cb.answer("𝙊𝙬𝙣𝙚𝙧 𝙤𝙣𝙡𝙮!"); return
+        await cb.message.edit_text("👑 𝘼𝘿𝙈𝙄𝙉 𝙋𝘼𝙉𝙀𝙇\n\n🔽 Select:", reply_markup=admin_kb())
         return
     
     if data == "admin_addkey":
         await cb.answer(
-            "🪪 ADD KEY\n\n"
+            "🪪 𝘼𝘿𝘿 𝙆𝙀𝙔\n\n"
             "Use: /genkey NAME TIME\n\n"
             "Examples:\n"
             "/genkey Test 30m\n"
@@ -773,7 +774,7 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "admin_auto":
         if uid != OWNER_ID: return
         await cb.message.edit_text(
-            f"🤖 AUTO GEN KEY\n\n{LINE}\n🔽 Select Duration:",
+            f"🤖 𝘼𝙐𝙏𝙊 𝙂𝙀𝙉 𝙆𝙀𝙔\n\n{LINE}\n🔽 Select Duration:",
             reply_markup=auto_key_kb()
         )
         return
@@ -791,10 +792,10 @@ async def callbacks(client, cb: CallbackQuery):
         name, time_str = auto_keys[data]
         key_code, duration = create_key(name, time_str)
         if key_code:
-            text = f"🔑 KEY GENERATED!\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 User: /redeem {key_code}"
+            text = f"🔑 𝙆𝙀𝙔 𝙂𝙀𝙉𝙀𝙍𝘼𝙏𝙀𝘿!\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 User: /redeem {key_code}"
             await cb.message.edit_text(text, reply_markup=auto_key_kb())
         else:
-            await cb.answer("❌ Failed!", show_alert=True)
+            await cb.answer("❌ 𝙁𝙖𝙞𝙡𝙚𝙙!", show_alert=True)
         return
     
     if data == "admin_keys":
@@ -802,21 +803,21 @@ async def callbacks(client, cb: CallbackQuery):
         keys = get_keys()
         active = [k for k, v in keys.items() if v["active"]]
         used = [k for k, v in keys.items() if not v["active"]]
-        text = f"🔑 ALL KEYS\n\n{LINE}\n🟢 Active: {len(active)}\n🔴 Used: {len(used)}\n{LINE}"
+        text = f"🔑 𝘼𝙇𝙇 𝙆𝙀𝙔𝙎\n\n{LINE}\n🟢 Active: {len(active)}\n🔴 Used: {len(used)}\n{LINE}"
         await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
     
     if data == "admin_stats":
         if uid != OWNER_ID: return
         vids = get_vids(); users = get_users()
-        text = f"📊 STATS\n\n{LINE}\n📹 Videos: {len(vids)}\n💎 Premium: {len(users.get('premium', []))}\n🔑 Key Users: {len(users.get('keys', {}))}\n⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n{LINE}"
+        text = f"📊 𝙎𝙏𝘼𝙏𝙎\n\n{LINE}\n📹 Videos: {len(vids)}\n💎 Premium: {len(users.get('premium', []))}\n🔑 Key Users: {len(users.get('keys', {}))}\n⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n{LINE}"
         await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
     
     if data == "admin_clear":
         if uid != OWNER_ID: return
         removed = remove_expired()
-        await cb.answer(f"🔄 {removed} expired removed!", show_alert=True)
+        await cb.answer(f"🔄 {removed} 𝙚𝙭𝙥𝙞𝙧𝙚𝙙 𝙧𝙚𝙢𝙤𝙫𝙚𝙙!", show_alert=True)
         return
 
 # ═══════════════ AUTO EXPIRE ═══════════════
@@ -835,7 +836,7 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💎 PREMIUM BGMI ATTACK BOT 💎      ║
-║  FINAL VERSION - ALL WORKING        ║
+║  FINAL FIXED - ALL WORKING          ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
