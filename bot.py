@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT 💎
-Clean UI | Auto Keys | History | Video Manager
+💎 PREMIUM BGMI ATTACK BOT - FINAL
+Clean UI | Auto Keys | History | Video | Premium
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -100,14 +100,6 @@ def get_remaining(expiry_str):
         elif hours > 0: return f"{hours}H {minutes}M", False
         else: return f"{minutes}M", False
     except: return "ERROR", False
-
-def get_time():
-    return datetime.now(IST).strftime("%I:%M %p")
-
-def tstr(s):
-    if s < 60: return f"{int(s)}s"
-    m, sec = int(s//60), int(s%60)
-    return f"{m}m {sec}s" if s < 3600 else f"{int(s//3600)}h {int((s%3600)//60)}m"
 
 # ═══════════════ VIDEO FUNCTIONS ═══════════════
 def get_vids(): return jload(VIDEO_DB, [])
@@ -256,7 +248,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("clean_premium_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("final_premium_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ KEYBOARDS ═══════════════
 def user_kb():
@@ -348,21 +340,19 @@ async def start_cmd(client, msg):
     if not access:
         vid = rand_vid()
         text = (
-            "╔══════════════════════════════╗\n"
-            "║  🛡️ PREMIUM PROTECTION  ║\n"
-            "╠══════════════════════════════╣\n"
-            f"║  👤 {user.first_name}\n"
-            "║  🔒 ACCESS DENIED!\n"
-            "║                              \n"
-            "║  💎 PREMIUM ONLY\n"
-            "║  🔑 Use Key to Unlock\n"
-            "║                              \n"
-            "║  📲 Contact Father\n"
-            "╚══════════════════════════════╝"
+            "🔒 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 {user.first_name}\n"
+            f"🆔 {uid}\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "💎 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
+            "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
+            "📋 /redeem KEY\n"
+            f"📲 @{OWNER_USERNAME}"
         )
         kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_popup")],
-            [InlineKeyboardButton("📲 Contact-FaThEr", url=f"https://t.me/{OWNER_USERNAME}")],
+            [InlineKeyboardButton("🛒 𝘽𝙪𝙔-𝙆𝙚𝙔 🔑", url=f"https://t.me/{OWNER_USERNAME}")],
+            [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
         ])
         await send_vid(msg.chat.id, text, kb, vid)
         return
@@ -431,13 +421,13 @@ async def attack_cmd(client, msg):
     if not access:
         vid = rand_vid()
         text = (
-            "╔══════════════════════════════╗\n"
-            "║  🛡️ PREMIUM PROTECTION  ║\n"
-            "╠══════════════════════════════╣\n"
-            f"║  👤 {msg.from_user.first_name}\n"
-            "║  🔒 ACCESS DENIED!\n"
-            "║  💎 PREMIUM ONLY\n"
-            "╚══════════════════════════════╝"
+            "🔒 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 {msg.from_user.first_name}\n"
+            f"🆔 {uid}\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "💎 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
+            "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮"
         )
         return await send_vid(msg.chat.id, text, None, vid)
     
@@ -591,13 +581,22 @@ async def callbacks(client, cb: CallbackQuery):
     # ═══════════ REDEEM POPUP ═══════════
     if data == "redeem_popup":
         await cb.answer(
-            "🔑 HOW TO REDEEM KEY?\n\n"
-            "1️⃣ Get key from admin\n"
+            "🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "🔑 𝙃𝙤𝙬 𝙏𝙤 𝙍𝙚𝙙𝙚𝙚𝙢 𝙆𝙚𝙮?\n\n"
+            "1️⃣ 𝙂𝙚𝙩 𝙆𝙚𝙮 𝙁𝙧𝙤𝙢 𝘼𝙙𝙢𝙞𝙣\n"
             f"📲 @{OWNER_USERNAME}\n\n"
-            "2️⃣ Use: /redeem KEY\n\n"
-            "3️⃣ Example:\n"
+            "2️⃣ 𝙐𝙨𝙚 𝘾𝙤𝙢𝙢𝙖𝙣𝙙:\n"
+            "/redeem YOUR_KEY\n\n"
+            "3️⃣ 𝙀𝙭𝙖𝙢𝙥𝙡𝙚:\n"
             "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
-            "⏱️ Durations: 30m, 24h, 7d, 2w, 1mo",
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "💡 𝙆𝙚𝙮 𝙁𝙤𝙧𝙢𝙖𝙩:\n"
+            "BGMI-XXXX-XXXX-XXXXXXXX\n\n"
+            "⏱️ 𝘿𝙪𝙧𝙖𝙩𝙞𝙤𝙣𝙨:\n"
+            "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "💎 𝙋𝙧𝙚𝙢𝙞𝙪𝙢 = 𝙋𝙤𝙬𝙚𝙧!",
             show_alert=True
         )
         return
@@ -702,7 +701,7 @@ async def callbacks(client, cb: CallbackQuery):
                 f"{LINE}\n📲 @{OWNER_USERNAME}\n\n"
                 f"⏱️ 30m | 24h | 7d | 2w | 1mo",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔑 HOW TO REDEEM", callback_data="redeem_popup")],
+                    [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
                     [InlineKeyboardButton("📲 Contact-FaThEr", url=f"https://t.me/{OWNER_USERNAME}")],
                     [InlineKeyboardButton("🔙 BACK", callback_data="back")],
                 ])
@@ -833,7 +832,13 @@ for f, d in [(VIDEO_DB, []), (USERS_DB, {"premium": [], "keys": {}}), (KEYS_DB, 
 os.makedirs("downloads", exist_ok=True)
 asyncio.get_event_loop().create_task(auto_expire())
 
-print("✅ PREMIUM BOT READY!")
+print("""
+╔══════════════════════════════════════╗
+║  💎 PREMIUM BGMI ATTACK BOT 💎      ║
+║  FINAL VERSION - ALL WORKING        ║
+╚══════════════════════════════════════╝
+✅ Bot Ready!
+""")
 
 if __name__ == "__main__":
     app.run()
