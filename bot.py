@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT - FINAL FIXED
-Popup Working | DM Link | New Text | All Features
+💎 PREMIUM BGMI ATTACK BOT - FINAL
+Popup Fixed | DM Link | All Working
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -22,6 +22,7 @@ API_HASH = "011f638e4acadee178c59afffc80193d"
 BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "BESTCHEAT_OWNER"
+OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
@@ -248,7 +249,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("final_link_popup_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("popup_link_fixed_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ KEYBOARDS ═══════════════
 def user_kb():
@@ -348,10 +349,10 @@ async def start_cmd(client, msg):
             "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
             "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
             "🍰 /redeem 𝙆𝙚𝙔\n"
-            "🕸️ 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ"
+            f"🕸️ [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})"
         )
         kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛒 𝘽𝙪𝙔-𝙆𝙚𝙔 🔑", url=f"https://t.me/{OWNER_USERNAME}")],
+            [InlineKeyboardButton("🛒 𝘽𝙪𝙔-𝙆𝙚𝙔 🔑", url=OWNER_LINK)],
             [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
         ])
         await send_vid(msg.chat.id, text, kb, vid)
@@ -399,7 +400,7 @@ async def redeem_cmd(client, msg):
     
     parts = msg.text.split()
     if len(parts) != 2:
-        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ")
+        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})")
     
     key = parts[1].upper()
     success, result = redeem_key_code(key, uid)
@@ -409,7 +410,7 @@ async def redeem_cmd(client, msg):
         text = f"🎉 KEY REDEEMED!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
         await send_vid(msg.chat.id, text, None, vid)
     else:
-        await msg.reply_text(f"❌ {result}\n\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ")
+        await msg.reply_text(f"❌ {result}\n\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})")
 
 # ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
@@ -570,18 +571,18 @@ async def gen_key_cmd(client, msg):
     else:
         await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
-# ═══════════════ CALLBACKS ═══════════════
+# ═══════════════ CALLBACKS - POPUP FIXED ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     
-    # ═══════════ SEPARATOR ═══════════
+    # SEPARATOR
     if data == "sep":
         await cb.answer()
         return
     
-    # ═══════════ REDEEM POPUP - MUST BE FIRST ═══════════
+    # REDEEM POPUP - MUST BE FIRST!
     if data == "redeem_popup":
         await cb.answer(
             "🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡\n\n"
@@ -604,7 +605,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ═══════════ ALL OTHER CALLBACKS ═══════════
+    # ALL OTHER CALLBACKS
     await cb.answer()
     
     if data == "back":
@@ -683,10 +684,10 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.message.edit_text(f"✅ 𝘼𝘾𝘾𝙀𝙎𝙎 𝘼𝘾𝙏𝙄𝙑𝙀!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!", reply_markup=back_kb())
         else:
             await cb.message.edit_text(
-                f"🔑 𝙍𝙀𝘿𝙀𝙀𝙈 𝙆𝙀𝙔\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
+                f"🔑 𝙍𝙀𝘿𝙀𝙀𝙈 𝙆𝙀𝙔\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-                    [InlineKeyboardButton("📲 𝘾𝙤𝙣𝙩𝙖𝙘𝙩-𝙁𝙖𝙏𝙝𝙀𝙧", url=f"https://t.me/{OWNER_USERNAME}")],
+                    [InlineKeyboardButton("📲 𝘾𝙤𝙣𝙩𝙖𝙘𝙩-𝙁𝙖𝙏𝙝𝙀𝙧", url=OWNER_LINK)],
                     [InlineKeyboardButton("🔙 BACK", callback_data="back")],
                 ])
             )
