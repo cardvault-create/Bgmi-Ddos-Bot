@@ -10,8 +10,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ─── CONFIG ─── YAHI APNI VALUES DALO ───
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # ← YAHI APNA TOKEN DALO
-AUTHORIZED_USERS = [123456789]     # ← YAHI APNA TELEGRAM ID DALO
+BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"  # ← YAHI APNA TOKEN DALO
+AUTHORIZED_USERS = [1987818347]     # ← YAHI APNA TELEGRAM ID DALO
 MAX_TIME = 400
 
 # BGMI ports range
