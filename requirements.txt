@@ -1,4 +1,3 @@
-telethon
-colorama
-requests
-urllib3
+pyrogram
+tgcrypto
+pytz
