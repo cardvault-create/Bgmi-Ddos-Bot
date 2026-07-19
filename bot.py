@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - FINAL FIXED
-Fast Reply | Popup Fixed | New Text | All Working
+Popup Working | DM Link | New Text | All Features
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -248,7 +248,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("final_popup_fixed_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("final_link_popup_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ KEYBOARDS ═══════════════
 def user_kb():
@@ -570,18 +570,18 @@ async def gen_key_cmd(client, msg):
     else:
         await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
-# ═══════════════ CALLBACKS - POPUP FIXED ═══════════════
+# ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     
-    # SEPARATOR - instant answer
+    # ═══════════ SEPARATOR ═══════════
     if data == "sep":
         await cb.answer()
         return
     
-    # REDEEM POPUP - CHECK FIRST BEFORE ANYTHING
+    # ═══════════ REDEEM POPUP - MUST BE FIRST ═══════════
     if data == "redeem_popup":
         await cb.answer(
             "🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡\n\n"
@@ -604,7 +604,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # All other callbacks
+    # ═══════════ ALL OTHER CALLBACKS ═══════════
     await cb.answer()
     
     if data == "back":
@@ -777,7 +777,7 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💎 PREMIUM BGMI ATTACK BOT 💎      ║
-║  POPUP FIXED | NEW TEXT | FAST      ║
+║  POPUP FIXED | LINK WORKING         ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
