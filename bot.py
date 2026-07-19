@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
 BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
-OWNER_ID = 7614459746
+OWNER_ID = 1987818347
 OWNER_USERNAME = "BESTCHEAT_OWNER"
 
 # ═══════════════ DATABASE FILES ═══════════════
