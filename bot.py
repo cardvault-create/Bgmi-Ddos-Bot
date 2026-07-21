@@ -43,7 +43,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-STICKER_DISPLAY_TIME = 4  # Sticker 4 second tak dikhega
+STICKER_DISPLAY_TIME = 5  # Sticker 4 second tak dikhega
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
