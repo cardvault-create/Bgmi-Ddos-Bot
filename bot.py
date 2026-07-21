@@ -378,7 +378,7 @@ def user_kb():
         [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
-        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],  # 🔥 COMMANDS BUTTON
     ])
 
 def owner_kb():
@@ -388,12 +388,12 @@ def owner_kb():
         [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],  # 🔥 COMMANDS BUTTON
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
         [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("🎨 STICKER MANAGER", callback_data="sticker_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
-        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
 
 def auto_key_kb():
@@ -626,6 +626,7 @@ async def normal_start(client, msg):
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
             [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
+            [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],  # 🔥 COMMANDS BUTTON
         ])
         return await send_vid(msg.chat.id, text, kb, vid)
     
@@ -674,13 +675,152 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
 
+# ═══════════════ COMMANDS LIST - STYLISH BOLD + ITALIC ═══════════════
+def get_commands_list(is_owner=False):
+    """Returns stylish command list with bold + italic formatting"""
+    
+    user_commands = """
+╔══════════════════════════════════════╗
+║         📝 *__COMMANDS LIST__*        ║
+╚══════════════════════════════════════╝
+
+╔══════════════════════════════════════╗
+║      👤 *__USER COMMANDS__*           ║
+╚══════════════════════════════════════╝
+
+*__/start__* - ✨ *Bot Start Karein*
+*__/attack__* - ⚔️ *Attack Start Karein*  
+*__/stop__* - 🛑 *Attack Stop Karein*
+*__/redeem__* - 🔑 *Key Redeem Karein*
+*__/commands__* - 📝 *Commands Dekhein*
+
+╔══════════════════════════════════════╗
+║      🎯 *__ATTACK HELP__*            ║
+╚══════════════════════════════════════╝
+
+*__Format:__* 
+`/attack IP PORT TIME`
+
+*__Example:__*
+`/attack 1.2.3.4 8080 600`
+
+*__BGMI Ports:__*
+`7000 - 15000`
+
+*__Max Time:__*
+`600 Seconds (10 Minutes)`
+
+╔══════════════════════════════════════╗
+║      🔑 *__REDEEM HELP__*            ║
+╚══════════════════════════════════════╝
+
+*__Format:__*
+`/redeem KEY_CODE`
+
+*__Example:__*
+`/redeem BGMI-XXXX-XXXX-XXXX`
+
+╔══════════════════════════════════════╗
+║      ⏱️ *__DURATIONS__*              ║
+╚══════════════════════════════════════╝
+
+`30m` - 30 Minutes
+`1h` - 1 Hour
+`24h` - 24 Hours
+`7d` - 7 Days
+`2w` - 2 Weeks
+`1mo` - 1 Month
+`3mo` - 3 Months
+
+"""
+    
+    owner_commands = """
+╔══════════════════════════════════════╗
+║      👑 *__OWNER COMMANDS__*         ║
+╚══════════════════════════════════════╝
+
+*__🎨 STICKER COMMANDS__*
+
+*__/addsticker__* - 📤 *Sticker Add Karein*
+*__/removesticker__* - 🗑️ *Sticker Remove Karein*
+*__/liststickers__* - 📋 *Stickers Dekhein*
+*__/resetstickers__* - 🔄 *Stickers Reset Karein*
+*__/setstickertime__* - ⏱️ *Sticker Time Set Karein*
+
+*__🎯 EMOJI COMMANDS__*
+
+*__/addemoji__* - 📤 *Emoji Add Karein*
+*__/removeemoji__* - 🗑️ *Emoji Remove Karein*
+*__/listemojis__* - 📋 *Emojis Dekhein*
+*__/resetemojis__* - 🔄 *Emojis Reset Karein*
+
+*__🎬 VIDEO COMMANDS__*
+
+*__/addvideo__* - 📤 *Video Add Karein*
+*__/delvideo__* - 🗑️ *Video Delete Karein*
+*__/videos__* - 📋 *Videos Dekhein*
+*__/clearvideos__* - 🧹 *Videos Clear Karein*
+
+*__🔑 KEY COMMANDS__*
+
+*__/genkey__* - 🪪 *Key Generate Karein*
+*__/admin_keys__* - 📋 *All Keys Dekhein*
+*__/admin_stats__* - 📊 *Statistics Dekhein*
+*__/admin_clear__* - 🔄 *Expired Clear Karein*
+
+╔══════════════════════════════════════╗
+║      📲 *__CONTACT__*                ║
+╚══════════════════════════════════════╝
+
+👑 *Owner:* [FATHER OF BOT]({OWNER_LINK})
+🤖 *Bot:* @{BOT_USERNAME}
+
+"""
+    
+    if is_owner:
+        return user_commands + owner_commands
+    return user_commands
+
+# ═══════════════ COMMANDS CALLBACK ═══════════════
+@app.on_callback_query(filters.regex("commands_menu"))
+async def commands_menu_callback(client, cb: CallbackQuery):
+    uid = cb.from_user.id
+    is_owner = (uid == OWNER_ID)
+    
+    # Get stylish command list
+    commands_text = get_commands_list(is_owner)
+    
+    # Format with proper styling
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    
+    # Add back button
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 BACK", callback_data="back")]
+    ])
+    
+    await cb.message.edit_text(formatted_text, reply_markup=kb)
+
+# ═══════════════ COMMANDS COMMAND ═══════════════
+@app.on_message(filters.command("commands"))
+async def commands_cmd(client, msg):
+    uid = msg.from_user.id
+    is_owner = (uid == OWNER_ID)
+    
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 BACK", callback_data="back")]
+    ])
+    
+    await msg.reply_text(formatted_text, reply_markup=kb)
+
 # ═══════════════ ATTACK WITH CHECKING ═══════════════
 @app.on_message(filters.command("attack"))
 async def attack_cmd(client, msg):
     global attacking, ainfo, amsg, attack_user
     uid = msg.from_user.id
     
-    # 🔥 REAL-TIME CHECKING SYSTEM - HACKER STYLE
     checking_msg = await msg.reply_text(
         "🔍 **INITIATING SECURITY PROTOCOL...**\n\n"
         "▫️ Connecting to secure server...\n"
@@ -690,7 +830,6 @@ async def attack_cmd(client, msg):
     
     await asyncio.sleep(0.5)
     
-    # Check 1: Blocked Check
     if is_blocked(uid):
         await checking_msg.edit_text(
             "🚫 **ACCESS DENIED!**\n\n"
@@ -713,7 +852,6 @@ async def attack_cmd(client, msg):
     
     await asyncio.sleep(0.5)
     
-    # Check 2: Owner Check
     if uid == OWNER_ID:
         await checking_msg.edit_text(
             "👑 **MASTER ACCESS GRANTED!**\n\n"
@@ -730,7 +868,6 @@ async def attack_cmd(client, msg):
         await execute_attack(client, msg, uid)
         return
     
-    # Check 3: Premium Check
     u = get_users()
     if str(uid) in u.get("premium", []):
         await checking_msg.edit_text(
@@ -756,7 +893,6 @@ async def attack_cmd(client, msg):
     
     await asyncio.sleep(0.5)
     
-    # Check 4: Key Check
     uk = u.get("keys", {}).get(str(uid), {})
     if uk:
         try:
@@ -776,7 +912,6 @@ async def attack_cmd(client, msg):
                 await execute_attack(client, msg, uid)
                 return
             else:
-                # Expired key
                 del u["keys"][str(uid)]
                 jsave(USERS_DB, u)
                 await checking_msg.edit_text(
@@ -788,13 +923,12 @@ async def attack_cmd(client, msg):
                     "╚══════════════════════════╝\n\n"
                     "Your key has expired.\n"
                     "Please purchase a new key!\n\n"
-                    "📲 Contact: [FATHER OF BOT]({OWNER_LINK})"
+                    f"📲 Contact: [FATHER OF BOT]({OWNER_LINK})"
                 )
                 return
         except:
             pass
     
-    # Check 5: No Access
     await checking_msg.edit_text(
         "⛔ **ACCESS DENIED!**\n\n"
         "╔══════════════════════════╗\n"
@@ -1241,36 +1375,6 @@ async def stop_cmd(client, msg):
     else:
         await msg.reply_text("💤 No attack running!")
 
-# ═══════════════ COMMANDS MENU ═══════════════
-@app.on_message(filters.command("commands"))
-async def commands_cmd(client, msg):
-    await msg.reply_text(
-        "📝 **COMMANDS MENU**\n\n"
-        f"{LINE}\n"
-        "⚔️ /attack IP PORT TIME - Start Attack\n"
-        "⛔ /stop - Stop Attack\n"
-        "🔑 /redeem KEY - Redeem Key\n"
-        "📊 /status - Check Status\n\n"
-        "**🎯 Owner Commands:**\n"
-        "📤 /addemoji - Add Premium Emoji\n"
-        "📋 /listemojis - List Emojis\n"
-        "🗑️ /removeemoji index - Remove Emoji\n"
-        "🔄 /resetemojis - Reset All Emojis\n\n"
-        "🎨 /addsticker - Add Sticker (Auto-Detect Time)\n"
-        "📋 /liststickers - List Stickers with Times\n"
-        "🗑️ /removesticker index - Remove Sticker\n"
-        "🔄 /resetstickers - Reset All Stickers\n"
-        "⏱️ /setstickertime index seconds - Set Sticker Time\n\n"
-        "🎬 /addvideo - Add Video\n"
-        "📋 /videos - List Videos\n"
-        "🗑️ /delvideo ID - Delete Video\n"
-        "🧹 /clearvideos - Clear All Videos\n\n"
-        f"⏱️ **Default Sticker Time:** {DEFAULT_STICKER_TIME} seconds\n"
-        f"🎮 **BGMI PORTS:** 7000-15000\n"
-        f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
-        f"👑 [FATHER OF BOT]({OWNER_LINK})"
-    )
-
 # ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
@@ -1299,29 +1403,15 @@ async def callbacks(client, cb: CallbackQuery):
         return
     
     if data == "commands_menu":
-        await cb.message.edit_text(
-            "📝 **COMMANDS MENU**\n\n"
-            f"{LINE}\n"
-            "⚔️ /attack IP PORT TIME - Start Attack\n"
-            "⛔ /stop - Stop Attack\n"
-            "🔑 /redeem KEY - Redeem Key\n"
-            "📊 /status - Check Status\n\n"
-            "**🎯 Owner Commands:**\n"
-            "📤 /addemoji - Add Premium Emoji\n"
-            "📋 /listemojis - List Emojis\n"
-            "🗑️ /removeemoji index - Remove Emoji\n"
-            "🔄 /resetemojis - Reset All Emojis\n\n"
-            "🎨 /addsticker - Add Sticker (Auto-Detect)\n"
-            "📋 /liststickers - List Stickers\n"
-            "🗑️ /removesticker index - Remove Sticker\n"
-            "🔄 /resetstickers - Reset All Stickers\n"
-            "⏱️ /setstickertime index seconds - Set Time\n\n"
-            f"⏱️ **Default Sticker Time:** {DEFAULT_STICKER_TIME} seconds\n"
-            f"🎮 **BGMI PORTS:** 7000-15000\n"
-            f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
-            f"👑 [FATHER OF BOT]({OWNER_LINK})",
-            reply_markup=back_kb()
-        )
+        is_owner = (uid == OWNER_ID)
+        commands_text = get_commands_list(is_owner)
+        formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+        
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 BACK", callback_data="back")]
+        ])
+        
+        await cb.message.edit_text(formatted_text, reply_markup=kb)
         return
     
     if data == "back":
@@ -1345,6 +1435,7 @@ async def callbacks(client, cb: CallbackQuery):
             kb = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
                 [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
+                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
             ])
             await cb.message.edit_text(text, reply_markup=kb)
             return
@@ -1656,10 +1747,8 @@ async def callbacks(client, cb: CallbackQuery):
         return
     
     if data == "attack_menu":
-        # 🔥 REAL-TIME CHECKING ON BUTTON CLICK
         uid = cb.from_user.id
         
-        # Send checking message
         checking_msg = await cb.message.reply_text(
             "🔍 **SYSTEM SCAN INITIATED...**\n\n"
             "▫️ 🔐 Verifying user credentials...\n"
@@ -1669,7 +1758,6 @@ async def callbacks(client, cb: CallbackQuery):
         
         await asyncio.sleep(0.5)
         
-        # Check if user has access
         access, a_type = check_access(uid)
         
         if not access:
@@ -1855,11 +1943,12 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
+║  📝 COMMANDS BUTTON ON KEYBOARD     ║
+║  STYLISH BOLD + ITALIC TEXT         ║
 ║  REAL-TIME CHECKING SYSTEM          ║
 ║  HACKER STYLE VERIFICATION          ║
 ║  AUTO-DETECT STICKER DURATION       ║
 ║  INSTANT VIDEO AFTER STICKER        ║
-║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
