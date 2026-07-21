@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+""" 
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
 Server Freeze Bot | Random Emoji + Sticker | Auto Update | Welcome Animation
 """
