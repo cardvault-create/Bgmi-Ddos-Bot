@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
-BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
+BOT_TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "FathersOfCreater"
 OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
