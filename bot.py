@@ -525,26 +525,26 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER (3 seconds)
-        sticker_id = get_random_sticker()
+        # Step 5: SEND STICKER (4 seconds)
+sticker_id = get_random_sticker()
+sticker_msg = None
+if sticker_id:
+    try:
+        sticker_msg = await client.send_sticker(chat_id, sticker_id)
+    except:
         sticker_msg = None
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
-        
-        # Step 6: WAIT EXACTLY 3 SECONDS
-        await asyncio.sleep(3)
-        
-        # Step 7: DELETE STICKER AFTER 3 SECONDS
-        if sticker_msg:
-            try:
-                await sticker_msg.delete()
-            except:
-                pass
-        
-        # Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE
+
+# Step 6: WAIT EXACTLY 4 SECONDS
+await asyncio.sleep(4)
+
+# Step 7: DELETE STICKER AFTER 4 SECONDS
+if sticker_msg:
+    try:
+        await sticker_msg.delete()
+    except:
+        pass
+
+# Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
