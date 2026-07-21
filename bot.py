@@ -470,7 +470,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 2: Welcome Baby message (emoji at end - like before)
+        # Step 2: Welcome Baby message (emoji at end)
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
@@ -494,7 +494,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 3: Starting animation with bold text (only starting text bold)
+        # Step 3: Starting animation with bold text
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
@@ -525,7 +525,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER (4 seconds)
+        # Step 5: SEND STICKER (3 seconds then delete)
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -534,8 +534,8 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 6: WAIT 4 SECONDS for sticker
-        await asyncio.sleep(4)
+        # Step 6: WAIT 3 SECONDS for sticker
+        await asyncio.sleep(3)
         
         # Step 7: DELETE STICKER
         if sticker_msg:
@@ -544,9 +544,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.3)
-        
-        # Step 8: FINAL WELCOME MESSAGE WITH VIDEO (normal text, not bold)
+        # Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE (no delay)
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -573,7 +571,7 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Send video with final message (if video exists)
+        # Send video with final message (instantly after sticker delete)
         video_data = rand_vid()
         final_msg = None
         
@@ -1554,8 +1552,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  ONLY STARTING TEXT BOLD            ║
-║  PREMIUM WELCOME ANIMATION          ║
+║  3 SEC STICKER → INSTANT VIDEO      ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
