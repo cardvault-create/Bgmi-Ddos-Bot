@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
+Server Freeze Bot | Random Emoji + Sticker + Video | Auto Update | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -8,9 +9,9 @@ from datetime import datetime, timedelta
 import pytz
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery,
-    ReplyKeyboardMarkup, KeyboardButton
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
 
 # ═══════════════ LOGGING ═══════════════
@@ -27,9 +28,6 @@ OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
 BOT_LINK = f"https://t.me/{BOT_USERNAME}"
 
-IST = pytz.timezone('Asia/Kolkata')
-LINE = "━━━━━━━━━━━━━━━━━━━"
-
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
 USERS_DB = "users.json"
@@ -40,10 +38,19 @@ STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
 STICKER_TIME_DB = "sticker_times.json"
 
+IST = pytz.timezone('Asia/Kolkata')
+LINE = "━━━━━━━━━━━━━━━━━━━"
+
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
 DEFAULT_STICKER_TIME = 5
+
+# ═══════════════ TRACKING ═══════════════
+used_videos = []
+last_emoji_index = -1
+last_sticker_index = -1
+last_video_index = -1
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -106,6 +113,7 @@ def get_remaining(expiry_str):
         else: return f"{minutes}M", False
     except: return "ERROR", False
 
+# ═══════════════ STICKER TIME FUNCTIONS ═══════════════
 def get_sticker_times():
     return jload(STICKER_TIME_DB, {})
 
@@ -289,6 +297,7 @@ def remove_expired():
         if removed > 0: jsave(USERS_DB, u)
     return removed
 
+# ═══════════════ HISTORY ═══════════════
 def get_history(): return jload(HISTORY_DB, {})
 def add_history(uid, action, details):
     h = get_history()
@@ -300,6 +309,7 @@ def add_history(uid, action, details):
 def get_user_history(uid):
     return get_history().get(str(uid), [])
 
+# ═══════════════ KEY FUNCTIONS ═══════════════
 def get_keys(): return jload(KEYS_DB, {})
 def create_key(name, time_str):
     keys = get_keys()
@@ -360,73 +370,30 @@ attack_user = None
 # ═══════════════ BOT ═══════════════
 app = Client("final_bgmi_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ═══════════════ PERSISTENT KEYBOARD ═══════════════
-def get_persistent_menu(is_owner=False):
-    if is_owner:
-        return ReplyKeyboardMarkup(
-            [
-                [KeyboardButton("📝 Commands"), KeyboardButton("💀 Attack"), KeyboardButton("⛔ Stop")],
-                [KeyboardButton("🔑 Redeem"), KeyboardButton("📊 Status"), KeyboardButton("ℹ️ Info")],
-                [KeyboardButton("━━━━━━━━━━━━━━━━━━")],
-                [KeyboardButton("🎬 Video Manager"), KeyboardButton("🎯 Emoji Manager")],
-                [KeyboardButton("🎨 Sticker Manager"), KeyboardButton("👑 Admin Panel")],
-            ],
-            resize_keyboard=True,
-            one_time_keyboard=False,
-            persistent=True
-        )
-    else:
-        return ReplyKeyboardMarkup(
-            [
-                [KeyboardButton("📝 Commands")],
-                [KeyboardButton("💀 Attack"), KeyboardButton("⛔ Stop")],
-                [KeyboardButton("🔑 Redeem"), KeyboardButton("📊 Status"), KeyboardButton("ℹ️ Info")],
-            ],
-            resize_keyboard=True,
-            one_time_keyboard=False,
-            persistent=True
-        )
-
-# ═══════════════ INLINE KEYBOARDS ═══════════════
-def user_inline_kb():
+# ═══════════════ INLINE KEYBOARDS - SIRF INLINE BUTTONS ═══════════════
+def user_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
          InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
         [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
 
-def owner_inline_kb():
+def owner_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
          InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
         [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
         [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("🎨 STICKER MANAGER", callback_data="sticker_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
-    ])
-
-def back_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
-
-def back_admin_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
-
-def admin_kb():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🪪 ADD KEY", callback_data="admin_addkey")],
-        [InlineKeyboardButton("🤖 AUTO GEN KEY", callback_data="admin_auto")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
-        [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
-        [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 BACK", callback_data="back")],
     ])
 
 def auto_key_kb():
@@ -481,6 +448,24 @@ def sticker_kb():
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
     ])
+
+def admin_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🪪 ADD KEY", callback_data="admin_addkey")],
+        [InlineKeyboardButton("🤖 AUTO GEN KEY", callback_data="admin_auto")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
+        [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
+        [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("🔙 BACK", callback_data="back")],
+    ])
+
+def back_kb():
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+
+def back_admin_kb():
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
 
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
@@ -571,26 +556,25 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ START COMMAND - SIMPLE & RELIABLE ═══════════════
-@app.on_message(filters.command("start") & filters.private)
-async def start_cmd(client, msg):
+# ═══════════════ WELCOME ANIMATION ═══════════════
+async def welcome_animation(client, msg):
     try:
         user = msg.from_user
-        user_id = user.id
+        chat_id = msg.chat.id
         first_name = user.first_name or "User"
-        is_owner = (user_id == OWNER_ID)
+        user_id = user.id
         
-        # 🔥 PEHLE PERSISTENT KEYBOARD SEND KARO
-        await msg.reply_text(
-            "🔄 *Loading...*",
-            reply_markup=get_persistent_menu(is_owner)
-        )
+        sticker_id = get_random_sticker()
+        video_data = rand_vid()
         
-        # 🔥 AB MAIN MESSAGE SEND KARO
-        if is_owner:
-            inline_kb = owner_inline_kb()
+        sticker_display_time = DEFAULT_STICKER_TIME
+        if sticker_id:
+            sticker_display_time = get_sticker_time(sticker_id)
+        
+        if user_id == OWNER_ID:
+            kb = owner_kb()
         else:
-            inline_kb = user_inline_kb()
+            kb = user_kb()
         
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
@@ -613,161 +597,182 @@ async def start_cmd(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
-        # 🔥 SEND FINAL MESSAGE
-        await client.send_message(
-            msg.chat.id,
-            final_text,
-            reply_markup=inline_kb
+        emoji_msg = None
+        emoji_id = get_random_emoji()
+        if emoji_id:
+            try:
+                emoji_msg = await client.send_sticker(chat_id, emoji_id)
+            except:
+                pass
+        
+        await asyncio.sleep(0.5)
+        
+        welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
+        welcome_msg = await client.send_message(
+            chat_id, 
+            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
         )
         
+        for emoji in welcome_emojis:
+            await asyncio.sleep(0.4)
+            try:
+                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
+            except:
+                pass
+        
+        if emoji_msg:
+            try:
+                await emoji_msg.delete()
+            except:
+                pass
+        
+        await asyncio.sleep(0.3)
+        
+        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
+        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
+        emoji_idx = 0
+        emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+        
+        await welcome_msg.edit_text(f"**{emoji}**")
+        await asyncio.sleep(0.2)
+        
+        for i, char in enumerate(chars_to_add):
+            await asyncio.sleep(0.1)
+            try:
+                if i % 2 == 0:
+                    emoji_idx += 1
+                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+                else:
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+            except:
+                pass
+        
+        await asyncio.sleep(0.3)
+        
+        try:
+            await welcome_msg.delete()
+        except:
+            pass
+        
+        await asyncio.sleep(0.3)
+        
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                pass
+        
+        video_task = None
+        if video_data and os.path.exists(video_data["path"]):
+            video_task = asyncio.create_task(
+                client.send_video(
+                    chat_id,
+                    video_data["path"],
+                    caption=final_text,
+                    reply_markup=kb
+                )
+            )
+        else:
+            video_task = asyncio.create_task(
+                client.send_message(chat_id, final_text, reply_markup=kb)
+            )
+        
+        await asyncio.sleep(sticker_display_time)
+        
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        final_msg = await video_task
+        return final_msg
+        
     except Exception as e:
-        logger.error(f"Start error: {e}")
-        # 🔥 AGAR KOI ERROR AAYE TOH SIMPLE REPLY
-        await msg.reply_text(
-            "👋 *Welcome to BGMI Attack Bot!*\n\n"
-            "Use /attack IP PORT TIME to start attacking!\n"
-            "Use /commands to see all commands."
+        logger.error(f"Welcome animation error: {e}")
+        await normal_start(client, msg)
+
+async def normal_start(client, msg):
+    uid = msg.from_user.id
+    user = msg.from_user
+    access, a_type = check_access(uid)
+    
+    if not access:
+        vid = rand_vid()
+        text = (
+            "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            f"💌 {user.first_name}\n"
+            f"🍄 {uid}\n"
+            "━━━━━━━━━━━━━━━━━━━\n\n"
+            "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
+            "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
+            "🍰 /redeem 𝙆𝙚𝙮\n"
+            f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
         )
-
-# ═══════════════ KEYBOARD BUTTON HANDLERS ═══════════════
-
-# 📝 Commands Button
-@app.on_message(filters.regex("^📝 Commands$") & filters.private)
-async def commands_button_handler(client, msg):
-    uid = msg.from_user.id
-    is_owner = (uid == OWNER_ID)
-    commands_text = get_commands_list(is_owner)
-    await msg.reply_text(commands_text)
-
-# 💀 Attack Button
-@app.on_message(filters.regex("^💀 Attack$") & filters.private)
-async def attack_button_handler(client, msg):
-    await attack_cmd(client, msg)
-
-# ⛔ Stop Button
-@app.on_message(filters.regex("^⛔ Stop$") & filters.private)
-async def stop_button_handler(client, msg):
-    await stop_cmd(client, msg)
-
-# 🔑 Redeem Button
-@app.on_message(filters.regex("^🔑 Redeem$") & filters.private)
-async def redeem_button_handler(client, msg):
-    await msg.reply_text(
-        f"🔑 **REDEEM KEY**\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [FATHER OF BOT]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo"
-    )
-
-# 📊 Status Button
-@app.on_message(filters.regex("^📊 Status$") & filters.private)
-async def status_button_handler(client, msg):
-    global attacking
-    if attacking:
-        e = time.time() - ainfo['start']
-        await msg.reply_text(f"🟢 **ATTACKING!**\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} pkts")
-    else:
-        await msg.reply_text("💤 **IDLE**\n\nNo attack running!")
-
-# ℹ️ Info Button
-@app.on_message(filters.regex("^ℹ️ Info$") & filters.private)
-async def info_button_handler(client, msg):
-    uid = msg.from_user.id
+        kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
+            [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
+            [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
+        ])
+        return await send_vid(msg.chat.id, text, kb, vid)
+    
     info = get_user_info(uid)
-    history = get_user_history(uid)
-    text = f"ℹ️ **USER INFO**\n\n{LINE}\n👤 {msg.from_user.first_name}\n🆔 {uid}\n💳 {info['type']}\n"
-    if info.get("remaining"): text += f"⏳ Remaining: {info['remaining']}\n"
+    vid = rand_vid()
+    kb = owner_kb() if uid == OWNER_ID else user_kb()
+    
+    expiry_text = ""
+    if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
     if info.get("expiry"):
         try:
             exp = datetime.fromisoformat(info["expiry"])
-            text += f"📅 Expires: {exp.strftime('%d %b, %I:%M %p')}\n"
+            expiry_text += f"\n📅 Expires: {exp.strftime('%d %b %Y, %I:%M %p')}"
         except: pass
-    text += f"\n{LINE}\n📊 **ATTACK HISTORY:**\n"
-    if history:
-        for h in history[-5:]:
-            try:
-                t = datetime.fromisoformat(h['time']).strftime('%d %b %I:%M %p')
-                text += f"• {t} - {h['action']}\n  {h['details'][:40]}\n"
-            except: pass
-    else:
-        text += "• No attacks yet!\n"
-    text += f"\n{LINE}\n📹 Videos: {len(get_vids())}"
-    await msg.reply_text(text)
-
-# 🎬 Video Manager Button - SIRF OWNER
-@app.on_message(filters.regex("^🎬 Video Manager$") & filters.private)
-async def video_manager_button_handler(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    vids = get_vids()
-    await msg.reply_text(
-        f"🎬 **VIDEO MANAGER**\n\n"
-        f"🔹 **Total Videos:** {len(vids)}\n"
-        f"🔹 **Commands:**\n"
-        f"• `/addvideo` - Reply to video\n"
-        f"• `/delvideo ID` - Delete by ID\n"
-        f"• `/videos` - List all videos\n"
-        f"• `/clearvideos` - Clear all\n\n"
-        f"✨ Videos appear randomly in welcome animation!"
+    
+    text = (
+        "💀 𝐁𝐆𝐌𝐈 𝐀𝐓𝐓𝐀𝐂𝐊 𝐁𝐎𝐓 💀\n\n"
+        f"{LINE}\n"
+        f"👤 {user.first_name}\n"
+        f"🆔 {uid}\n"
+        f"💳 {a_type}{expiry_text}\n"
+        f"{LINE}\n"
+        f"⚡ {info['threads']} Threads\n"
+        f"⏱️ {info['max_time']}s Max Time\n"
+        f"📹 {len(get_vids())} Videos\n"
+        f"{LINE}\n"
+        "⚔️ /attack IP PORT TIME\n"
+        "📋 /attack 1.2.3.4 8080 600\n"
+        "🎮 BGMI Ports: 7000-15000\n"
+        f"{LINE}\n"
+        "🔽 SELECT OPTION:"
     )
+    return await send_vid(msg.chat.id, text, kb, vid)
 
-# 🎯 Emoji Manager Button - SIRF OWNER
-@app.on_message(filters.regex("^🎯 Emoji Manager$") & filters.private)
-async def emoji_manager_button_handler(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    emojis = get_all_emojis()
-    await msg.reply_text(
-        f"🎯 **EMOJI MANAGER**\n\n"
-        f"🔹 **Total Emojis:** {len(emojis)}\n"
-        f"🔹 **Commands:**\n"
-        f"• `/addemoji` - Reply to premium emoji\n"
-        f"• `/removeemoji index` - Remove by index\n"
-        f"• `/listemojis` - List all emojis\n"
-        f"• `/resetemojis` - Reset all\n\n"
-        f"✨ Emojis appear randomly in welcome animation!"
-    )
+async def send_vid(chat_id, text, kb=None, vid=None):
+    if vid is None: vid = rand_vid()
+    try:
+        if vid and os.path.exists(vid["path"]):
+            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
+        return await app.send_message(chat_id, text, reply_markup=kb)
+    except:
+        return await app.send_message(chat_id, text, reply_markup=kb)
 
-# 🎨 Sticker Manager Button - SIRF OWNER
-@app.on_message(filters.regex("^🎨 Sticker Manager$") & filters.private)
-async def sticker_manager_button_handler(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    stickers = get_all_stickers()
-    sticker_times = get_sticker_times()
-    text = f"🎨 **STICKER MANAGER**\n\n"
-    text += f"🔹 **Total Stickers:** {len(stickers)}\n"
-    if stickers:
-        text += "🔹 **Sticker Times:**\n"
-        for i, sid in enumerate(stickers[:5], 1):
-            time = sticker_times.get(sid, DEFAULT_STICKER_TIME)
-            text += f"   #{i}: {time}s\n"
-    text += f"\n🔹 **Commands:**\n"
-    text += f"• `/addsticker` - Reply to sticker (Auto-detect)\n"
-    text += f"• `/removesticker index` - Remove by index\n"
-    text += f"• `/liststickers` - List all stickers\n"
-    text += f"• `/resetstickers` - Reset all\n"
-    text += f"• `/setstickertime index seconds` - Set time\n\n"
-    text += f"⏱️ **Default Time:** {DEFAULT_STICKER_TIME} seconds\n"
-    text += f"✨ Stickers appear randomly in welcome animation!"
-    await msg.reply_text(text)
+# ═══════════════ START ═══════════════
+@app.on_message(filters.command("start") & filters.private)
+async def start_cmd(client, msg):
+    await welcome_animation(client, msg)
 
-# 👑 Admin Panel Button - SIRF OWNER
-@app.on_message(filters.regex("^👑 Admin Panel$") & filters.private)
-async def admin_panel_button_handler(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    await msg.reply_text(
-        "👑 **ADMIN PANEL**\n\n"
-        "🔽 Use these commands:\n\n"
-        "🪪 `/genkey NAME TIME` - Generate Key\n"
-        "🤖 Auto Key - Use menu\n"
-        "📋 `/admin_keys` - All Keys\n"
-        "📊 `/admin_stats` - Statistics\n"
-        "🔄 `/admin_clear` - Clear Expired"
-    )
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-@app.on_message(filters.regex("^━━━━━━━━━━━━━━━━━━$") & filters.private)
-async def separator_handler(client, msg):
-    pass
+# ═══════════════ COMMANDS CALLBACK ═══════════════
+@app.on_callback_query(filters.regex("commands_menu"))
+async def commands_menu_callback(client, cb: CallbackQuery):
+    uid = cb.from_user.id
+    is_owner = (uid == OWNER_ID)
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+    await cb.message.edit_text(formatted_text, reply_markup=kb)
 
 # ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
@@ -997,15 +1002,6 @@ async def execute_attack(client, msg, uid):
     except: 
         pass
 
-async def send_vid(chat_id, text, kb=None, vid=None):
-    if vid is None: vid = rand_vid()
-    try:
-        if vid and os.path.exists(vid["path"]):
-            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
-        return await app.send_message(chat_id, text, reply_markup=kb)
-    except:
-        return await app.send_message(chat_id, text, reply_markup=kb)
-
 # ═══════════════ STOP ═══════════════
 @app.on_message(filters.command("stop"))
 async def stop_cmd(client, msg):
@@ -1041,6 +1037,16 @@ async def redeem_cmd(client, msg):
         await send_vid(msg.chat.id, text, None, vid)
     else:
         await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+
+# ═══════════════ COMMANDS COMMAND ═══════════════
+@app.on_message(filters.command("commands"))
+async def commands_cmd(client, msg):
+    uid = msg.from_user.id
+    is_owner = (uid == OWNER_ID)
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+    await msg.reply_text(formatted_text, reply_markup=kb)
 
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji"))
@@ -1439,16 +1445,18 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "commands_menu":
         is_owner = (uid == OWNER_ID)
         commands_text = get_commands_list(is_owner)
-        await cb.message.edit_text(commands_text, reply_markup=back_kb())
+        formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+        kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+        await cb.message.edit_text(formatted_text, reply_markup=kb)
         return
     
     if data == "back":
         user = cb.from_user
         uid = user.id
         access, a_type = check_access(uid)
-        is_owner = (uid == OWNER_ID)
         
         if not access:
+            vid = rand_vid()
             text = (
                 "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
                 "━━━━━━━━━━━━━━━━━━━\n"
@@ -1469,11 +1477,12 @@ async def callbacks(client, cb: CallbackQuery):
             return
         
         info = get_user_info(uid)
+        vid = rand_vid()
         
         if uid == OWNER_ID:
-            kb = owner_inline_kb()
+            kb = owner_kb()
         else:
-            kb = user_inline_kb()
+            kb = user_kb()
         
         expiry_text = ""
         if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
@@ -1934,9 +1943,8 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  SABKE LIYE KEYBOARD KE BYAN BUTTONS║
-║  USER: Simple Menu                  ║
-║  OWNER: Full Menu                   ║
+║  SIRF INLINE BUTTONS - CHAT KE ANDAR║
+║  KEYBOARD KE BYAN KUCH NAHI          ║
 ║  REAL-TIME CHECKING SYSTEM          ║
 ║  HACKER STYLE VERIFICATION          ║
 ╚══════════════════════════════════════╝
