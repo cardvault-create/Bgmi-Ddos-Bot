@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT - ULTRA PREMIUM
-Popup Working | Stylish Text | DM Link | All Features | Welcome Animation
+💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
+Emoji Add Feature | Premium Emojis | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -26,9 +26,6 @@ OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
 BOT_LINK = f"https://t.me/{BOT_USERNAME}"
 
-# Animated Emoji ID
-ANIMATED_EMOJI_ID = "CAACAgUAAxkBAAERk5JqXv5riEYAAe1iEC1eoJd1_HyaplYAAuQgAAJYAfFWCptc4IJ3B909BA"
-
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
 USERS_DB = "users.json"
@@ -36,13 +33,14 @@ KEYS_DB = "keys.json"
 BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
+EMOJI_DB = "emojis.json"  # Naya DB for emojis
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
 
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
-PREMIUM_TIME = 400  # 6.6 minutes
+PREMIUM_TIME = 400
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -107,6 +105,35 @@ def get_remaining(expiry_str):
         elif hours > 0: return f"{hours}H {minutes}M", False
         else: return f"{minutes}M", False
     except: return "ERROR", False
+
+# ═══════════════ EMOJI FUNCTIONS ═══════════════
+def get_emojis():
+    return jload(EMOJI_DB, {"emojis": []})
+
+def add_emoji(emoji_id):
+    data = get_emojis()
+    if emoji_id not in data["emojis"]:
+        data["emojis"].append(emoji_id)
+        jsave(EMOJI_DB, data)
+        return True
+    return False
+
+def remove_emoji(emoji_id):
+    data = get_emojis()
+    if emoji_id in data["emojis"]:
+        data["emojis"].remove(emoji_id)
+        jsave(EMOJI_DB, data)
+        return True
+    return False
+
+def get_random_emoji():
+    data = get_emojis()
+    if data["emojis"]:
+        return random.choice(data["emojis"])
+    return None
+
+def get_all_emojis():
+    return get_emojis()["emojis"]
 
 # ═══════════════ STICKER FUNCTIONS ═══════════════
 def get_sticker(): return jload(STICKER_DB, {"sticker_id": None})
@@ -283,6 +310,7 @@ def owner_kb():
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
+        [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
         [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
@@ -318,6 +346,16 @@ def video_kb():
         [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
     ])
 
+def emoji_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📤 ADD EMOJI", callback_data="e_add")],
+        [InlineKeyboardButton("🗑️ REMOVE EMOJI", callback_data="e_remove")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("📋 LIST EMOJIS", callback_data="e_list")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
+    ])
+
 def admin_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🪪 ADD KEY", callback_data="admin_addkey")],
@@ -339,56 +377,69 @@ def back_admin_kb():
 
 # ═══════════════ WELCOME ANIMATION ═══════════════
 async def welcome_animation(client, msg):
-    """Premium welcome animation with auto-delete messages"""
     try:
         user = msg.from_user
         chat_id = msg.chat.id
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: Send animated emoji + auto delete after 2 seconds
+        # Step 1: React with ❤️
         try:
-            emoji_msg = await client.send_sticker(chat_id, ANIMATED_EMOJI_ID)
-            await asyncio.sleep(2)
-            await emoji_msg.delete()
+            await msg.react("❤️")
         except:
             pass
         
         await asyncio.sleep(0.5)
         
-        # Step 2: Welcome message with animated emojis
-        welcome_emojis = ["✨", "🌟", "💫", "⭐", "🌈", "💎"]
-        welcome_msg = await client.send_message(
-            chat_id, 
-            f"HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})"
-        )
-        
-        # Change emojis in the same message
-        for emoji in welcome_emojis[:6]:
-            await asyncio.sleep(0.3)
+        # Step 2: Send random emoji from DB
+        emoji_id = get_random_emoji()
+        if emoji_id:
             try:
-                await welcome_msg.edit_text(f"{emoji} HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})")
+                emoji_msg = await client.send_sticker(chat_id, emoji_id)
+                await asyncio.sleep(1)
+                await emoji_msg.delete()
             except:
                 pass
         
-        await asyncio.sleep(0.5)
-        
-        # Delete welcome message
-        try:
-            await welcome_msg.delete()
-        except:
-            pass
         await asyncio.sleep(0.3)
         
-        # Step 3: Starting message with character by character typing effect
-        starting_emojis = ["⚡", "💫", "✨", "🔥", "💥"]
-        starting_msg = await client.send_message(chat_id, "s")
+        # Step 3: Welcome Text 1
+        welcome1 = await client.send_message(
+            chat_id, 
+            f"HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})"
+        )
+        await asyncio.sleep(1)
+        await welcome1.delete()
         
-        # Build text character by character
+        await asyncio.sleep(0.3)
+        
+        # Step 4: Send another random emoji
+        emoji_id2 = get_random_emoji()
+        if emoji_id2:
+            try:
+                emoji_msg2 = await client.send_sticker(chat_id, emoji_id2)
+                await asyncio.sleep(1)
+                await emoji_msg2.delete()
+            except:
+                pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 5: Welcome Text 2
+        welcome2 = await client.send_message(
+            chat_id, 
+            f"I'M 'BGMI ✘ ATTACK, ♪,"
+        )
+        await asyncio.sleep(1)
+        await welcome2.delete()
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 6: Starting animation
+        starting_msg = await client.send_message(chat_id, "s")
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "s"
         
-        # Add each character
         for char in chars_to_add:
             current_text += char
             await asyncio.sleep(0.08)
@@ -397,39 +448,24 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # Change emojis in the same message
-        for emoji in starting_emojis[:5]:
-            await asyncio.sleep(0.25)
-            try:
-                await starting_msg.edit_text(f"{emoji} ѕтαятιиg.....")
-            except:
-                pass
-        
         await asyncio.sleep(0.5)
+        await starting_msg.delete()
         
-        # Delete starting message
-        try:
-            await starting_msg.delete()
-        except:
-            pass
         await asyncio.sleep(0.3)
         
-        # Step 4: Send sticker if available (auto delete after 5 seconds)
+        # Step 7: Send sticker if available (auto delete after 5 seconds)
         sticker_data = get_sticker()
         if sticker_data and sticker_data.get("sticker_id"):
             try:
                 sticker_msg = await client.send_sticker(chat_id, sticker_data["sticker_id"])
                 await asyncio.sleep(5)
-                try:
-                    await sticker_msg.delete()
-                except:
-                    pass
+                await sticker_msg.delete()
             except:
                 pass
         
         await asyncio.sleep(0.5)
         
-        # Step 5: Final welcome message with EXACT screenshot style
+        # Step 8: Final Message
         final_text = f"""
 HEY, ⚡ I'm → HeaVen  
 I'M 'BGMI ✘ ATTACK, ♪,  
@@ -453,27 +489,18 @@ I'M 'BGMI ✘ ATTACK, ♪,
 **[FATHER OF BOT]({OWNER_LINK})**
 """
         
-        # Choose keyboard based on user type
         if user_id == OWNER_ID:
             kb = owner_kb()
         else:
             kb = user_kb()
         
-        # Final message with buttons
-        final_msg = await client.send_message(
-            chat_id,
-            final_text,
-            reply_markup=kb
-        )
-        
-        return final_msg
+        await client.send_message(chat_id, final_text, reply_markup=kb)
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
-        return await normal_start(client, msg)
+        await normal_start(client, msg)
 
 async def normal_start(client, msg):
-    """Normal start message without animation"""
     uid = msg.from_user.id
     user = msg.from_user
     access, a_type = check_access(uid)
@@ -541,13 +568,89 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
-    # React with ❤️
     try:
         await msg.react("❤️")
     except Exception:
         pass
     
     await welcome_animation(client, msg)
+
+# ═══════════════ EMOJI COMMANDS ═══════════════
+@app.on_message(filters.command("addemoji"))
+async def add_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if msg.reply_to_message and msg.reply_to_message.sticker:
+        try:
+            emoji_id = msg.reply_to_message.sticker.file_id
+            
+            # Check if already exists
+            if add_emoji(emoji_id):
+                await msg.reply_text(
+                    "✅ **EMOJI ADDED SUCCESSFULLY!** 🎉\n\n"
+                    f"🔹 **Total Emojis:** {len(get_all_emojis())}\n\n"
+                    "✨ This emoji will now appear in welcome animation randomly!"
+                )
+            else:
+                await msg.reply_text("❌ This emoji is already in the list!")
+        except Exception as e:
+            await msg.reply_text(f"❌ Error: {e}")
+    else:
+        await msg.reply_text(
+            "📤 **ADD EMOJI**\n\n"
+            "Reply to a sticker/emoji with:\n"
+            "`/addemoji`\n\n"
+            "The emoji will be added to welcome animation!"
+        )
+
+@app.on_message(filters.command("removeemoji"))
+async def remove_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "🗑️ **REMOVE EMOJI**\n\n"
+            "Use: `/removeemoji index`\n\n"
+            "Get index from `/listemojis` command."
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        emojis = get_all_emojis()
+        
+        if 0 <= index < len(emojis):
+            emoji_id = emojis[index]
+            if remove_emoji(emoji_id):
+                await msg.reply_text(
+                    f"✅ **EMOJI REMOVED!**\n\n"
+                    f"🔹 **Remaining Emojis:** {len(get_all_emojis())}"
+                )
+            else:
+                await msg.reply_text("❌ Failed to remove!")
+        else:
+            await msg.reply_text("❌ Invalid index!")
+    except ValueError:
+        await msg.reply_text("❌ Invalid index! Use a number.")
+
+@app.on_message(filters.command("listemojis"))
+async def list_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    emojis = get_all_emojis()
+    
+    if not emojis:
+        return await msg.reply_text("📭 **No emojis added yet!**\n\nAdd using `/addemoji`")
+    
+    text = "📋 **EMOJI LIST**\n\n"
+    for i, emoji_id in enumerate(emojis, 1):
+        text += f"**{i}.** `{emoji_id[:30]}...`\n"
+    
+    text += f"\n🔹 **Total:** {len(emojis)}"
+    await msg.reply_text(text)
 
 # ═══════════════ REDEEM ═══════════════
 @app.on_message(filters.command("redeem"))
@@ -871,6 +974,68 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text("👑 𝘼𝘿𝙈𝙄𝙉 𝙋𝘼𝙉𝙀𝙇\n\n🔽 Select:", reply_markup=admin_kb())
         return
     
+    # ═══════════════ EMOJI MENU ═══════════════
+    if data == "emoji_menu":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        emojis = get_all_emojis()
+        await cb.message.edit_text(
+            f"🎯 **EMOJI MANAGER**\n\n"
+            f"🔹 **Total Emojis:** {len(emojis)}\n"
+            f"🔹 **Commands:**\n"
+            f"• `/addemoji` - Reply to sticker\n"
+            f"• `/removeemoji index` - Remove by index\n"
+            f"• `/listemojis` - List all emojis\n\n"
+            f"✨ Emojis appear randomly in welcome animation!",
+            reply_markup=emoji_kb()
+        )
+        return
+    
+    if data == "e_add":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        await cb.message.edit_text(
+            "📤 **ADD EMOJI**\n\n"
+            "Reply to a sticker/emoji with:\n"
+            "`/addemoji`\n\n"
+            "The emoji will be added to welcome animation!",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "e_remove":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        emojis = get_all_emojis()
+        if not emojis:
+            await cb.answer("No emojis to remove!", show_alert=True)
+            return
+        await cb.message.edit_text(
+            "🗑️ **REMOVE EMOJI**\n\n"
+            "Use: `/removeemoji index`\n\n"
+            "Get index from `/listemojis` command.",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "e_list":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        emojis = get_all_emojis()
+        if not emojis:
+            await cb.answer("No emojis added yet!", show_alert=True)
+            return
+        text = "📋 **EMOJI LIST**\n\n"
+        for i, emoji_id in enumerate(emojis, 1):
+            text += f"**{i}.** `{emoji_id[:30]}...`\n"
+        text += f"\n🔹 **Total:** {len(emojis)}"
+        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        return
+    
     if data == "stop_attack":
         global attacking
         if attacking and (uid == attack_user or uid == OWNER_ID):
@@ -1026,7 +1191,15 @@ async def auto_expire():
         remove_expired()
 
 # ═══════════════ INIT ═══════════════
-for f, d in [(VIDEO_DB, []), (USERS_DB, {"premium": [], "keys": {}}), (KEYS_DB, {}), (BLOCKED_DB, []), (HISTORY_DB, {}), (STICKER_DB, {"sticker_id": None})]:
+for f, d in [
+    (VIDEO_DB, []), 
+    (USERS_DB, {"premium": [], "keys": {}}), 
+    (KEYS_DB, {}), 
+    (BLOCKED_DB, []), 
+    (HISTORY_DB, {}), 
+    (STICKER_DB, {"sticker_id": None}),
+    (EMOJI_DB, {"emojis": []})
+]:
     if not os.path.exists(f): jsave(f, d)
 
 os.makedirs("downloads", exist_ok=True)
@@ -1035,8 +1208,8 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO 💀  ║
-║  WELCOME ANIMATION | POPUP WORKING  ║
-║  STICKER SUPPORT | BACK FIXED       ║
+║  EMOJI ADD FEATURE | PREMIUM       ║
+║  WELCOME ANIMATION | STICKER       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
