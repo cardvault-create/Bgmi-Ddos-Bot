@@ -43,6 +43,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
+STICKER_DISPLAY_TIME = 4  # Sticker 4 second tak dikhega
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -525,7 +526,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER
+        # Step 5: SEND STICKER (4 seconds)
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -534,11 +535,10 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 6: WAIT UNTIL STICKER IS FULLY SENT (3 seconds)
-        # Sticker send hone ke baad 3 second wait karo
-        await asyncio.sleep(3)
+        # Step 6: WAIT EXACTLY 4 SECONDS
+        await asyncio.sleep(STICKER_DISPLAY_TIME)
         
-        # Step 7: DELETE STICKER
+        # Step 7: DELETE STICKER AFTER 4 SECONDS
         if sticker_msg:
             try:
                 await sticker_msg.delete()
@@ -589,10 +589,8 @@ async def welcome_animation(client, msg):
                 )
             except Exception as e:
                 logger.error(f"Video send error: {e}")
-                # If video fails, send only text
                 final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         else:
-            # No video, send only text
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
         return final_msg
@@ -682,8 +680,7 @@ async def add_emoji_cmd(client, msg):
             "📤 **ADD EMOJI**\n\n"
             "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
-            "The emoji will be added to welcome animation!\n"
-            "Each time new emoji will appear randomly."
+            "The emoji will be added to welcome animation!"
         )
     
     emoji_id = None
@@ -699,8 +696,8 @@ async def add_emoji_cmd(client, msg):
             await msg.reply_text(
                 f"✅ **EMOJI ADDED!** 🎉\n\n"
                 f"🔹 **Total Emojis:** {total}\n\n"
-                "✨ This emoji will now appear randomly in welcome animation!\n"
-                "🔄 Each time a new random emoji will be shown."
+                f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n\n"
+                "✨ This emoji will appear randomly in welcome animation!"
             )
         else:
             await msg.reply_text("❌ This emoji is already in the list!")
@@ -776,8 +773,7 @@ async def add_sticker_cmd(client, msg):
             "🎨 **ADD STICKER**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
-            "The sticker will appear randomly in welcome animation!\n"
-            "Each time a new random sticker will be shown."
+            "The sticker will appear randomly in welcome animation!"
         )
     
     if not msg.reply_to_message.sticker:
@@ -790,8 +786,8 @@ async def add_sticker_cmd(client, msg):
         await msg.reply_text(
             f"✅ **STICKER ADDED!** 🎉\n\n"
             f"🔹 **Total Stickers:** {total}\n\n"
-            "✨ This sticker will now appear randomly in welcome animation!\n"
-            "🔄 Each time a new random sticker will be shown."
+            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n\n"
+            "✨ This sticker will appear randomly in welcome animation!"
         )
     else:
         await msg.reply_text("❌ This sticker is already in the list!")
@@ -860,12 +856,21 @@ async def add_video_cmd(client, msg):
         try:
             path = await msg.reply_to_message.download()
             vid = add_vid(path)
+            
+            # Get video duration if available
+            duration = "Unknown"
+            if msg.reply_to_message.video.duration:
+                mins = msg.reply_to_message.video.duration // 60
+                secs = msg.reply_to_message.video.duration % 60
+                duration = f"{mins}m {secs}s"
+            
             text = (
-                "✅ **VIDEO ADDED SUCCESSFULLY!** ✅\n\n"
+                f"✅ **VIDEO ADDED SUCCESSFULLY!** ✅\n\n"
                 f"{LINE}\n"
-                f"🆔 Video ID: {vid}\n"
-                f"📁 Name: {os.path.basename(path)[:30]}\n"
-                f"📹 Total Videos: {len(get_vids())}\n"
+                f"🆔 **Video ID:** {vid}\n"
+                f"📁 **Name:** {os.path.basename(path)[:30]}\n"
+                f"📹 **Total Videos:** {len(get_vids())}\n"
+                f"⏱️ **Duration:** {duration}\n"
                 f"{LINE}\n\n"
                 "🎲 Video will play randomly on welcome!\n"
                 "📋 /videos to see all videos"
@@ -1045,7 +1050,7 @@ async def commands_cmd(client, msg):
         "📋 /videos - List Videos\n"
         "🗑️ /delvideo ID - Delete Video\n"
         "🧹 /clearvideos - Clear All Videos\n\n"
-        "🔑 /genkey NAME TIME - Generate Key\n\n"
+        f"⏱️ **Sticker Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
         f"🎮 **BGMI PORTS:** 7000-15000\n"
         f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
         f"👑 [FATHER OF BOT]({OWNER_LINK})"
@@ -1095,6 +1100,7 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 /liststickers - List Stickers\n"
             "🗑️ /removesticker index - Remove Sticker\n"
             "🔄 /resetstickers - Reset All Stickers\n\n"
+            f"⏱️ **Sticker Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
             f"🎮 **BGMI PORTS:** 7000-15000\n"
             f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
             f"👑 [FATHER OF BOT]({OWNER_LINK})",
@@ -1184,8 +1190,8 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/removeemoji index` - Remove by index\n"
             f"• `/listemojis` - List all emojis\n"
             f"• `/resetemojis` - Reset all\n\n"
-            f"✨ Emojis appear randomly in welcome animation!\n"
-            f"🔄 Each time a new random emoji will be shown.",
+            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            f"✨ Emojis appear randomly in welcome animation!",
             reply_markup=emoji_kb()
         )
         return
@@ -1198,8 +1204,8 @@ async def callbacks(client, cb: CallbackQuery):
             "📤 **ADD EMOJI**\n\n"
             "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
-            "✨ The emoji will be added to welcome animation!\n"
-            "🔄 Each time a new random emoji will be shown.",
+            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            "✨ The emoji will be added to welcome animation!",
             reply_markup=back_admin_kb()
         )
         return
@@ -1263,8 +1269,8 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/removesticker index` - Remove by index\n"
             f"• `/liststickers` - List all stickers\n"
             f"• `/resetstickers` - Reset all\n\n"
-            f"✨ Stickers appear randomly in welcome animation!\n"
-            f"🔄 Each time a new random sticker will be shown.",
+            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            f"✨ Stickers appear randomly in welcome animation!",
             reply_markup=sticker_kb()
         )
         return
@@ -1277,8 +1283,8 @@ async def callbacks(client, cb: CallbackQuery):
             "🎨 **ADD STICKER**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
-            "✨ The sticker will be added to welcome animation!\n"
-            "🔄 Each time a new random sticker will be shown.",
+            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            "✨ The sticker will be added to welcome animation!",
             reply_markup=back_admin_kb()
         )
         return
@@ -1339,8 +1345,7 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/delvideo ID` - Delete by ID\n"
             f"• `/videos` - List all videos\n"
             f"• `/clearvideos` - Clear all\n\n"
-            f"✨ Videos appear randomly in welcome animation!\n"
-            f"🔄 Each time a new random video will be shown.",
+            f"✨ Videos appear randomly in welcome animation!",
             reply_markup=video_kb()
         )
         return
@@ -1351,8 +1356,7 @@ async def callbacks(client, cb: CallbackQuery):
             "📤 **ADD VIDEO**\n\n"
             "Reply to a **video** with:\n"
             "`/addvideo`\n\n"
-            "✨ The video will be added to welcome animation!\n"
-            "🔄 Each time a new random video will be shown.",
+            "✨ The video will be added to welcome animation!",
             reply_markup=back_admin_kb()
         )
         return
@@ -1557,7 +1561,8 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  3 SEC STICKER → FINAL MSG          ║
+║  4 SEC STICKER DISPLAY              ║
+║  DETAILED ADD CONFIRMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
