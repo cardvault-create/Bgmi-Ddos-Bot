@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-📢 AUTO-POST BOT
-Channel Admin Banne Ke Baad Jo Bhi Message Bhejo Channel Par Upload Kar De
+📢 AUTO-POST BOT - FIXED
+Channel Admin Banne Ke Baad Jo Bhi Bhejo Channel Par Post
+Group Se Bhi Add Kar Sakte Ho
 """
 
 import asyncio, json, os, re
@@ -40,19 +41,19 @@ def get_channels():
 
 def add_channel(channel_id, channel_name):
     data = get_channels()
-    if channel_id not in data["channels"]:
-        data["channels"].append(channel_id)
-        jsave(CHANNEL_DB, data)
-        return True
-    return False
+    # Check if already exists
+    for ch in data["channels"]:
+        if ch["id"] == channel_id:
+            return False
+    data["channels"].append({"id": channel_id, "name": channel_name})
+    jsave(CHANNEL_DB, data)
+    return True
 
 def remove_channel(channel_id):
     data = get_channels()
-    if channel_id in data["channels"]:
-        data["channels"].remove(channel_id)
-        jsave(CHANNEL_DB, data)
-        return True
-    return False
+    data["channels"] = [ch for ch in data["channels"] if ch["id"] != channel_id]
+    jsave(CHANNEL_DB, data)
+    return True
 
 def get_all_channels():
     return get_channels()["channels"]
@@ -66,13 +67,13 @@ async def start_cmd(client, msg):
         "**Commands:**\n"
         "/start - Show this message\n"
         "/help - Help menu\n"
-        "/addchannel - Add current channel\n"
-        "/removechannel - Remove channel\n"
+        "/addchannel CHANNEL_ID - Add channel by ID\n"
+        "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
         "/post - Post message to channel\n\n"
         "**How to use:**\n"
         "1️⃣ Bot ko channel admin banao\n"
-        "2️⃣ Channel mein /addchannel command bhejo\n"
+        "2️⃣ /addchannel -123456789 bhejo\n"
         "3️⃣ Ab jo bhi message bhejo ge channel par post ho jayega!"
     )
 
@@ -81,14 +82,14 @@ async def help_cmd(client, msg):
     await msg.reply_text(
         "📖 **HELP MENU**\n\n"
         "**Commands:**\n"
-        "/addchannel - Add current channel\n"
-        "/removechannel - Remove channel\n"
+        "/addchannel CHANNEL_ID - Add channel by ID\n"
+        "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
         "/post - Post message to channel\n\n"
-        "**How to add channel:**\n"
-        "1️⃣ Bot ko channel admin banao (post permission)\n"
-        "2️⃣ Channel mein /addchannel bhejo\n"
-        "3️⃣ Done! Ab jo bhi msg bhejo ge channel par post hoga!\n\n"
+        "**How to get channel ID:**\n"
+        "1️⃣ Channel mein @getidsbot bhejo\n"
+        "2️⃣ Channel ID copy karo (negative number)\n"
+        "3️⃣ /addchannel -123456789 bhejo\n\n"
         "**How to post manually:**\n"
         "/post Hello World!\n"
         "Reply to a message and /post"
@@ -97,34 +98,57 @@ async def help_cmd(client, msg):
 # ═══════════════ CHANNEL MANAGEMENT ═══════════════
 @app.on_message(filters.command("addchannel"))
 async def add_channel_cmd(client, msg):
-    chat = msg.chat
+    parts = msg.text.split(maxsplit=1)
     
-    # Check if it's a channel
-    if chat.type not in ["channel", "supergroup"]:
-        await msg.reply_text("❌ This command only works in channels or supergroups!")
+    # Check if channel ID provided
+    if len(parts) != 2:
+        await msg.reply_text(
+            "❌ **Usage:** `/addchannel CHANNEL_ID`\n\n"
+            "Example: `/addchannel -100123456789`\n\n"
+            "**How to get channel ID:**\n"
+            "1️⃣ Channel mein @getidsbot bhejo\n"
+            "2️⃣ Channel ID copy karo (negative number)"
+        )
         return
     
-    channel_id = chat.id
-    channel_name = chat.title or "Unknown"
+    try:
+        channel_id = int(parts[1].strip())
+    except ValueError:
+        await msg.reply_text(
+            "❌ **Invalid channel ID!**\n\n"
+            "Channel ID must be a number.\n"
+            "Example: `/addchannel -100123456789`"
+        )
+        return
     
-    # Check if bot is admin
+    # Check if bot is admin in this channel
     try:
         bot_member = await client.get_chat_member(channel_id, "me")
         if bot_member.status not in ["administrator", "creator"]:
             await msg.reply_text(
-                f"❌ **I'm not an admin!**\n\n"
-                f"Please add me as admin in:\n"
-                f"**{channel_name}**\n\n"
-                f"Then try again!"
+                f"❌ **I'm not an admin in this channel!**\n\n"
+                f"Channel ID: `{channel_id}`\n\n"
+                "Please add me as admin first!"
             )
             return
-    except:
+    except Exception as e:
         await msg.reply_text(
             f"❌ **Error checking admin status!**\n\n"
-            f"Please make sure I'm an admin in:\n"
-            f"**{channel_name}**"
+            f"Channel ID: `{channel_id}`\n"
+            f"Error: {str(e)[:100]}\n\n"
+            "Make sure:\n"
+            "1. Channel ID is correct\n"
+            "2. Bot is admin in the channel\n"
+            "3. Bot is added to the channel"
         )
         return
+    
+    # Get channel name
+    try:
+        chat = await client.get_chat(channel_id)
+        channel_name = chat.title or "Unknown"
+    except:
+        channel_name = "Unknown"
     
     # Add channel
     if add_channel(channel_id, channel_name):
@@ -132,7 +156,8 @@ async def add_channel_cmd(client, msg):
             f"✅ **Channel Added!**\n\n"
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
-            "Now I will auto-post all messages to this channel!"
+            "Now I will auto-post all messages to this channel!\n"
+            "Send any message to me privately."
         )
     else:
         await msg.reply_text(
@@ -143,26 +168,31 @@ async def add_channel_cmd(client, msg):
 
 @app.on_message(filters.command("removechannel"))
 async def remove_channel_cmd(client, msg):
-    chat = msg.chat
+    parts = msg.text.split(maxsplit=1)
     
-    if chat.type not in ["channel", "supergroup"]:
-        await msg.reply_text("❌ This command only works in channels or supergroups!")
+    if len(parts) != 2:
+        await msg.reply_text(
+            "❌ **Usage:** `/removechannel CHANNEL_ID`\n\n"
+            "Example: `/removechannel -100123456789`"
+        )
         return
     
-    channel_id = chat.id
-    channel_name = chat.title or "Unknown"
+    try:
+        channel_id = int(parts[1].strip())
+    except ValueError:
+        await msg.reply_text("❌ Invalid channel ID!")
+        return
     
     if remove_channel(channel_id):
         await msg.reply_text(
             f"✅ **Channel Removed!**\n\n"
-            f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
             "I will no longer auto-post to this channel."
         )
     else:
         await msg.reply_text(
             f"❌ **Channel not found!**\n\n"
-            f"📢 **Name:** {channel_name}\n\n"
+            f"🆔 **ID:** `{channel_id}`\n\n"
             "This channel is not in my list."
         )
 
@@ -171,17 +201,20 @@ async def list_channels_cmd(client, msg):
     channels = get_all_channels()
     
     if not channels:
-        await msg.reply_text("📭 **No channels added yet!**\n\nUse /addchannel to add a channel.")
+        await msg.reply_text(
+            "📭 **No channels added yet!**\n\n"
+            "Use `/addchannel CHANNEL_ID` to add a channel.\n\n"
+            "**How to get channel ID:**\n"
+            "1️⃣ Channel mein @getidsbot bhejo\n"
+            "2️⃣ Channel ID copy karo (negative number)"
+        )
         return
     
     text = "📋 **CHANNEL LIST**\n\n"
-    for i, channel_id in enumerate(channels, 1):
-        try:
-            chat = await client.get_chat(channel_id)
-            name = chat.title or "Unknown"
-            text += f"**{i}.** {name}\n`{channel_id}`\n\n"
-        except:
-            text += f"**{i}.** Unknown Channel\n`{channel_id}`\n\n"
+    for i, channel in enumerate(channels, 1):
+        name = channel.get("name", "Unknown")
+        channel_id = channel.get("id")
+        text += f"**{i}.** {name}\n`{channel_id}`\n\n"
     
     await msg.reply_text(text)
 
@@ -193,57 +226,29 @@ async def auto_post_text(client, msg):
     if not channels:
         await msg.reply_text(
             "⚠️ **No channels added!**\n\n"
-            "Add a channel first using /addchannel command in the channel."
+            "Add a channel first using `/addchannel CHANNEL_ID`\n\n"
+            "**How to get channel ID:**\n"
+            "1️⃣ Channel mein @getidsbot bhejo\n"
+            "2️⃣ Channel ID copy karo (negative number)\n"
+            "3️⃣ /addchannel -100123456789"
         )
         return
     
-    # Send to all channels
     sent_count = 0
     failed_channels = []
     
-    for channel_id in channels:
+    for channel in channels:
+        channel_id = channel.get("id")
         try:
-            # Get original message content
-            text = msg.text
-            
-            # Check if message has reply
-            if msg.reply_to_message:
-                reply_msg = msg.reply_to_message
-                if reply_msg.text:
-                    text = reply_msg.text + "\n\n" + text
-                elif reply_msg.photo:
-                    await client.send_photo(
-                        channel_id,
-                        reply_msg.photo.file_id,
-                        caption=text
-                    )
-                    continue
-                elif reply_msg.video:
-                    await client.send_video(
-                        channel_id,
-                        reply_msg.video.file_id,
-                        caption=text
-                    )
-                    continue
-                elif reply_msg.sticker:
-                    await client.send_sticker(
-                        channel_id,
-                        reply_msg.sticker.file_id
-                    )
-                    continue
-            
-            # Send text
-            await client.send_message(channel_id, text)
+            await client.send_message(channel_id, msg.text)
             sent_count += 1
-            
         except Exception as e:
             failed_channels.append(channel_id)
             print(f"Error posting to {channel_id}: {e}")
     
-    # Send confirmation
     if sent_count > 0:
         await msg.reply_text(
-            f"✅ **Message posted to {sent_count} channels!**"
+            f"✅ **Message posted to {sent_count} channel(s)!**"
         )
     else:
         await msg.reply_text(
@@ -257,7 +262,7 @@ async def post_cmd(client, msg):
     channels = get_all_channels()
     
     if not channels:
-        await msg.reply_text("⚠️ No channels added! Use /addchannel first.")
+        await msg.reply_text("⚠️ No channels added! Use `/addchannel CHANNEL_ID` first.")
         return
     
     # Check if replying to a message
@@ -265,7 +270,8 @@ async def post_cmd(client, msg):
         reply_msg = msg.reply_to_message
         
         sent_count = 0
-        for channel_id in channels:
+        for channel in channels:
+            channel_id = channel.get("id")
             try:
                 if reply_msg.text:
                     await client.send_message(channel_id, reply_msg.text)
@@ -281,10 +287,9 @@ async def post_cmd(client, msg):
             except Exception as e:
                 print(f"Error: {e}")
         
-        await msg.reply_text(f"✅ **Posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
         
     else:
-        # Get text after /post
         parts = msg.text.split(maxsplit=1)
         if len(parts) < 2:
             await msg.reply_text(
@@ -297,69 +302,62 @@ async def post_cmd(client, msg):
         text = parts[1]
         
         sent_count = 0
-        for channel_id in channels:
+        for channel in channels:
+            channel_id = channel.get("id")
             try:
                 await client.send_message(channel_id, text)
                 sent_count += 1
             except Exception as e:
                 print(f"Error: {e}")
         
-        await msg.reply_text(f"✅ **Posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
 
 # ═══════════════ PHOTO/VIDEO/STICKER AUTO-POST ═══════════════
 @app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
 async def auto_post_photo(client, msg):
     channels = get_all_channels()
-    
     if not channels:
         return
     
     sent_count = 0
-    for channel_id in channels:
+    for channel in channels:
+        channel_id = channel.get("id")
         try:
-            await client.send_photo(
-                channel_id,
-                msg.photo.file_id,
-                caption=msg.caption
-            )
+            await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
             sent_count += 1
         except:
             pass
     
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Photo posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Photo posted to {sent_count} channel(s)!**")
 
 @app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
 async def auto_post_video(client, msg):
     channels = get_all_channels()
-    
     if not channels:
         return
     
     sent_count = 0
-    for channel_id in channels:
+    for channel in channels:
+        channel_id = channel.get("id")
         try:
-            await client.send_video(
-                channel_id,
-                msg.video.file_id,
-                caption=msg.caption
-            )
+            await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
             sent_count += 1
         except:
             pass
     
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Video posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Video posted to {sent_count} channel(s)!**")
 
 @app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
 async def auto_post_sticker(client, msg):
     channels = get_all_channels()
-    
     if not channels:
         return
     
     sent_count = 0
-    for channel_id in channels:
+    for channel in channels:
+        channel_id = channel.get("id")
         try:
             await client.send_sticker(channel_id, msg.sticker.file_id)
             sent_count += 1
@@ -367,29 +365,37 @@ async def auto_post_sticker(client, msg):
             pass
     
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Sticker posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Sticker posted to {sent_count} channel(s)!**")
 
 @app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
 async def auto_post_document(client, msg):
     channels = get_all_channels()
-    
     if not channels:
         return
     
     sent_count = 0
-    for channel_id in channels:
+    for channel in channels:
+        channel_id = channel.get("id")
         try:
-            await client.send_document(
-                channel_id,
-                msg.document.file_id,
-                caption=msg.caption
-            )
+            await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
             sent_count += 1
         except:
             pass
     
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Document posted to {sent_count} channels!**")
+        await msg.reply_text(f"✅ **Document posted to {sent_count} channel(s)!**")
+
+# ═══════════════ CHANNEL ID GETTER ═══════════════
+@app.on_message(filters.command("getid"))
+async def get_id_cmd(client, msg):
+    chat = msg.chat
+    await msg.reply_text(
+        f"📋 **Chat Info**\n\n"
+        f"📢 **Name:** {chat.title or chat.first_name or 'Unknown'}\n"
+        f"🆔 **ID:** `{chat.id}`\n"
+        f"📂 **Type:** {chat.type}\n\n"
+        f"Use this ID in /addchannel command."
+    )
 
 # ═══════════════ RUN ═══════════════
 if not os.path.exists(CHANNEL_DB):
@@ -397,9 +403,10 @@ if not os.path.exists(CHANNEL_DB):
 
 print("""
 ╔══════════════════════════════════════╗
-║  📢 AUTO-POST BOT                   ║
+║  📢 AUTO-POST BOT - FIXED           ║
 ║  Channel Admin Banne Ke Baad        ║
 ║  Jo Bhi Bhejo Channel Par Post      ║
+║  Group/Private Se Bhi Add Karo      ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
