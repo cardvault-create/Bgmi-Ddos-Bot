@@ -203,18 +203,16 @@ def add_vid(path):
     return vid
 
 def rand_vid():
-    global used_videos, last_video_index
+    global last_video_index
     vids = get_vids()
     if not vids:
         return None
-    # Ensure different video each time
     if len(vids) > 1:
         available = [v for v in vids if v["id"] != last_video_index]
         if available:
             chosen = random.choice(available)
             last_video_index = chosen["id"]
             return chosen
-    # Fallback
     chosen = random.choice(vids)
     last_video_index = chosen["id"]
     return chosen
@@ -472,18 +470,18 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 2: Welcome Baby message with bold text
+        # Step 2: Welcome Baby message (emoji at end - like before)
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"**𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷**"
+            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
         )
         
-        # Change emojis
+        # Change emojis (emoji at end)
         for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"**{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...**")
+                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
             except:
                 pass
         
@@ -496,7 +494,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 3: Starting animation with bold text
+        # Step 3: Starting animation with bold text (only starting text bold)
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
@@ -527,12 +525,33 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: FINAL WELCOME MESSAGE
+        # Step 5: SEND STICKER (4 seconds)
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                sticker_msg = None
+        
+        # Step 6: WAIT 4 SECONDS for sticker
+        await asyncio.sleep(4)
+        
+        # Step 7: DELETE STICKER
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 8: FINAL WELCOME MESSAGE WITH VIDEO (normal text, not bold)
         final_text = f"""
-**ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
-ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),**
+ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
+ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
 
-**┏━━━━━━━━━━━━━━━━━⧫
+┏━━━━━━━━━━━━━━━━━⧫
 ┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
 ┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
 ┗━━━━━━━━━━━━━━━━━⧫
@@ -546,7 +565,7 @@ async def welcome_animation(client, msg):
 ┗━━━━━━━━━━━━━━━━━⧫
 ๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
 
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎**
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
         if user_id == OWNER_ID:
@@ -554,13 +573,12 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Step 6: Try to send video with final message
+        # Send video with final message (if video exists)
         video_data = rand_vid()
         final_msg = None
         
         if video_data and os.path.exists(video_data["path"]):
             try:
-                # Send video with caption as final message
                 final_msg = await client.send_video(
                     chat_id,
                     video_data["path"],
@@ -571,25 +589,8 @@ async def welcome_animation(client, msg):
                 logger.error(f"Video send error: {e}")
                 final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         else:
-            # No video available, send only text
+            # No video, send only text
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
-        
-        # Step 7: Send random sticker after final message
-        sticker_id = get_random_sticker()
-        sticker_msg = None
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
-        
-        # Step 8: Delete sticker after 2 seconds
-        if sticker_msg:
-            await asyncio.sleep(2)
-            try:
-                await sticker_msg.delete()
-            except:
-                pass
         
         return final_msg
         
@@ -1553,7 +1554,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  BOLD STYLISH TEXT                  ║
+║  ONLY STARTING TEXT BOLD            ║
 ║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
