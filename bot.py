@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
@@ -485,6 +485,19 @@ def back_kb():
 def back_admin_kb():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
 
+# ═══════════════ REACTION ON ALL MESSAGES ═══════════════
+@app.on_message(filters.text & filters.private)
+async def react_to_all(client, msg):
+    """React to every message with random emoji"""
+    try:
+        reaction_emoji = get_random_normal_emoji()
+        await client.send_reaction(msg.chat.id, msg.id, reaction_emoji)
+    except:
+        try:
+            await msg.react(reaction_emoji)
+        except:
+            pass
+
 # ═══════════════ WELCOME ANIMATION ═══════════════
 async def welcome_animation(client, msg):
     try:
@@ -493,7 +506,7 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React with random emoji to user's /start message
+        # Step 1: React to /start message
         try:
             reaction_emoji = get_random_normal_emoji()
             await client.send_reaction(chat_id, msg.id, reaction_emoji)
@@ -570,7 +583,15 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 6: GET USER PROFILE PHOTO (Before sticker)
+        # Step 6: DELETE STARTING MESSAGE
+        try:
+            await welcome_msg.delete()
+        except:
+            pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 7: GET USER PROFILE PHOTO
         user_photo = None
         try:
             photos = await client.get_chat_photos(user_id, limit=1)
@@ -579,15 +600,7 @@ async def welcome_animation(client, msg):
         except:
             pass
         
-        # Step 7: DELETE STARTING MESSAGE
-        try:
-            await welcome_msg.delete()
-        except:
-            pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 8: SEND STICKER (After starting delete)
+        # Step 8: SEND STICKER
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -596,9 +609,10 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        await asyncio.sleep(0.5)
+        # Step 9: WAIT 3 SECONDS
+        await asyncio.sleep(3)
         
-        # Step 9: FINAL WELCOME MESSAGE WITH PHOTO
+        # Step 10: FINAL WELCOME MESSAGE WITH PHOTO
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -636,9 +650,9 @@ async def welcome_animation(client, msg):
         else:
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
-        # Step 10: DELETE STICKER (After final message)
+        # Step 11: DELETE STICKER
         if sticker_msg:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             try:
                 await sticker_msg.delete()
             except:
@@ -731,7 +745,7 @@ async def add_normal_emoji_cmd(client, msg):
         return await msg.reply_text(
             "📤 **ADD REACTION EMOJI**\n\n"
             "Usage: `/addnormalemoji ❤️`\n\n"
-            "Add a normal emoji that will be used to react to /start messages.\n\n"
+            "Add a normal emoji that will be used to react to messages.\n\n"
             "**Examples:**\n"
             "/addnormalemoji ❤️\n"
             "/addnormalemoji 🔥\n"
@@ -749,7 +763,7 @@ async def add_normal_emoji_cmd(client, msg):
             f"✅ **REACTION EMOJI ADDED!** 🎉\n\n"
             f"🔹 **Emoji:** {emoji}\n"
             f"🔹 **Total Reaction Emojis:** {total}\n\n"
-            "✨ This emoji will now be used randomly to react to /start messages!"
+            "✨ This emoji will now be used randomly to react to all messages!"
         )
     else:
         await msg.reply_text("❌ This emoji is already in the list!")
@@ -1342,7 +1356,7 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/removenormalemoji index` - Remove by index\n"
             f"• `/listnormalemojis` - List all reactions\n"
             f"• `/resetnormalemojis` - Reset all\n\n"
-            f"✨ Reactions are used to react to /start messages randomly!",
+            f"✨ Reactions are used to react to all messages randomly!",
             reply_markup=reaction_kb()
         )
         return
@@ -1355,7 +1369,7 @@ async def callbacks(client, cb: CallbackQuery):
             "😊 **ADD REACTION EMOJI**\n\n"
             "Use: `/addnormalemoji ❤️`\n\n"
             "Add any normal Telegram emoji.\n"
-            "It will be used randomly to react to /start messages!",
+            "It will be used randomly to react to all messages!",
             reply_markup=back_admin_kb()
         )
         return
@@ -1733,7 +1747,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER             ║
-║  REACTION EMOJI SUPPORT             ║
+║  REACTION ON ALL MESSAGES           ║
 ║  USER PROFILE PHOTO                 ║
 ║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
