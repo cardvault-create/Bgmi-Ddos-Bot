@@ -446,11 +446,13 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React with ❤️
+        # Step 1: React with ❤️ to user's /start message
         try:
             await msg.react("❤️")
         except:
             pass
+        
+        await asyncio.sleep(0.3)
         
         # Step 2: Send random emoji
         emoji_id = get_random_emoji()
@@ -491,43 +493,35 @@ async def welcome_animation(client, msg):
         # Step 4: Welcome message convert to starting text
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
         
-        # First change emoji to starting emoji
-        for emoji in starting_emojis[:5]:
-            await asyncio.sleep(0.3)
+        # Step 5: Starting animation with character by character typing effect
+        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
+        current_text = ""
+        emoji_idx = 0
+        emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+        
+        # Start with emoji first
+        await welcome_msg.edit_text(f"{emoji}")
+        await asyncio.sleep(0.1)
+        
+        # Add each character one by one with emoji change
+        for i, char in enumerate(chars_to_add):
+            current_text = f"{emoji} " + "".join(chars_to_add[:i+1])
+            await asyncio.sleep(0.08)
             try:
-                await welcome_msg.edit_text(f"{emoji} ѕтαятιиg.....")
+                if i % 2 == 0:
+                    emoji_idx += 1
+                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+                    await welcome_msg.edit_text(f"{emoji} " + "".join(chars_to_add[:i+1]))
+                else:
+                    await welcome_msg.edit_text(current_text)
             except:
                 pass
         
         await asyncio.sleep(0.3)
         
-        # Step 5: Starting animation with typing effect in same message
-        starting_msg = welcome_msg
-        
-        # Character by character typing effect
-        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
-        current_text = "🩵"
-        emoji_idx = 0
-        
-        # Add each character with emoji change
-        for i, char in enumerate(chars_to_add):
-            current_text += char
-            await asyncio.sleep(0.08)
-            try:
-                if i % 2 == 0:
-                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
-                    await starting_msg.edit_text(f"{emoji} ѕтαятιиg.....")
-                    emoji_idx += 1
-                else:
-                    await starting_msg.edit_text(current_text)
-            except:
-                pass
-        
-        await asyncio.sleep(0.5)
-        
         # Step 6: Delete starting message
         try:
-            await starting_msg.delete()
+            await welcome_msg.delete()
         except:
             pass
         
@@ -556,7 +550,7 @@ async def welcome_animation(client, msg):
         
         # Step 9: Final welcome message with EXACT text
         final_text = f"""
-ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
+ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
 
 ┏━━━━━━━━━━━━━━━━━⧫
@@ -657,6 +651,7 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
+    # React with ❤️ to user's /start message
     try:
         await msg.react("❤️")
     except Exception:
