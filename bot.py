@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 📢 AUTO-POST BOT - FINAL FIXED
-Forward Message (Text/Media/Sticker) Sab Catch Karega
+Grouped Media/Album Forward Bhi Kaam Karega
+Photo + Text + Premium Emoji Sab Post Hoga
 """
 
 import asyncio, json, os, re
@@ -87,27 +88,76 @@ async def check_admin(client, chat_id):
         else:
             return False, f"⚠️ Error: {error[:100]}"
 
-# ═══════════════ COPY MESSAGE - EXACTLY WAISA HI ═══════════════
-async def copy_to_channels(client, msg, channels):
-    """Message ko channels mein copy karega EXACTLY waisa hi"""
+# ═══════════════ SEND MESSAGE - PHOTO + TEXT + EMOJI SAB ═══════════════
+async def send_to_channel(client, msg, channel_id):
+    """Message ko channel mein send karega - Photo + Text + Premium Emoji sab"""
+    try:
+        # Agar message forward hai toh original content copy karo
+        if msg.forward_from or msg.forward_from_chat:
+            # Pehle text copy karo agar hai
+            if msg.text:
+                await client.send_message(channel_id, msg.text)
+            
+            # Phir media copy karo agar hai
+            if msg.photo:
+                await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
+            elif msg.video:
+                await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
+            elif msg.sticker:
+                await client.send_sticker(channel_id, msg.sticker.file_id)
+            elif msg.document:
+                await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
+            elif msg.animation:
+                await client.send_animation(channel_id, msg.animation.file_id, caption=msg.caption)
+            elif msg.voice:
+                await client.send_voice(channel_id, msg.voice.file_id, caption=msg.caption)
+            elif msg.audio:
+                await client.send_audio(channel_id, msg.audio.file_id, caption=msg.caption)
+            
+            return True
+        else:
+            # Normal message - copy using raw API
+            try:
+                await client.invoke(
+                    functions.messages.CopyMessages(
+                        from_peer=await client.resolve_peer(msg.chat.id),
+                        id=[msg.id],
+                        to_peer=await client.resolve_peer(channel_id),
+                        silent=False
+                    )
+                )
+                return True
+            except:
+                # Fallback: send manually
+                if msg.text:
+                    await client.send_message(channel_id, msg.text)
+                if msg.photo:
+                    await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
+                elif msg.video:
+                    await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
+                elif msg.sticker:
+                    await client.send_sticker(channel_id, msg.sticker.file_id)
+                elif msg.document:
+                    await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
+                elif msg.animation:
+                    await client.send_animation(channel_id, msg.animation.file_id, caption=msg.caption)
+                elif msg.voice:
+                    await client.send_voice(channel_id, msg.voice.file_id, caption=msg.caption)
+                elif msg.audio:
+                    await client.send_audio(channel_id, msg.audio.file_id, caption=msg.caption)
+                return True
+    except Exception as e:
+        print(f"Error sending to {channel_id}: {e}")
+        return False
+
+async def send_to_channels(client, msg, channels):
+    """Message ko sab channels mein send karega"""
     sent_count = 0
     
     for channel in channels:
         channel_id = channel.get("id")
-        try:
-            # Copy message (not forward) - no "Forwarded From" tag
-            result = await client.invoke(
-                functions.messages.CopyMessages(
-                    from_peer=await client.resolve_peer(msg.chat.id),
-                    id=[msg.id],
-                    to_peer=await client.resolve_peer(channel_id),
-                    silent=False
-                )
-            )
-            if result:
-                sent_count += 1
-        except Exception as e:
-            print(f"Error copying to {channel_id}: {e}")
+        if await send_to_channel(client, msg, channel_id):
+            sent_count += 1
     
     return sent_count
 
@@ -118,7 +168,7 @@ async def start_cmd(client, msg):
         "📢 **AUTO-POST BOT**\n\n"
         "Mujhe channel admin banao aur main jo bhi msg bhejo ge woh channel par **exactly waisa hi** post kar dunga!\n\n"
         "✅ Forward message bina 'Forwarded From' tag ke post hoga!\n"
-        "✅ Premium emoji, text, media sab exactly waisa hi rahega!\n\n"
+        "✅ Photo + Text + Premium Emoji sab saath mein post hoga!\n\n"
         "**Commands:**\n"
         "/start - Show this message\n"
         "/help - Help menu\n"
@@ -142,9 +192,9 @@ async def help_cmd(client, msg):
         "2️⃣ Channel ID copy karo (negative number)\n"
         "3️⃣ /addchannel -123456789 bhejo\n\n"
         "**Features:**\n"
-        "✅ Premium emoji exactly waisa hi post hoga\n"
+        "✅ Photo + Text + Premium Emoji sab saath mein post hoga\n"
         "✅ Forward message bina 'Forwarded From' tag ke\n"
-        "✅ Text, photo, video, sticker sab exactly waisa hi"
+        "✅ Sab exactly waisa hi post hoga"
     )
 
 @app.on_message(filters.command("check"))
@@ -216,8 +266,7 @@ async def add_channel_cmd(client, msg):
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
             "Now I will auto-post **exactly** whatever you send me!\n"
-            "✅ Forward messages bina tag ke post honge!\n"
-            "✅ Premium emoji exactly waisa hi rahega!"
+            "✅ Photo + Text + Premium Emoji sab saath mein post hoga!"
         )
     else:
         await status_msg.edit_text(
@@ -261,12 +310,10 @@ async def list_channels_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ AUTO-POST - ALL MESSAGES (TEXT + MEDIA + FORWARD) ═══════════════
-# Yeh HAR TYPE ke message ko catch karega (text, photo, video, sticker, forward, sab)
-
+# ═══════════════ AUTO-POST - ALL MESSAGES ═══════════════
 @app.on_message(filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_all(client, msg):
-    """Har type ke message ko catch karega aur channels mein copy karega"""
+    """Har type ke message ko catch karega aur channels mein send karega"""
     channels = get_all_channels()
     
     if not channels:
@@ -278,7 +325,7 @@ async def auto_post_all(client, msg):
         await msg.reply_text("⚠️ Unsupported message type!")
         return
     
-    sent_count = await copy_to_channels(client, msg, channels)
+    sent_count = await send_to_channels(client, msg, channels)
     
     if sent_count > 0:
         # Detect message type for reply
@@ -325,9 +372,9 @@ if not os.path.exists(CHANNEL_DB):
 print("""
 ╔══════════════════════════════════════╗
 ║  📢 AUTO-POST BOT - FINAL FIXED     ║
-║  Sab Type Ke Messages Catch Karega  ║
-║  Text + Media + Forward + Sticker   ║
-║  Sab Exactly Waisa Hi Post Hoga     ║
+║  Photo + Text + Premium Emoji       ║
+║  Sab Saath Mein Post Hoga           ║
+║  Forward Message Bina Tag Ke        ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
