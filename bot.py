@@ -497,8 +497,7 @@ async def welcome_animation(client, msg):
         try:
             reaction_emoji = get_random_normal_emoji()
             await client.send_reaction(chat_id, msg.id, reaction_emoji)
-        except Exception as e:
-            print(f"Reaction error: {e}")
+        except:
             try:
                 await msg.react(reaction_emoji)
             except:
@@ -571,27 +570,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 6: Delete starting message
-        try:
-            await welcome_msg.delete()
-        except:
-            pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 7: Send random sticker
-        sticker_id = get_random_sticker()
-        sticker_msg = None
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
-        
-        # Step 8: Wait 3 seconds
-        await asyncio.sleep(3)
-        
-        # Step 9: Get user profile photo
+        # Step 6: GET USER PROFILE PHOTO (Before sticker)
         user_photo = None
         try:
             photos = await client.get_chat_photos(user_id, limit=1)
@@ -600,16 +579,26 @@ async def welcome_animation(client, msg):
         except:
             pass
         
-        # Step 10: Delete sticker (after 3 seconds)
-        if sticker_msg:
-            try:
-                await sticker_msg.delete()
-            except:
-                pass
+        # Step 7: DELETE STARTING MESSAGE
+        try:
+            await welcome_msg.delete()
+        except:
+            pass
         
         await asyncio.sleep(0.3)
         
-        # Step 11: Final welcome message with user profile photo
+        # Step 8: SEND STICKER (After starting delete)
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                sticker_msg = None
+        
+        await asyncio.sleep(0.5)
+        
+        # Step 9: FINAL WELCOME MESSAGE WITH PHOTO
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -646,6 +635,14 @@ async def welcome_animation(client, msg):
             )
         else:
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+        
+        # Step 10: DELETE STICKER (After final message)
+        if sticker_msg:
+            await asyncio.sleep(1)
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
         
         return final_msg
         
@@ -1738,6 +1735,7 @@ print("""
 ║  RANDOM EMOJI + STICKER             ║
 ║  REACTION EMOJI SUPPORT             ║
 ║  USER PROFILE PHOTO                 ║
+║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
