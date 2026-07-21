@@ -526,17 +526,25 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER (4 seconds)
+        # Step 5: SEND STICKER (with exact time tracking)
         sticker_id = get_random_sticker()
         sticker_msg = None
+        sticker_send_time = None
+        
         if sticker_id:
             try:
                 sticker_msg = await client.send_sticker(chat_id, sticker_id)
+                sticker_send_time = time.time()  # Send time note karo
             except:
                 sticker_msg = None
         
-        # Step 6: WAIT EXACTLY 4 SECONDS
-        await asyncio.sleep(STICKER_DISPLAY_TIME)
+        # Step 6: WAIT EXACTLY 4 SECONDS (sticker send hone ke baad se)
+        if sticker_msg and sticker_send_time:
+            elapsed = time.time() - sticker_send_time
+            remaining = max(0, 4 - elapsed)  # Agar 4 sec se kam hua toh baki time wait karo
+            await asyncio.sleep(remaining)
+        else:
+            await asyncio.sleep(4)
         
         # Step 7: DELETE STICKER AFTER 4 SECONDS
         if sticker_msg:
