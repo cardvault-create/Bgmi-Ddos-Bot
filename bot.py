@@ -39,7 +39,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
-PREMIUM_TIME = 240  # 4 minutes
+PREMIUM_TIME = 400  # 6.6 minutes
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -343,37 +343,47 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React to /start message
+        # Step 1: React to /start message with ❤️
         try:
-            await msg.react("💞")
+            await msg.react("❤️")
         except:
             pass
         await asyncio.sleep(0.5)
         
-        # Step 2: Send Welcome message with user name as clickable link
+        # Step 2: Welcome message with animated emojis
+        welcome_emojis = ["✨", "🌟", "💫", "⭐", "🌈", "💎", "✨"]
         welcome_msg = await client.send_message(
             chat_id, 
             f"✨ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
         )
-        await asyncio.sleep(1.5)
         
-        # Step 3: Delete welcome message
+        # Change emojis in the same message
+        for emoji in welcome_emojis[:6]:
+            await asyncio.sleep(0.3)
+            try:
+                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})")
+            except:
+                pass
+        
+        await asyncio.sleep(0.5)
+        
+        # Delete welcome message
         try:
             await welcome_msg.delete()
         except:
             pass
         await asyncio.sleep(0.3)
         
-        # Step 4: Send starting message with character by character typing effect
+        # Step 3: Starting message with character by character typing effect
+        starting_emojis = ["⚡", "💫", "✨", "🔥", "💥"]
         starting_msg = await client.send_message(chat_id, "s")
-        await asyncio.sleep(0.1)
         
         # Build text character by character
         full_text = "⚡ ѕтαятιиg....."
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "s"
         
-        # Add each character with emoji change
+        # Add each character
         for i, char in enumerate(chars_to_add):
             current_text += char
             await asyncio.sleep(0.08)
@@ -382,9 +392,8 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # Now change emojis in the same message
-        emoji_list = ["⚡", "💫", "✨", "⚡", "💥", "⚡", "💫", "✨"]
-        for emoji in emoji_list[:5]:
+        # Change emojis in the same message
+        for emoji in starting_emojis[:5]:
             await asyncio.sleep(0.25)
             try:
                 await starting_msg.edit_text(f"{emoji} ѕтαятιиg.....")
@@ -400,12 +409,12 @@ async def welcome_animation(client, msg):
             pass
         await asyncio.sleep(0.3)
         
-        # Step 5: Send sticker if available (auto delete after 4 seconds)
+        # Step 4: Send sticker if available (auto delete after 5 seconds)
         sticker_data = get_sticker()
         if sticker_data and sticker_data.get("sticker_id"):
             try:
                 sticker_msg = await client.send_sticker(chat_id, sticker_data["sticker_id"])
-                await asyncio.sleep(4)
+                await asyncio.sleep(5)
                 try:
                     await sticker_msg.delete()
                 except:
@@ -415,9 +424,9 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 6: Final welcome message
+        # Step 5: Final welcome message with user profile and bot link
         final_text = f"""
-ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
+ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
 
 ┏━━━━━━━━━━━━━━━━━⧫
@@ -437,20 +446,34 @@ async def welcome_animation(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK}) ✔︎
 """
         
-        # Final message with all buttons
+        # Check if user is owner
+        if user_id == OWNER_ID:
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
+                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
+                [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
+                 InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
+                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+                [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+                [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
+                [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
+                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
+            ])
+        else:
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
+                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
+                [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
+                 InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
+                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
+            ])
+        
+        # Final message with buttons
         final_msg = await client.send_message(
             chat_id,
             final_text,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"👤 {first_name}'s Profile", url=f"tg://user?id={user_id}")],
-                [InlineKeyboardButton("🤖 Bot", url=BOT_LINK)],
-                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
-                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
-                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu"),
-                 InlineKeyboardButton("📊 STATUS", callback_data="status_btn")],
-                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu"),
-                 InlineKeyboardButton("👑 𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓", url=OWNER_LINK)]
-            ])
+            reply_markup=kb
         )
         
         return final_msg
@@ -481,7 +504,6 @@ async def normal_start(client, msg):
         kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
             [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-            [InlineKeyboardButton(f"👤 {user.first_name}'s Profile", url=f"tg://user?id={uid}")],
         ])
         return await send_vid(msg.chat.id, text, kb, vid)
     
@@ -721,7 +743,7 @@ async def add_sticker_cmd(client, msg):
         try:
             sticker_id = msg.reply_to_message.sticker.file_id
             set_sticker(sticker_id)
-            await msg.reply_text("✅ 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔!\n\nThis sticker will appear in welcome animation for 4 seconds.")
+            await msg.reply_text("✅ 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔!\n\nThis sticker will appear in welcome animation for 5 seconds.")
         except Exception as e:
             await msg.reply_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
     else:
@@ -806,14 +828,17 @@ async def callbacks(client, cb: CallbackQuery):
             kb = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
                 [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-                [InlineKeyboardButton(f"👤 {user.first_name}'s Profile", url=f"tg://user?id={uid}")],
             ])
             await cb.message.edit_text(text, reply_markup=kb)
             return
         
         info = get_user_info(uid)
         vid = rand_vid()
-        kb = owner_kb() if uid == OWNER_ID else user_kb()
+        
+        if uid == OWNER_ID:
+            kb = owner_kb()
+        else:
+            kb = user_kb()
         
         expiry_text = ""
         if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
@@ -960,7 +985,7 @@ async def callbacks(client, cb: CallbackQuery):
     
     if data == "admin_addsticker":
         if uid != OWNER_ID: return
-        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation for 4 seconds!", show_alert=True)
+        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation for 5 seconds!", show_alert=True)
         return
     
     auto_keys = {
