@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 📢 AUTO-POST BOT - FIXED
-Channel Admin Banne Ke Baad Jo Bhi Bhejo Channel Par Post
-Group Se Bhi Add Kar Sakte Ho
+Channel Admin Check Properly
 """
 
 import asyncio, json, os, re
@@ -41,7 +40,6 @@ def get_channels():
 
 def add_channel(channel_id, channel_name):
     data = get_channels()
-    # Check if already exists
     for ch in data["channels"]:
         if ch["id"] == channel_id:
             return False
@@ -57,6 +55,36 @@ def remove_channel(channel_id):
 
 def get_all_channels():
     return get_channels()["channels"]
+
+# ═══════════════ CHECK ADMIN - IMPROVED ═══════════════
+async def check_admin(client, chat_id):
+    """Check if bot is admin in channel - Improved"""
+    try:
+        # First try to get chat info
+        chat = await client.get_chat(chat_id)
+        print(f"Chat found: {chat.title}")
+        
+        # Try to get bot member info
+        bot_member = await client.get_chat_member(chat_id, "me")
+        print(f"Bot status: {bot_member.status}")
+        
+        if bot_member.status in ["administrator", "creator"]:
+            return True, "Admin"
+        else:
+            return False, f"Bot is {bot_member.status}"
+            
+    except Exception as e:
+        error = str(e)
+        print(f"Error checking admin: {error}")
+        
+        if "USER_NOT_PARTICIPANT" in error:
+            return False, "Bot is not a member of the channel!"
+        elif "CHAT_ADMIN_REQUIRED" in error:
+            return False, "Bot is not admin!"
+        elif "CHAT_ID_INVALID" in error:
+            return False, "Invalid channel ID!"
+        else:
+            return False, f"Error: {error[:100]}"
 
 # ═══════════════ START COMMAND ═══════════════
 @app.on_message(filters.command("start"))
@@ -100,7 +128,6 @@ async def help_cmd(client, msg):
 async def add_channel_cmd(client, msg):
     parts = msg.text.split(maxsplit=1)
     
-    # Check if channel ID provided
     if len(parts) != 2:
         await msg.reply_text(
             "❌ **Usage:** `/addchannel CHANNEL_ID`\n\n"
@@ -121,25 +148,22 @@ async def add_channel_cmd(client, msg):
         )
         return
     
-    # Check if bot is admin in this channel
-    try:
-        bot_member = await client.get_chat_member(channel_id, "me")
-        if bot_member.status not in ["administrator", "creator"]:
-            await msg.reply_text(
-                f"❌ **I'm not an admin in this channel!**\n\n"
-                f"Channel ID: `{channel_id}`\n\n"
-                "Please add me as admin first!"
-            )
-            return
-    except Exception as e:
+    # Check if bot is admin - IMPROVED
+    is_admin, status = await check_admin(client, channel_id)
+    
+    if not is_admin:
         await msg.reply_text(
-            f"❌ **Error checking admin status!**\n\n"
-            f"Channel ID: `{channel_id}`\n"
-            f"Error: {str(e)[:100]}\n\n"
-            "Make sure:\n"
-            "1. Channel ID is correct\n"
-            "2. Bot is admin in the channel\n"
-            "3. Bot is added to the channel"
+            f"❌ **I'm not an admin!**\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n\n"
+            f"🚫 **Reason:** {status}\n\n"
+            "**Please follow these steps:**\n"
+            "1️⃣ Add bot to the channel (if not added)\n"
+            "2️⃣ Make bot admin with **Post Messages** permission\n"
+            "3️⃣ Wait 5 seconds and try again\n\n"
+            "**Make sure:**\n"
+            "✅ Bot is in the channel\n"
+            "✅ Bot has admin permissions\n"
+            "✅ Channel is public or bot can access it"
         )
         return
     
@@ -153,7 +177,7 @@ async def add_channel_cmd(client, msg):
     # Add channel
     if add_channel(channel_id, channel_name):
         await msg.reply_text(
-            f"✅ **Channel Added!**\n\n"
+            f"✅ **Channel Added!** 🎉\n\n"
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
             "Now I will auto-post all messages to this channel!\n"
@@ -265,7 +289,6 @@ async def post_cmd(client, msg):
         await msg.reply_text("⚠️ No channels added! Use `/addchannel CHANNEL_ID` first.")
         return
     
-    # Check if replying to a message
     if msg.reply_to_message:
         reply_msg = msg.reply_to_message
         
@@ -397,6 +420,46 @@ async def get_id_cmd(client, msg):
         f"Use this ID in /addchannel command."
     )
 
+# ═══════════════ CHECK COMMAND ═══════════════
+@app.on_message(filters.command("check"))
+async def check_cmd(client, msg):
+    """Check bot status in a channel"""
+    parts = msg.text.split(maxsplit=1)
+    
+    if len(parts) != 2:
+        await msg.reply_text(
+            "❌ **Usage:** `/check CHANNEL_ID`\n\n"
+            "Example: `/check -100123456789`"
+        )
+        return
+    
+    try:
+        channel_id = int(parts[1].strip())
+    except ValueError:
+        await msg.reply_text("❌ Invalid channel ID!")
+        return
+    
+    is_admin, status = await check_admin(client, channel_id)
+    
+    if is_admin:
+        await msg.reply_text(
+            f"✅ **Bot is Admin!**\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n"
+            f"🔹 **Status:** {status}\n\n"
+            "You can now add this channel using:\n"
+            f"`/addchannel {channel_id}`"
+        )
+    else:
+        await msg.reply_text(
+            f"❌ **Bot is NOT Admin!**\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n"
+            f"🚫 **Reason:** {status}\n\n"
+            "**Please follow these steps:**\n"
+            "1️⃣ Add bot to the channel\n"
+            "2️⃣ Make bot admin with **Post Messages** permission\n"
+            "3️⃣ Wait 5 seconds and try `/check` again"
+        )
+
 # ═══════════════ RUN ═══════════════
 if not os.path.exists(CHANNEL_DB):
     jsave(CHANNEL_DB, {"channels": []})
@@ -404,9 +467,8 @@ if not os.path.exists(CHANNEL_DB):
 print("""
 ╔══════════════════════════════════════╗
 ║  📢 AUTO-POST BOT - FIXED           ║
-║  Channel Admin Banne Ke Baad        ║
-║  Jo Bhi Bhejo Channel Par Post      ║
-║  Group/Private Se Bhi Add Karo      ║
+║  Better Admin Check                  ║
+║  /check command added               ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
