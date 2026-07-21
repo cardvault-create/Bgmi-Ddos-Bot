@@ -42,7 +42,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
-PREMIUM_TIME = 600  # 10 minutes = 600 seconds
+PREMIUM_TIME = 600  # 10 minutes
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -454,7 +454,19 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 2: Send random emoji
+        # Step 2: Send random sticker FIRST
+        sticker_id = get_random_sticker()
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                sticker_msg = None
+        else:
+            sticker_msg = None
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 3: Send random emoji
         emoji_id = get_random_emoji()
         if emoji_id:
             try:
@@ -466,15 +478,15 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 3: Welcome Baby with user name and profile link
-        welcome_emojis = ["💞", "💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "🔥", "💜", "🩵", "❤️", "🧡", "💛", "💚", "💙"]
+        # Step 4: Welcome Baby with user name and profile link
+        welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"💞 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
+            f"🩷 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
         )
         
         # Change emojis in same message (0.3 sec interval)
-        for emoji in welcome_emojis[:8]:
+        for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
                 await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})")
@@ -488,7 +500,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # Step 4: Delete welcome message after 0.9 seconds
+        # Step 5: Delete welcome message after 0.9 seconds
         await asyncio.sleep(0.9)
         try:
             await welcome_msg.delete()
@@ -497,12 +509,12 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
-        # Step 5: Starting animation with typing effect
-        starting_emojis = ["⚡", "💫", "✨", "🔥", "💥", "⚡", "💫", "✨"]
+        # Step 6: Starting animation with typing effect
+        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️"]
         starting_msg = await client.send_message(chat_id, "s")
         
         # Character by character typing effect
-        full_text = "⚡ ѕтαятιиg....."
+        full_text = "🩵 ѕтαятιиg....."
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "s"
         
@@ -526,19 +538,10 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
-        # Step 6: Send random sticker
-        sticker_id = get_random_sticker()
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
-        else:
-            sticker_msg = None
+        # Step 7: Wait 3 seconds before final message
+        await asyncio.sleep(3)
         
-        await asyncio.sleep(0.5)
-        
-        # Step 7: Final welcome message with EXACT text
+        # Step 8: Final welcome message with EXACT text
         final_text = f"""
 ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪,
@@ -567,9 +570,8 @@ async def welcome_animation(client, msg):
         
         final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
-        # Step 8: Delete sticker after 5 seconds
+        # Step 9: Delete sticker after final message
         if sticker_msg:
-            await asyncio.sleep(5)
             try:
                 await sticker_msg.delete()
             except:
@@ -629,7 +631,7 @@ async def normal_start(client, msg):
         f"📹 {len(get_vids())} Videos\n"
         f"{LINE}\n"
         "⚔️ /attack IP PORT TIME\n"
-        "📋 /attack 1.2.3.4 8080 120\n"
+        "📋 /attack 1.2.3.4 8080 600\n"
         "🎮 BGMI Ports: 7000-15000\n"
         f"{LINE}\n"
         "🔽 SELECT OPTION:"
