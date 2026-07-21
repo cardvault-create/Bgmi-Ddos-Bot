@@ -540,6 +540,12 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
+    # React with ❤️
+    try:
+        await msg.react("❤️")
+    except Exception:
+        pass
+    
     await welcome_animation(client, msg)
 
 # ═══════════════ REDEEM ═══════════════
