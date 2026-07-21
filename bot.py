@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-Server Freeze Bot | Random Emoji + Sticker | Auto Update | Welcome Animation
+Server Freeze Bot | Random Emoji + Sticker + Video | Auto Update | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -36,7 +36,6 @@ BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
-NORMAL_EMOJI_DB = "normal_emojis.json"
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -49,6 +48,7 @@ PREMIUM_TIME = 600
 used_videos = []
 last_emoji_index = -1
 last_sticker_index = -1
+last_video_index = -1
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -110,40 +110,6 @@ def get_remaining(expiry_str):
         elif hours > 0: return f"{hours}H {minutes}M", False
         else: return f"{minutes}M", False
     except: return "ERROR", False
-
-# ═══════════════ NORMAL EMOJI FUNCTIONS ═══════════════
-def get_normal_emojis():
-    data = jload(NORMAL_EMOJI_DB, {"emojis": []})
-    return data
-
-def add_normal_emoji(emoji):
-    data = get_normal_emojis()
-    if emoji not in data["emojis"]:
-        data["emojis"].append(emoji)
-        jsave(NORMAL_EMOJI_DB, data)
-        return True, len(data["emojis"])
-    return False, len(data["emojis"])
-
-def remove_normal_emoji(index):
-    data = get_normal_emojis()
-    if 0 <= index < len(data["emojis"]):
-        removed = data["emojis"].pop(index)
-        jsave(NORMAL_EMOJI_DB, data)
-        return True, removed, len(data["emojis"])
-    return False, None, len(data["emojis"])
-
-def get_random_normal_emoji():
-    data = get_normal_emojis()
-    if data["emojis"]:
-        return random.choice(data["emojis"])
-    return "❤️"
-
-def get_all_normal_emojis():
-    return get_normal_emojis()["emojis"]
-
-def reset_normal_emojis():
-    jsave(NORMAL_EMOJI_DB, {"emojis": []})
-    return True
 
 # ═══════════════ EMOJI FUNCTIONS ═══════════════
 def get_emojis():
@@ -235,14 +201,24 @@ def add_vid(path):
     vids.append({"id": vid, "path": path, "name": os.path.basename(path)})
     jsave(VIDEO_DB, vids)
     return vid
+
 def rand_vid():
-    global used_videos
+    global used_videos, last_video_index
     vids = get_vids()
-    if not vids: return None
-    avail = [v for v in vids if v["id"] not in used_videos]
-    if not avail: used_videos.clear(); avail = vids
-    v = random.choice(avail); used_videos.append(v["id"])
-    return v
+    if not vids:
+        return None
+    # Ensure different video each time
+    if len(vids) > 1:
+        available = [v for v in vids if v["id"] != last_video_index]
+        if available:
+            chosen = random.choice(available)
+            last_video_index = chosen["id"]
+            return chosen
+    # Fallback
+    chosen = random.choice(vids)
+    last_video_index = chosen["id"]
+    return chosen
+
 def del_vid(vid):
     vids = get_vids()
     for i, v in enumerate(vids):
@@ -251,6 +227,7 @@ def del_vid(vid):
             vids.pop(i); jsave(VIDEO_DB, vids)
             return True
     return False
+
 def clear_vids():
     vids = get_vids()
     for v in vids:
@@ -398,7 +375,6 @@ def owner_kb():
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
         [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("🎨 STICKER MANAGER", callback_data="sticker_menu")],
-        [InlineKeyboardButton("😊 REACTION EMOJIS", callback_data="reaction_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
         [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
@@ -445,17 +421,6 @@ def emoji_kb():
         [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
     ])
 
-def reaction_kb():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📤 ADD REACTION EMOJI", callback_data="r_add")],
-        [InlineKeyboardButton("🗑️ REMOVE REACTION", callback_data="r_remove")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 LIST REACTIONS", callback_data="r_list")],
-        [InlineKeyboardButton("🔄 RESET ALL", callback_data="r_reset")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
-    ])
-
 def sticker_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📤 ADD STICKER", callback_data="s_add")],
@@ -493,19 +458,9 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React to /start message
-        try:
-            reaction_emoji = get_random_normal_emoji()
-            await client.send_reaction(chat_id, msg.id, reaction_emoji)
-        except:
-            try:
-                await msg.react(reaction_emoji)
-            except:
-                pass
-        
         await asyncio.sleep(0.3)
         
-        # Step 2: Send random emoji
+        # Step 1: Send random emoji
         emoji_id = get_random_emoji()
         if emoji_id:
             try:
@@ -517,18 +472,18 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 3: Welcome Baby message
+        # Step 2: Welcome Baby message with bold text
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
+            f"**𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷**"
         )
         
         # Change emojis
         for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
+                await welcome_msg.edit_text(f"**{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...**")
             except:
                 pass
         
@@ -541,13 +496,13 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 4: Starting animation
+        # Step 3: Starting animation with bold text
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
         emoji = starting_emojis[emoji_idx % len(starting_emojis)]
         
-        await welcome_msg.edit_text(f"{emoji}")
+        await welcome_msg.edit_text(f"**{emoji}**")
         await asyncio.sleep(0.1)
         
         for i, char in enumerate(chars_to_add):
@@ -556,15 +511,15 @@ async def welcome_animation(client, msg):
                 if i % 2 == 0:
                     emoji_idx += 1
                     emoji = starting_emojis[emoji_idx % len(starting_emojis)]
-                    await welcome_msg.edit_text(f"{emoji} " + "".join(chars_to_add[:i+1]))
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
                 else:
-                    await welcome_msg.edit_text(f"{emoji} " + "".join(chars_to_add[:i+1]))
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
             except:
                 pass
         
         await asyncio.sleep(0.3)
         
-        # Step 5: DELETE STARTING MESSAGE
+        # Step 4: DELETE STARTING MESSAGE
         try:
             await welcome_msg.delete()
         except:
@@ -572,33 +527,12 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 6: Get user profile photo (SIMPLE - using file_id)
-        user_photo = None
-        try:
-            photos = await client.get_chat_photos(user_id, limit=1)
-            if photos and photos.total_count > 0:
-                user_photo = photos[0].file_id  # Direct file_id, no download
-        except:
-            pass
-        
-        # Step 7: SEND STICKER
-        sticker_id = get_random_sticker()
-        sticker_msg = None
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
-        
-        # Step 8: WAIT 3 SECONDS
-        await asyncio.sleep(3)
-        
-        # Step 9: FINAL WELCOME MESSAGE WITH PHOTO
+        # Step 5: FINAL WELCOME MESSAGE
         final_text = f"""
-ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
-ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
+**ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
+ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),**
 
-┏━━━━━━━━━━━━━━━━━⧫
+**┏━━━━━━━━━━━━━━━━━⧫
 ┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
 ┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
 ┗━━━━━━━━━━━━━━━━━⧫
@@ -612,7 +546,7 @@ async def welcome_animation(client, msg):
 ┗━━━━━━━━━━━━━━━━━⧫
 ๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
 
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎**
 """
         
         if user_id == OWNER_ID:
@@ -620,20 +554,38 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Send with profile photo (using file_id - no download needed)
-        if user_photo:
-            final_msg = await client.send_photo(
-                chat_id,
-                user_photo,
-                caption=final_text,
-                reply_markup=kb
-            )
+        # Step 6: Try to send video with final message
+        video_data = rand_vid()
+        final_msg = None
+        
+        if video_data and os.path.exists(video_data["path"]):
+            try:
+                # Send video with caption as final message
+                final_msg = await client.send_video(
+                    chat_id,
+                    video_data["path"],
+                    caption=final_text,
+                    reply_markup=kb
+                )
+            except Exception as e:
+                logger.error(f"Video send error: {e}")
+                final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         else:
+            # No video available, send only text
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
-        # Step 10: DELETE STICKER
+        # Step 7: Send random sticker after final message
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                sticker_msg = None
+        
+        # Step 8: Delete sticker after 2 seconds
         if sticker_msg:
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(2)
             try:
                 await sticker_msg.delete()
             except:
@@ -714,113 +666,6 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
-
-# ═══════════════ REACTION ON MESSAGES (SIMPLE) ═══════════════
-@app.on_message(filters.text & filters.private & ~filters.command(["start", "redeem", "attack", "stop", "addemoji", "removeemoji", "listemojis", "resetemojis", "addsticker", "removesticker", "liststickers", "resetstickers", "addnormalemoji", "removenormalemoji", "listnormalemojis", "resetnormalemojis", "addvideo", "videos", "delvideo", "clearvideos", "genkey", "commands", "help"]))
-async def react_to_all(client, msg):
-    """React to all non-command messages with random emoji"""
-    try:
-        reaction_emoji = get_random_normal_emoji()
-        await client.send_reaction(msg.chat.id, msg.id, reaction_emoji)
-    except:
-        try:
-            await msg.react(reaction_emoji)
-        except:
-            pass
-
-# ═══════════════ NORMAL EMOJI COMMANDS ═══════════════
-@app.on_message(filters.command("addnormalemoji"))
-async def add_normal_emoji_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split(maxsplit=1)
-    if len(parts) != 2:
-        return await msg.reply_text(
-            "📤 **ADD REACTION EMOJI**\n\n"
-            "Usage: `/addnormalemoji ❤️`\n\n"
-            "Add a normal emoji that will be used to react to messages.\n\n"
-            "**Examples:**\n"
-            "/addnormalemoji ❤️\n"
-            "/addnormalemoji 🔥\n"
-            "/addnormalemoji 💀"
-        )
-    
-    emoji = parts[1].strip()
-    
-    if len(emoji) > 2:
-        return await msg.reply_text("❌ Please send only one emoji!")
-    
-    success, total = add_normal_emoji(emoji)
-    if success:
-        await msg.reply_text(
-            f"✅ **REACTION EMOJI ADDED!** 🎉\n\n"
-            f"🔹 **Emoji:** {emoji}\n"
-            f"🔹 **Total Reaction Emojis:** {total}\n\n"
-            "✨ This emoji will now be used randomly to react to all messages!"
-        )
-    else:
-        await msg.reply_text("❌ This emoji is already in the list!")
-
-@app.on_message(filters.command("removenormalemoji"))
-async def remove_normal_emoji_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(
-            "🗑️ **REMOVE REACTION EMOJI**\n\n"
-            "Usage: `/removenormalemoji index`\n\n"
-            "Get index from `/listnormalemojis` command."
-        )
-    
-    try:
-        index = int(parts[1]) - 1
-        success, removed, total = remove_normal_emoji(index)
-        if success:
-            await msg.reply_text(
-                f"✅ **REACTION EMOJI REMOVED!**\n\n"
-                f"🔹 **Removed:** {removed}\n"
-                f"🔹 **Remaining Reactions:** {total}"
-            )
-        else:
-            await msg.reply_text(f"❌ Invalid index! Total reactions: {total}")
-    except ValueError:
-        await msg.reply_text("❌ Invalid index! Use a number.")
-
-@app.on_message(filters.command("listnormalemojis"))
-async def list_normal_emojis_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    emojis = get_all_normal_emojis()
-    
-    if not emojis:
-        return await msg.reply_text(
-            "📭 **No reaction emojis added yet!**\n\n"
-            "Add using `/addnormalemoji ❤️`"
-        )
-    
-    text = "📋 **REACTION EMOJI LIST**\n\n"
-    for i, emoji in enumerate(emojis, 1):
-        text += f"**{i}.** {emoji}\n"
-    
-    text += f"\n🔹 **Total:** {len(emojis)}"
-    await msg.reply_text(text)
-
-@app.on_message(filters.command("resetnormalemojis"))
-async def reset_normal_emojis_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    reset_normal_emojis()
-    await msg.reply_text(
-        f"🔄 **REACTION EMOJIS RESET!**\n\n"
-        f"🔹 **Total Reactions:** 0\n\n"
-        "All reaction emojis have been removed.\n"
-        "Default reaction will be ❤️"
-    )
 
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji"))
@@ -1002,6 +847,60 @@ async def reset_stickers_cmd(client, msg):
         "All stickers have been removed from the list."
     )
 
+# ═══════════════ VIDEO COMMANDS ═══════════════
+@app.on_message(filters.command("addvideo"))
+async def add_video_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    if msg.reply_to_message and msg.reply_to_message.video:
+        s = await msg.reply_text("📂 Adding Video 📸")
+        try:
+            path = await msg.reply_to_message.download()
+            vid = add_vid(path)
+            text = (
+                "✅ **VIDEO ADDED SUCCESSFULLY!** ✅\n\n"
+                f"{LINE}\n"
+                f"🆔 Video ID: {vid}\n"
+                f"📁 Name: {os.path.basename(path)[:30]}\n"
+                f"📹 Total Videos: {len(get_vids())}\n"
+                f"{LINE}\n\n"
+                "🎲 Video will play randomly on welcome!\n"
+                "📋 /videos to see all videos"
+            )
+            await s.edit_text(text)
+        except Exception as e:
+            await s.edit_text(f"❌ Error: {e}")
+    else:
+        await msg.reply_text("❌ Reply to a video!")
+
+@app.on_message(filters.command("videos"))
+async def list_vids_cmd(client, msg):
+    if not check_access(msg.from_user.id)[0]: return
+    vids = get_vids()
+    if not vids: return await msg.reply_text("📹 No videos!")
+    text = f"📹 **Videos ({len(vids)}):**\n\n"
+    for v in vids[:15]:
+        text += f"#{v['id']} {v['name'][:30]}\n"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("delvideo"))
+async def del_vid_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    parts = msg.text.split()
+    if len(parts) != 2: return await msg.reply_text("❌ /delvideo ID")
+    try:
+        if del_vid(int(parts[1])):
+            await msg.reply_text(f"✅ Video #{parts[1]} deleted!\n📹 Remaining: {len(get_vids())}")
+        else:
+            await msg.reply_text("❌ Not found!")
+    except:
+        await msg.reply_text("❌ Invalid ID!")
+
+@app.on_message(filters.command("clearvideos"))
+async def clear_vids_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    n = clear_vids()
+    await msg.reply_text(f"🗑️ {n} videos cleared!")
+
 # ═══════════════ REDEEM ═══════════════
 @app.on_message(filters.command("redeem"))
 async def redeem_cmd(client, msg):
@@ -1119,71 +1018,6 @@ async def stop_cmd(client, msg):
     else:
         await msg.reply_text("💤 No attack running!")
 
-# ═══════════════ VIDEO COMMANDS ═══════════════
-@app.on_message(filters.command("addvideo"))
-async def add_video_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    if msg.reply_to_message and msg.reply_to_message.video:
-        s = await msg.reply_text("📂 𝘼𝙙𝙙𝙞𝙣𝙜 𝙑𝙞𝙙𝙚𝙤 📸")
-        try:
-            path = await msg.reply_to_message.download()
-            vid = add_vid(path)
-            text = (
-                "✅ 𝙑𝙄𝘿𝙀𝙊 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔! ✅\n\n"
-                f"{LINE}\n"
-                f"🆔 𝙑𝙞𝙙𝙚𝙤 𝙄𝘿: {vid}\n"
-                f"📁 𝙉𝙖𝙢𝙚: {os.path.basename(path)[:30]}\n"
-                f"📹 𝙏𝙤𝙩𝙖𝙡 𝙑𝙞𝙙𝙚𝙤𝙨: {len(get_vids())}\n"
-                f"{LINE}\n\n"
-                "🎲 𝙑𝙞𝙙𝙚𝙤 𝙬𝙞𝙡𝙡 𝙥𝙡𝙖𝙮 𝙧𝙖𝙣𝙙𝙤𝙢𝙡𝙮!\n"
-                "📋 /videos 𝙩𝙤 𝙨𝙚𝙚 𝙖𝙡𝙡 𝙫𝙞𝙙𝙚𝙤𝙨"
-            )
-            await s.edit_text(text)
-        except Exception as e:
-            await s.edit_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
-    else:
-        await msg.reply_text("❌ 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙫𝙞𝙙𝙚𝙤!")
-
-@app.on_message(filters.command("videos"))
-async def list_vids_cmd(client, msg):
-    if not check_access(msg.from_user.id)[0]: return
-    vids = get_vids()
-    if not vids: return await msg.reply_text("📹 𝙉𝙤 𝙫𝙞𝙙𝙚𝙤𝙨!")
-    text = f"📹 𝙑𝙞𝙙𝙚𝙤𝙨 ({len(vids)}):\n\n"
-    for v in vids[:15]: text += f"#{v['id']} {v['name'][:30]}\n"
-    await msg.reply_text(text)
-
-@app.on_message(filters.command("delvideo"))
-async def del_vid_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    parts = msg.text.split()
-    if len(parts) != 2: return await msg.reply_text("❌ /delvideo 𝙄𝘿")
-    try:
-        if del_vid(int(parts[1])):
-            await msg.reply_text(f"✅ 𝙑𝙞𝙙𝙚𝙤 #{parts[1]} 𝙙𝙚𝙡𝙚𝙩𝙚𝙙!\n📹 𝙍𝙚𝙢𝙖𝙞𝙣𝙞𝙣𝙜: {len(get_vids())}")
-        else:
-            await msg.reply_text("❌ 𝙉𝙤𝙩 𝙛𝙤𝙪𝙣𝙙!")
-    except:
-        await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙄𝘿!")
-
-@app.on_message(filters.command("clearvideos"))
-async def clear_vids_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    n = clear_vids()
-    await msg.reply_text(f"🗑️ {n} 𝙫𝙞𝙙𝙚𝙤𝙨 𝙘𝙡𝙚𝙖𝙧𝙚𝙙!")
-
-@app.on_message(filters.command("genkey"))
-async def gen_key_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    parts = msg.text.split()
-    if len(parts) < 3: return await msg.reply_text("📋 /genkey NAME TIME\n🔑 /genkey Test 30m")
-    name, time_str = parts[1], parts[2]
-    key_code, duration = create_key(name, time_str)
-    if key_code:
-        await msg.reply_text(f"🔑 𝙆𝙀𝙔 𝙂𝙀𝙉𝙀𝙍𝘼𝙏𝙀𝘿!\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 /redeem {key_code}")
-    else:
-        await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
-
 # ═══════════════ COMMANDS MENU ═══════════════
 @app.on_message(filters.command("commands"))
 async def commands_cmd(client, msg):
@@ -1199,10 +1033,6 @@ async def commands_cmd(client, msg):
         "📋 /listemojis - List Emojis\n"
         "🗑️ /removeemoji index - Remove Emoji\n"
         "🔄 /resetemojis - Reset All Emojis\n\n"
-        "😊 /addnormalemoji - Add Reaction Emoji\n"
-        "📋 /listnormalemojis - List Reaction Emojis\n"
-        "🗑️ /removenormalemoji index - Remove Reaction\n"
-        "🔄 /resetnormalemojis - Reset Reactions\n\n"
         "🎨 /addsticker - Add Sticker\n"
         "📋 /liststickers - List Stickers\n"
         "🗑️ /removesticker index - Remove Sticker\n"
@@ -1257,10 +1087,10 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 /listemojis - List Emojis\n"
             "🗑️ /removeemoji index - Remove Emoji\n"
             "🔄 /resetemojis - Reset All Emojis\n\n"
-            "😊 /addnormalemoji - Add Reaction Emoji\n"
-            "📋 /listnormalemojis - List Reaction Emojis\n"
-            "🗑️ /removenormalemoji index - Remove Reaction\n"
-            "🔄 /resetnormalemojis - Reset Reactions\n\n"
+            "🎨 /addsticker - Add Sticker\n"
+            "📋 /liststickers - List Stickers\n"
+            "🗑️ /removesticker index - Remove Sticker\n"
+            "🔄 /resetstickers - Reset All Stickers\n\n"
             f"🎮 **BGMI PORTS:** 7000-15000\n"
             f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
             f"👑 [FATHER OF BOT]({OWNER_LINK})",
@@ -1334,83 +1164,6 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "back_admin":
         if uid != OWNER_ID: return
         await cb.message.edit_text("👑 **ADMIN PANEL**\n\n🔽 Select:", reply_markup=admin_kb())
-        return
-    
-    # ═══════════════ REACTION MENU ═══════════════
-    if data == "reaction_menu":
-        if uid != OWNER_ID:
-            await cb.answer("Owner only!", show_alert=True)
-            return
-        reactions = get_all_normal_emojis()
-        await cb.message.edit_text(
-            f"😊 **REACTION EMOJI MANAGER**\n\n"
-            f"🔹 **Total Reactions:** {len(reactions)}\n"
-            f"🔹 **Commands:**\n"
-            f"• `/addnormalemoji ❤️` - Add reaction emoji\n"
-            f"• `/removenormalemoji index` - Remove by index\n"
-            f"• `/listnormalemojis` - List all reactions\n"
-            f"• `/resetnormalemojis` - Reset all\n\n"
-            f"✨ Reactions are used to react to all messages randomly!",
-            reply_markup=reaction_kb()
-        )
-        return
-    
-    if data == "r_add":
-        if uid != OWNER_ID:
-            await cb.answer("Owner only!", show_alert=True)
-            return
-        await cb.message.edit_text(
-            "😊 **ADD REACTION EMOJI**\n\n"
-            "Use: `/addnormalemoji ❤️`\n\n"
-            "Add any normal Telegram emoji.\n"
-            "It will be used randomly to react to all messages!",
-            reply_markup=back_admin_kb()
-        )
-        return
-    
-    if data == "r_remove":
-        if uid != OWNER_ID:
-            await cb.answer("Owner only!", show_alert=True)
-            return
-        reactions = get_all_normal_emojis()
-        if not reactions:
-            await cb.answer("No reactions to remove!", show_alert=True)
-            return
-        await cb.message.edit_text(
-            "🗑️ **REMOVE REACTION EMOJI**\n\n"
-            "Use: `/removenormalemoji index`\n\n"
-            "Get index from `/listnormalemojis` command.",
-            reply_markup=back_admin_kb()
-        )
-        return
-    
-    if data == "r_list":
-        if uid != OWNER_ID:
-            await cb.answer("Owner only!", show_alert=True)
-            return
-        reactions = get_all_normal_emojis()
-        if not reactions:
-            await cb.answer("No reactions added yet!", show_alert=True)
-            return
-        text = "📋 **REACTION EMOJI LIST**\n\n"
-        for i, emoji in enumerate(reactions, 1):
-            text += f"**{i}.** {emoji}\n"
-        text += f"\n🔹 **Total:** {len(reactions)}"
-        await cb.message.edit_text(text, reply_markup=back_admin_kb())
-        return
-    
-    if data == "r_reset":
-        if uid != OWNER_ID:
-            await cb.answer("Owner only!", show_alert=True)
-            return
-        reset_normal_emojis()
-        await cb.answer("🔄 All reactions reset!", show_alert=True)
-        await cb.message.edit_text(
-            f"🔄 **REACTIONS RESET!**\n\n"
-            f"🔹 **Total Reactions:** 0\n\n"
-            "Default reaction will be ❤️",
-            reply_markup=reaction_kb()
-        )
         return
     
     # ═══════════════ EMOJI MENU ═══════════════
@@ -1571,6 +1324,86 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
+    if data == "video_menu":
+        if uid != OWNER_ID: await cb.answer("Owner only!"); return
+        vids = get_vids()
+        await cb.message.edit_text(
+            f"🎬 **VIDEO MANAGER**\n\n"
+            f"🔹 **Total Videos:** {len(vids)}\n"
+            f"🔹 **Commands:**\n"
+            f"• `/addvideo` - Reply to video\n"
+            f"• `/delvideo ID` - Delete by ID\n"
+            f"• `/videos` - List all videos\n"
+            f"• `/clearvideos` - Clear all\n\n"
+            f"✨ Videos appear randomly in welcome animation!\n"
+            f"🔄 Each time a new random video will be shown.",
+            reply_markup=video_kb()
+        )
+        return
+    
+    if data == "v_add":
+        if uid != OWNER_ID: await cb.answer("Owner only!", show_alert=True); return
+        await cb.message.edit_text(
+            "📤 **ADD VIDEO**\n\n"
+            "Reply to a **video** with:\n"
+            "`/addvideo`\n\n"
+            "✨ The video will be added to welcome animation!\n"
+            "🔄 Each time a new random video will be shown.",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "v_del":
+        if uid != OWNER_ID: await cb.answer("Owner only!", show_alert=True); return
+        vids = get_vids()
+        if not vids:
+            await cb.answer("No videos to delete!", show_alert=True)
+            return
+        await cb.message.edit_text(
+            "🗑️ **DELETE VIDEO**\n\n"
+            "Use: `/delvideo ID`\n\n"
+            "Get ID from `/videos` command.",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "v_list":
+        if uid != OWNER_ID: await cb.answer("Owner only!", show_alert=True); return
+        vids = get_vids()
+        if not vids:
+            await cb.answer("No videos added yet!", show_alert=True)
+            return
+        text = "📋 **VIDEO LIST**\n\n"
+        for v in vids[:15]:
+            text += f"#{v['id']} {v['name'][:30]}\n"
+        text += f"\n🔹 **Total:** {len(vids)}"
+        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        return
+    
+    if data == "v_clear":
+        if uid != OWNER_ID: await cb.answer("Owner only!", show_alert=True); return
+        n = clear_vids()
+        await cb.answer(f"🗑️ {n} videos cleared!", show_alert=True)
+        await cb.message.edit_text(
+            f"🗑️ **{n} VIDEOS CLEARED!**\n\n"
+            f"🔹 **Total Videos:** 0",
+            reply_markup=video_kb()
+        )
+        return
+    
+    if data == "v_help":
+        await cb.message.edit_text(
+            f"ℹ️ **VIDEO HELP**\n\n"
+            f"{LINE}\n"
+            "📤 Add: Reply + /addvideo\n"
+            "📋 List: /videos\n"
+            "🗑️ Delete: /delvideo ID\n"
+            "🧹 Clear: /clearvideos\n"
+            f"{LINE}",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
     if data == "stop_attack":
         global attacking
         if attacking and (uid == attack_user or uid == OWNER_ID):
@@ -1645,26 +1478,6 @@ async def callbacks(client, cb: CallbackQuery):
             )
         return
     
-    if data == "video_menu":
-        if uid != OWNER_ID: await cb.answer("Owner only!"); return
-        await cb.message.edit_text(f"🎬 **VIDEO MANAGER**\n\n{LINE}\n📹 Total: {len(get_vids())}\n{LINE}\n🔽 Select:", reply_markup=video_kb())
-        return
-    
-    if data == "v_add": await cb.message.edit_text("📤 Reply to a video with /addvideo", reply_markup=back_admin_kb()); return
-    if data == "v_del": await cb.message.edit_text("🗑️ Use: /delvideo ID\n📋 /videos to see IDs", reply_markup=back_admin_kb()); return
-    if data == "v_clear": n = clear_vids(); await cb.message.edit_text(f"🗑️ {n} videos cleared!", reply_markup=back_admin_kb()); return
-    
-    if data == "v_list":
-        vids = get_vids()
-        if not vids: await cb.message.edit_text("📹 No videos!", reply_markup=back_admin_kb())
-        else:
-            text = f"📹 **Videos ({len(vids)}):**\n\n"
-            for v in vids[:15]: text += f"#{v['id']} {v['name'][:30]}\n"
-            await cb.message.edit_text(text, reply_markup=back_admin_kb())
-        return
-    
-    if data == "v_help": await cb.message.edit_text(f"ℹ️ **VIDEO HELP**\n\n{LINE}\n📤 Add: Reply + /addvideo\n📋 List: /videos\n🗑️ Delete: /delvideo ID\n🧹 Clear: /clearvideos\n{LINE}", reply_markup=back_admin_kb()); return
-    
     if data == "admin_menu":
         if uid != OWNER_ID: await cb.answer("Owner only!"); return
         await cb.message.edit_text("👑 **ADMIN PANEL**\n\n🔽 Select:", reply_markup=admin_kb())
@@ -1728,8 +1541,7 @@ for f, d in [
     (BLOCKED_DB, []), 
     (HISTORY_DB, {}), 
     (STICKER_DB, {"stickers": []}),
-    (EMOJI_DB, {"emojis": []}),
-    (NORMAL_EMOJI_DB, {"emojis": []})
+    (EMOJI_DB, {"emojis": []})
 ]:
     if not os.path.exists(f): jsave(f, d)
 
@@ -1740,9 +1552,8 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  RANDOM EMOJI + STICKER             ║
-║  REACTION ON ALL MESSAGES           ║
-║  USER PROFILE PHOTO (FILE ID)       ║
+║  RANDOM EMOJI + STICKER + VIDEO     ║
+║  BOLD STYLISH TEXT                  ║
 ║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
