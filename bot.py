@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 )
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
@@ -493,7 +493,7 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React to /start message
+        # Step 1: React to /start message with random emoji
         try:
             reaction_emoji = get_random_normal_emoji()
             await client.send_reaction(chat_id, msg.id, reaction_emoji)
@@ -505,7 +505,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 2: Send random emoji
+        # Step 2: Send random emoji (welcome animation)
         emoji_id = get_random_emoji()
         if emoji_id:
             try:
@@ -517,14 +517,14 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 3: Welcome Baby with user name and profile link
+        # Step 3: Welcome Baby message
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
             f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
         )
         
-        # Change emojis in same message (0.3 sec interval)
+        # Change emojis (0.3 sec interval)
         for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
@@ -541,22 +541,16 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 4: Welcome message convert to starting text
+        # Step 4: Starting animation (character by character)
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
-        
-        # Step 5: Starting animation with character by character typing effect
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
-        current_text = ""
         emoji_idx = 0
         emoji = starting_emojis[emoji_idx % len(starting_emojis)]
         
-        # Start with emoji first
         await welcome_msg.edit_text(f"{emoji}")
         await asyncio.sleep(0.1)
         
-        # Add each character one by one with emoji change
         for i, char in enumerate(chars_to_add):
-            current_text = f"{emoji} " + "".join(chars_to_add[:i+1])
             await asyncio.sleep(0.08)
             try:
                 if i % 2 == 0:
@@ -564,13 +558,13 @@ async def welcome_animation(client, msg):
                     emoji = starting_emojis[emoji_idx % len(starting_emojis)]
                     await welcome_msg.edit_text(f"{emoji} " + "".join(chars_to_add[:i+1]))
                 else:
-                    await welcome_msg.edit_text(current_text)
+                    await welcome_msg.edit_text(f"{emoji} " + "".join(chars_to_add[:i+1]))
             except:
                 pass
         
         await asyncio.sleep(0.3)
         
-        # Step 6: DELETE STARTING MESSAGE
+        # Step 5: DELETE STARTING MESSAGE
         try:
             await welcome_msg.delete()
         except:
@@ -578,16 +572,18 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 7: GET USER PROFILE PHOTO
-        user_photo = None
+        # Step 6: GET USER PROFILE PHOTO (Download karein)
+        user_photo_path = None
         try:
             photos = await client.get_chat_photos(user_id, limit=1)
             if photos and photos.total_count > 0:
-                user_photo = photos[0].file_id
+                photo = photos[0]
+                # Download photo
+                user_photo_path = await client.download_media(photo.file_id, file_name=f"{user_id}_profile.jpg")
         except:
             pass
         
-        # Step 8: SEND STICKER
+        # Step 7: SEND STICKER
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -596,10 +592,10 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 9: WAIT 3 SECONDS
+        # Step 8: WAIT 3 SECONDS
         await asyncio.sleep(3)
         
-        # Step 10: FINAL WELCOME MESSAGE WITH PHOTO
+        # Step 9: FINAL WELCOME MESSAGE WITH PHOTO AS FILE
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -626,18 +622,23 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Send with profile photo if available
-        if user_photo:
+        # Send profile photo as file with caption
+        if user_photo_path and os.path.exists(user_photo_path):
             final_msg = await client.send_photo(
                 chat_id,
-                user_photo,
+                user_photo_path,
                 caption=final_text,
                 reply_markup=kb
             )
+            # Delete downloaded photo
+            try:
+                os.remove(user_photo_path)
+            except:
+                pass
         else:
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
-        # Step 11: DELETE STICKER
+        # Step 10: DELETE STICKER
         if sticker_msg:
             await asyncio.sleep(0.5)
             try:
@@ -720,6 +721,23 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
+
+# ═══════════════ REACTION ON EVERY MESSAGE ═══════════════
+@app.on_message(filters.text & filters.private)
+async def react_to_all(client, msg):
+    """React to every message with random emoji"""
+    try:
+        # Don't react to commands
+        if msg.text and msg.text.startswith('/'):
+            return
+        
+        reaction_emoji = get_random_normal_emoji()
+        await client.send_reaction(msg.chat.id, msg.id, reaction_emoji)
+    except:
+        try:
+            await msg.react(reaction_emoji)
+        except:
+            pass
 
 # ═══════════════ NORMAL EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addnormalemoji"))
@@ -1734,8 +1752,8 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER             ║
-║  REACTION EMOJI SUPPORT             ║
-║  USER PROFILE PHOTO                 ║
+║  REACTION ON ALL MESSAGES           ║
+║  USER PROFILE PHOTO DOWNLOAD        ║
 ║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
