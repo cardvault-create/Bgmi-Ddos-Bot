@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 📢 AUTO-POST BOT - FINAL FIXED
-Forward Message Waisa Hi Post Hoga, Sirf "Forwarded From" Tag Hatega
+Forward Message (Text/Media/Sticker) Sab Catch Karega
 """
 
 import asyncio, json, os, re
@@ -88,28 +88,6 @@ async def check_admin(client, chat_id):
             return False, f"⚠️ Error: {error[:100]}"
 
 # ═══════════════ COPY MESSAGE - EXACTLY WAISA HI ═══════════════
-async def copy_message_exact(client, from_chat, msg_id, to_chat):
-    """
-    Message ko copy karega EXACTLY waisa hi, bina "Forwarded From" tag ke
-    Premium emoji, formatting, sab same rahega
-    """
-    try:
-        # Raw API call - copy message without forward tag
-        result = await client.invoke(
-            functions.messages.CopyMessages(
-                from_peer=await client.resolve_peer(from_chat),
-                id=[msg_id],
-                to_peer=await client.resolve_peer(to_chat),
-                silent=False,
-                send_as=None,
-                schedule_date=None
-            )
-        )
-        return True
-    except Exception as e:
-        print(f"Copy error: {e}")
-        return False
-
 async def copy_to_channels(client, msg, channels):
     """Message ko channels mein copy karega EXACTLY waisa hi"""
     sent_count = 0
@@ -283,81 +261,51 @@ async def list_channels_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ AUTO-POST - EXACT COPY ═══════════════
-@app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_text(client, msg):
+# ═══════════════ AUTO-POST - ALL MESSAGES (TEXT + MEDIA + FORWARD) ═══════════════
+# Yeh HAR TYPE ke message ko catch karega (text, photo, video, sticker, forward, sab)
+
+@app.on_message(filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
+async def auto_post_all(client, msg):
+    """Har type ke message ko catch karega aur channels mein copy karega"""
     channels = get_all_channels()
+    
     if not channels:
-        await msg.reply_text("⚠️ No channels added!")
+        await msg.reply_text("⚠️ No channels added! Use `/addchannel CHANNEL_ID` first.")
+        return
+    
+    # Check if message has any content
+    if not msg.text and not msg.photo and not msg.video and not msg.sticker and not msg.document and not msg.animation and not msg.voice and not msg.audio:
+        await msg.reply_text("⚠️ Unsupported message type!")
         return
     
     sent_count = await copy_to_channels(client, msg, channels)
     
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_photo(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Photo posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_video(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Video posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_sticker(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Sticker posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_document(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Document posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.animation & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_animation(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Animation posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.voice & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_voice(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Voice posted to {sent_count} channel(s)!**")
-
-@app.on_message(filters.audio & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
-async def auto_post_audio(client, msg):
-    channels = get_all_channels()
-    if not channels:
-        return
-    sent_count = await copy_to_channels(client, msg, channels)
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Audio posted to {sent_count} channel(s)!**")
+        # Detect message type for reply
+        if msg.forward_from or msg.forward_from_chat:
+            msg_type = "Forwarded message"
+        elif msg.text:
+            msg_type = "Text"
+        elif msg.photo:
+            msg_type = "Photo"
+        elif msg.video:
+            msg_type = "Video"
+        elif msg.sticker:
+            msg_type = "Sticker"
+        elif msg.document:
+            msg_type = "Document"
+        elif msg.animation:
+            msg_type = "Animation"
+        elif msg.voice:
+            msg_type = "Voice"
+        elif msg.audio:
+            msg_type = "Audio"
+        else:
+            msg_type = "Message"
+        
+        await msg.reply_text(f"✅ **{msg_type} posted to {sent_count} channel(s)!**")
+    else:
+        await msg.reply_text("❌ Failed to post to any channel!")
 
 # ═══════════════ GET ID ═══════════════
 @app.on_message(filters.command("getid"))
@@ -376,10 +324,10 @@ if not os.path.exists(CHANNEL_DB):
 
 print("""
 ╔══════════════════════════════════════╗
-║  📢 AUTO-POST BOT - FINAL           ║
-║  Copy Message Without Forward Tag   ║
-║  Premium Emoji + Text + Media      ║
-║  Sab Exactly Waisa Hi Rahega       ║
+║  📢 AUTO-POST BOT - FINAL FIXED     ║
+║  Sab Type Ke Messages Catch Karega  ║
+║  Text + Media + Forward + Sticker   ║
+║  Sab Exactly Waisa Hi Post Hoga     ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
