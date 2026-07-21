@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-📢 AUTO-POST BOT - FINAL FIXED
-Grouped Media/Album Forward Bhi Kaam Karega
-Photo + Text + Premium Emoji Sab Post Hoga
+📢 AUTO-POST BOT - FLOOD WAIT FIXED
+Flood Wait Aane Par Auto-Retry With Delay
 """
 
-import asyncio, json, os, re
+import asyncio, json, os, re, time
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.raw import functions, types
+from pyrogram.errors import FloodWait
 
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
@@ -88,37 +88,55 @@ async def check_admin(client, chat_id):
         else:
             return False, f"⚠️ Error: {error[:100]}"
 
-# ═══════════════ SEND MESSAGE - PHOTO + TEXT + EMOJI SAB ═══════════════
+# ═══════════════ SEND MESSAGE WITH FLOOD WAIT HANDLER ═══════════════
+async def send_with_retry(client, send_func, *args, **kwargs):
+    """FloodWait aane par auto-retry with delay"""
+    try:
+        return await send_func(*args, **kwargs)
+    except FloodWait as e:
+        wait_time = e.value if hasattr(e, 'value') else 60
+        print(f"⚠️ FloodWait: Waiting {wait_time} seconds...")
+        await asyncio.sleep(wait_time + 5)
+        return await send_func(*args, **kwargs)
+
 async def send_to_channel(client, msg, channel_id):
-    """Message ko channel mein send karega - Photo + Text + Premium Emoji sab"""
+    """Message ko channel mein send karega - FloodWait handle karega"""
     try:
         # Agar message forward hai toh original content copy karo
         if msg.forward_from or msg.forward_from_chat:
             # Pehle text copy karo agar hai
             if msg.text:
-                await client.send_message(channel_id, msg.text)
+                await send_with_retry(client, client.send_message, channel_id, msg.text)
+                await asyncio.sleep(0.5)
             
             # Phir media copy karo agar hai
             if msg.photo:
-                await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_photo, channel_id, msg.photo.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             elif msg.video:
-                await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_video, channel_id, msg.video.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             elif msg.sticker:
-                await client.send_sticker(channel_id, msg.sticker.file_id)
+                await send_with_retry(client, client.send_sticker, channel_id, msg.sticker.file_id)
+                await asyncio.sleep(0.5)
             elif msg.document:
-                await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_document, channel_id, msg.document.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             elif msg.animation:
-                await client.send_animation(channel_id, msg.animation.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_animation, channel_id, msg.animation.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             elif msg.voice:
-                await client.send_voice(channel_id, msg.voice.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_voice, channel_id, msg.voice.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             elif msg.audio:
-                await client.send_audio(channel_id, msg.audio.file_id, caption=msg.caption)
+                await send_with_retry(client, client.send_audio, channel_id, msg.audio.file_id, caption=msg.caption)
+                await asyncio.sleep(0.5)
             
             return True
         else:
             # Normal message - copy using raw API
             try:
-                await client.invoke(
+                await send_with_retry(client, client.invoke,
                     functions.messages.CopyMessages(
                         from_peer=await client.resolve_peer(msg.chat.id),
                         id=[msg.id],
@@ -126,38 +144,53 @@ async def send_to_channel(client, msg, channel_id):
                         silent=False
                     )
                 )
+                await asyncio.sleep(0.5)
                 return True
             except:
                 # Fallback: send manually
                 if msg.text:
-                    await client.send_message(channel_id, msg.text)
+                    await send_with_retry(client, client.send_message, channel_id, msg.text)
+                    await asyncio.sleep(0.5)
                 if msg.photo:
-                    await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_photo, channel_id, msg.photo.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 elif msg.video:
-                    await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_video, channel_id, msg.video.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 elif msg.sticker:
-                    await client.send_sticker(channel_id, msg.sticker.file_id)
+                    await send_with_retry(client, client.send_sticker, channel_id, msg.sticker.file_id)
+                    await asyncio.sleep(0.5)
                 elif msg.document:
-                    await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_document, channel_id, msg.document.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 elif msg.animation:
-                    await client.send_animation(channel_id, msg.animation.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_animation, channel_id, msg.animation.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 elif msg.voice:
-                    await client.send_voice(channel_id, msg.voice.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_voice, channel_id, msg.voice.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 elif msg.audio:
-                    await client.send_audio(channel_id, msg.audio.file_id, caption=msg.caption)
+                    await send_with_retry(client, client.send_audio, channel_id, msg.audio.file_id, caption=msg.caption)
+                    await asyncio.sleep(0.5)
                 return True
+    except FloodWait as e:
+        wait_time = e.value if hasattr(e, 'value') else 60
+        print(f"⚠️ FloodWait: Waiting {wait_time} seconds...")
+        await asyncio.sleep(wait_time + 5)
+        return await send_to_channel(client, msg, channel_id)
     except Exception as e:
         print(f"Error sending to {channel_id}: {e}")
         return False
 
 async def send_to_channels(client, msg, channels):
-    """Message ko sab channels mein send karega"""
+    """Message ko sab channels mein send karega - FloodWait handle karega"""
     sent_count = 0
     
     for channel in channels:
         channel_id = channel.get("id")
         if await send_to_channel(client, msg, channel_id):
             sent_count += 1
+        await asyncio.sleep(0.5)  # Har channel ke baad 0.5 sec delay
     
     return sent_count
 
@@ -194,7 +227,7 @@ async def help_cmd(client, msg):
         "**Features:**\n"
         "✅ Photo + Text + Premium Emoji sab saath mein post hoga\n"
         "✅ Forward message bina 'Forwarded From' tag ke\n"
-        "✅ Sab exactly waisa hi post hoga"
+        "✅ FloodWait handle karega - auto retry"
     )
 
 @app.on_message(filters.command("check"))
@@ -365,19 +398,36 @@ async def get_id_cmd(client, msg):
         f"📂 **Type:** {chat.type}"
     )
 
-# ═══════════════ RUN ═══════════════
-if not os.path.exists(CHANNEL_DB):
-    jsave(CHANNEL_DB, {"channels": []})
-
-print("""
+# ═══════════════ RUN WITH FLOOD WAIT HANDLER ═══════════════
+async def main():
+    """Bot start with flood wait handling"""
+    try:
+        print("""
 ╔══════════════════════════════════════╗
-║  📢 AUTO-POST BOT - FINAL FIXED     ║
+║  📢 AUTO-POST BOT - FLOOD WAIT FIX  ║
 ║  Photo + Text + Premium Emoji       ║
 ║  Sab Saath Mein Post Hoga           ║
-║  Forward Message Bina Tag Ke        ║
+║  FloodWait Handle Karega            ║
 ╚══════════════════════════════════════╝
-✅ Bot Ready!
-""")
+        """)
+        await app.start()
+        print("✅ Bot Started Successfully!")
+        await asyncio.Event().wait()
+    except FloodWait as e:
+        wait_time = e.value if hasattr(e, 'value') else 60
+        print(f"⚠️ FloodWait: Waiting {wait_time} seconds before retry...")
+        await asyncio.sleep(wait_time + 5)
+        await main()
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        await asyncio.sleep(10)
+        await main()
 
 if __name__ == "__main__":
-    app.run()
+    try:
+        app.run()
+    except FloodWait as e:
+        wait_time = e.value if hasattr(e, 'value') else 60
+        print(f"⚠️ FloodWait: Waiting {wait_time} seconds...")
+        time.sleep(wait_time + 5)
+        app.run()
