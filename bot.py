@@ -19,11 +19,12 @@ logger = logging.getLogger(__name__)
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
-BOT_TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
+BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "FathersOfCreater"
 OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
+BOT_LINK = f"https://t.me/{BOT_USERNAME}"
 
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
@@ -38,7 +39,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
-PREMIUM_TIME = 600
+PREMIUM_TIME = 240  # 4 minutes
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -347,67 +348,48 @@ async def welcome_animation(client, msg):
             await msg.react("💞")
         except:
             pass
-        await asyncio.sleep(0.8)
-        
-        # Step 2: Send first message - 💞 emoji
-        msg1 = await client.send_message(chat_id, "💞")
-        
-        # Step 3: Send second message - Welcome Baby with user name and changing emojis
-        emoji_list = ["💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "💖"]
-        
-        # Send initial welcome
-        welcome_msg = await client.send_message(
-            chat_id, 
-            f"💖 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ {first_name}.."
-        )
-        
-        # Update the same message with changing emojis
-        for emoji in emoji_list[:6]:
-            await asyncio.sleep(0.4)
-            try:
-                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ {first_name}..")
-            except:
-                pass
-        
         await asyncio.sleep(0.5)
         
-        # Delete both messages
+        # Step 2: Send Welcome message with user name as clickable link
+        welcome_msg = await client.send_message(
+            chat_id, 
+            f"✨ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
+        )
+        await asyncio.sleep(1.5)
+        
+        # Step 3: Delete welcome message
         try:
-            await msg1.delete()
             await welcome_msg.delete()
         except:
             pass
-        
         await asyncio.sleep(0.3)
         
-        # Step 4: ⚡ѕтαятιиg..... with typing effect in same message
-        starting_emojis = ["⚡", "💫", "✨", "⚡", "💥"]
-        starting_msg = await client.send_message(chat_id, "⚡ ѕтαятιиg.....")
+        # Step 4: Send starting message with character by character typing effect
+        starting_msg = await client.send_message(chat_id, "s")
+        await asyncio.sleep(0.1)
         
-        # Change emojis in same message
-        for emoji in starting_emojis[:5]:
-            await asyncio.sleep(0.35)
+        # Build text character by character
+        full_text = "⚡ ѕтαятιиg....."
+        chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
+        current_text = "s"
+        
+        # Add each character with emoji change
+        for i, char in enumerate(chars_to_add):
+            current_text += char
+            await asyncio.sleep(0.08)
+            try:
+                await starting_msg.edit_text(current_text)
+            except:
+                pass
+        
+        # Now change emojis in the same message
+        emoji_list = ["⚡", "💫", "✨", "⚡", "💥", "⚡", "💫", "✨"]
+        for emoji in emoji_list[:5]:
+            await asyncio.sleep(0.25)
             try:
                 await starting_msg.edit_text(f"{emoji} ѕтαятιиg.....")
             except:
                 pass
-        
-        # Character by character typing effect in same message
-        typing_text = "⚡ ѕтαятιиg....."
-        for i in range(1, len(typing_text) + 1):
-            partial = typing_text[:i]
-            await asyncio.sleep(0.06)
-            try:
-                await starting_msg.edit_text(partial)
-            except:
-                pass
-        
-        # Final starting message with full text
-        await asyncio.sleep(0.3)
-        try:
-            await starting_msg.edit_text("⚡ ѕтαятιиg.....")
-        except:
-            pass
         
         await asyncio.sleep(0.5)
         
@@ -416,15 +398,18 @@ async def welcome_animation(client, msg):
             await starting_msg.delete()
         except:
             pass
-        
         await asyncio.sleep(0.3)
         
-        # Step 5: Send sticker if available
+        # Step 5: Send sticker if available (auto delete after 4 seconds)
         sticker_data = get_sticker()
         if sticker_data and sticker_data.get("sticker_id"):
             try:
-                await client.send_sticker(chat_id, sticker_data["sticker_id"])
-                await asyncio.sleep(1.5)
+                sticker_msg = await client.send_sticker(chat_id, sticker_data["sticker_id"])
+                await asyncio.sleep(4)
+                try:
+                    await sticker_msg.delete()
+                except:
+                    pass
             except:
                 pass
         
@@ -432,8 +417,8 @@ async def welcome_animation(client, msg):
         
         # Step 6: Final welcome message
         final_text = f"""
-ʜᴇʏ, ⌬ {first_name} 
-ɪ'ᴍ ˹𝐁𝐆𝐌𝐈 ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
+ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
+ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
 
 ┏━━━━━━━━━━━━━━━━━⧫
 ┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
@@ -443,7 +428,7 @@ async def welcome_animation(client, msg):
 ┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
 ┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
 ┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
-┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 10 ᴍɪɴᴜᴛᴇꜱ.
+┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 4 ᴍɪɴᴜᴛᴇꜱ.
 ┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
 ┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
 ┗━━━━━━━━━━━━━━━━━⧫
@@ -452,12 +437,13 @@ async def welcome_animation(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK}) ✔︎
 """
         
-        # Final message with user profile and all buttons
+        # Final message with all buttons
         final_msg = await client.send_message(
             chat_id,
             final_text,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(f"👤 {first_name}'s Profile", url=f"tg://user?id={user_id}")],
+                [InlineKeyboardButton("🤖 Bot", url=BOT_LINK)],
                 [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
                  InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
                 [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu"),
@@ -543,8 +529,6 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
-    # Check if user is accessing via back button (check last message)
-    # Always show animation on fresh /start
     await welcome_animation(client, msg)
 
 # ═══════════════ REDEEM ═══════════════
@@ -737,7 +721,7 @@ async def add_sticker_cmd(client, msg):
         try:
             sticker_id = msg.reply_to_message.sticker.file_id
             set_sticker(sticker_id)
-            await msg.reply_text("✅ 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔!\n\nThis sticker will appear in welcome animation.")
+            await msg.reply_text("✅ 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔!\n\nThis sticker will appear in welcome animation for 4 seconds.")
         except Exception as e:
             await msg.reply_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
     else:
@@ -800,9 +784,8 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # BACK BUTTON - Just go back, no animation
+    # BACK BUTTON - Just go back to previous menu
     if data == "back":
-        # Get user info and show normal menu without animation
         user = cb.from_user
         uid = user.id
         access, a_type = check_access(uid)
@@ -977,7 +960,7 @@ async def callbacks(client, cb: CallbackQuery):
     
     if data == "admin_addsticker":
         if uid != OWNER_ID: return
-        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation!", show_alert=True)
+        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation for 4 seconds!", show_alert=True)
         return
     
     auto_keys = {
