@@ -31,6 +31,7 @@ USERS_DB = "users.json"
 KEYS_DB = "keys.json"
 BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
+STICKER_DB = "sticker.json"
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -102,6 +103,12 @@ def get_remaining(expiry_str):
         elif hours > 0: return f"{hours}H {minutes}M", False
         else: return f"{minutes}M", False
     except: return "ERROR", False
+
+# ═══════════════ STICKER FUNCTIONS ═══════════════
+def get_sticker(): return jload(STICKER_DB, {"sticker_id": None})
+def set_sticker(sticker_id):
+    jsave(STICKER_DB, {"sticker_id": sticker_id})
+    return True
 
 # ═══════════════ VIDEO FUNCTIONS ═══════════════
 def get_vids(): return jload(VIDEO_DB, [])
@@ -315,6 +322,7 @@ def admin_kb():
         [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
         [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
         [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
+        [InlineKeyboardButton("🎯 ADD STICKER", callback_data="admin_addsticker")],
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🔙 BACK", callback_data="back")],
     ])
@@ -326,8 +334,6 @@ def back_admin_kb():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
 
 # ═══════════════ WELCOME ANIMATION ═══════════════
-WELCOME_EMOJIS = ["💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "🔥", "💜", "🩵"]
-
 async def welcome_animation(client, msg):
     """Premium welcome animation with auto-delete messages"""
     try:
@@ -336,89 +342,95 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: Reaction
+        # Step 1: React to /start message
         try:
-            await msg.react("💖")
+            await msg.react("💞")
         except:
             pass
         await asyncio.sleep(0.8)
         
-        # Step 2: Welcome Text with user name and profile button
+        # Step 2: Send first message - 💞 emoji
+        msg1 = await client.send_message(chat_id, "💞")
+        
+        # Step 3: Send second message - Welcome Baby with user name and changing emojis
         emoji_list = ["💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "💖"]
-        for i, emoji in enumerate(emoji_list[:6]):
-            text = f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ {first_name}.."
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"👤 {first_name}'s Profile", url=f"tg://user?id={user_id}")]
-            ])
-            sent = await client.send_message(chat_id, text, reply_markup=kb)
+        
+        # Send initial welcome
+        welcome_msg = await client.send_message(
+            chat_id, 
+            f"💖 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ {first_name}.."
+        )
+        
+        # Update the same message with changing emojis
+        for emoji in emoji_list[:6]:
             await asyncio.sleep(0.4)
             try:
-                await sent.delete()
+                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ {first_name}..")
             except:
                 pass
+        
         await asyncio.sleep(0.5)
         
-        # Step 3: ⚡ѕтαятιиg..... with typing effect
+        # Delete both messages
+        try:
+            await msg1.delete()
+            await welcome_msg.delete()
+        except:
+            pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 4: ⚡ѕтαятιиg..... with typing effect in same message
         starting_emojis = ["⚡", "💫", "✨", "⚡", "💥"]
-        for i, emoji in enumerate(starting_emojis[:5]):
-            text = f"{emoji} ѕтαятιиg....."
-            sent = await client.send_message(chat_id, text)
+        starting_msg = await client.send_message(chat_id, "⚡ ѕтαятιиg.....")
+        
+        # Change emojis in same message
+        for emoji in starting_emojis[:5]:
             await asyncio.sleep(0.35)
             try:
-                await sent.delete()
+                await starting_msg.edit_text(f"{emoji} ѕтαятιиg.....")
             except:
                 pass
         
+        # Character by character typing effect in same message
         typing_text = "⚡ ѕтαятιиg....."
         for i in range(1, len(typing_text) + 1):
             partial = typing_text[:i]
-            sent = await client.send_message(chat_id, partial)
-            await asyncio.sleep(0.08)
+            await asyncio.sleep(0.06)
             try:
-                await sent.delete()
+                await starting_msg.edit_text(partial)
             except:
                 pass
-        await asyncio.sleep(0.5)
         
-        # Step 4: Solo motion words with typing effect
-        motion_words = ["𝐁𝐎𝐎𝐓𝐈𝐍𝐆", "𝐋𝐎𝐀𝐃𝐈𝐍𝐆", "𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐈𝐍𝐆", "𝐏𝐑𝐄𝐏𝐀𝐑𝐈𝐍𝐆", "𝐑𝐄𝐀𝐃𝐘"]
-        motion_emojis = ["💫", "✨", "⚡", "🔥", "💎"]
-        
-        for idx, word in enumerate(motion_words):
-            emoji = motion_emojis[idx % len(motion_emojis)]
-            full_text = f"{emoji} {word}"
-            for i in range(1, len(full_text) + 1):
-                partial = full_text[:i]
-                sent = await client.send_message(chat_id, partial)
-                await asyncio.sleep(0.06)
-                try:
-                    await sent.delete()
-                except:
-                    pass
-            sent = await client.send_message(chat_id, f"{emoji} {word} {emoji}")
-            await asyncio.sleep(0.3)
-            try:
-                await sent.delete()
-            except:
-                pass
-        await asyncio.sleep(0.5)
-        
-        # Step 5: Sticker with owner button
-        sticker_msg = await client.send_message(
-            chat_id,
-            "🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧\n\n✨ ᴄʟɪᴄᴋ ʙᴇʟᴏᴡ ᴛᴏ ᴄᴏɴᴛᴀᴄᴛ ᴏᴡɴᴇʀ ✨",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("👑 𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓", url=OWNER_LINK)]
-            ])
-        )
-        await asyncio.sleep(2.5)
+        # Final starting message with full text
+        await asyncio.sleep(0.3)
         try:
-            await sticker_msg.delete()
+            await starting_msg.edit_text("⚡ ѕтαятιиg.....")
         except:
             pass
+        
         await asyncio.sleep(0.5)
         
-        # Step 6: Final welcome message - BGMI ATTACK BOT THEMED with original style
+        # Delete starting message
+        try:
+            await starting_msg.delete()
+        except:
+            pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 5: Send sticker if available
+        sticker_data = get_sticker()
+        if sticker_data and sticker_data.get("sticker_id"):
+            try:
+                await client.send_sticker(chat_id, sticker_data["sticker_id"])
+                await asyncio.sleep(1.5)
+            except:
+                pass
+        
+        await asyncio.sleep(0.5)
+        
+        # Step 6: Final welcome message
         final_text = f"""
 ʜᴇʏ, ⌬ {first_name} 
 ɪ'ᴍ ˹𝐁𝐆𝐌𝐈 ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
@@ -462,7 +474,7 @@ async def welcome_animation(client, msg):
         return await normal_start(client, msg)
 
 async def normal_start(client, msg):
-    """Fallback start message"""
+    """Normal start message without animation"""
     uid = msg.from_user.id
     user = msg.from_user
     access, a_type = check_access(uid)
@@ -531,6 +543,8 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
+    # Check if user is accessing via back button (check last message)
+    # Always show animation on fresh /start
     await welcome_animation(client, msg)
 
 # ═══════════════ REDEEM ═══════════════
@@ -715,6 +729,20 @@ async def gen_key_cmd(client, msg):
     else:
         await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
+# ═══════════════ ADD STICKER ═══════════════
+@app.on_message(filters.command("addsticker"))
+async def add_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    if msg.reply_to_message and msg.reply_to_message.sticker:
+        try:
+            sticker_id = msg.reply_to_message.sticker.file_id
+            set_sticker(sticker_id)
+            await msg.reply_text("✅ 𝙎𝙏𝙄𝘾𝙆𝙀𝙍 𝘼𝘿𝘿𝙀𝘿 𝙎𝙐𝘾𝘾𝙀𝙎𝙎𝙁𝙐𝙇𝙇𝙔!\n\nThis sticker will appear in welcome animation.")
+        except Exception as e:
+            await msg.reply_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
+    else:
+        await msg.reply_text("❌ 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙨𝙩𝙞𝙘𝙠𝙚𝙧!\n\n📋 /addsticker (reply to sticker)")
+
 # ═══════════════ COMMANDS MENU ═══════════════
 @app.on_message(filters.command("commands"))
 async def commands_cmd(client, msg):
@@ -772,13 +800,67 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    await cb.answer()
-    
+    # BACK BUTTON - Just go back, no animation
     if data == "back":
-        await start_cmd(client, cb.message)
-        try: await cb.message.delete()
-        except: pass
+        # Get user info and show normal menu without animation
+        user = cb.from_user
+        uid = user.id
+        access, a_type = check_access(uid)
+        
+        if not access:
+            vid = rand_vid()
+            text = (
+                "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
+                "━━━━━━━━━━━━━━━━━━━\n"
+                f"💌 {user.first_name}\n"
+                f"🍄 {uid}\n"
+                "━━━━━━━━━━━━━━━━━━━\n\n"
+                "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
+                "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
+                "🍰 /redeem 𝙆𝙚𝙔\n"
+                f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
+            )
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
+                [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
+                [InlineKeyboardButton(f"👤 {user.first_name}'s Profile", url=f"tg://user?id={uid}")],
+            ])
+            await cb.message.edit_text(text, reply_markup=kb)
+            return
+        
+        info = get_user_info(uid)
+        vid = rand_vid()
+        kb = owner_kb() if uid == OWNER_ID else user_kb()
+        
+        expiry_text = ""
+        if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
+        if info.get("expiry"):
+            try:
+                exp = datetime.fromisoformat(info["expiry"])
+                expiry_text += f"\n📅 Expires: {exp.strftime('%d %b %Y, %I:%M %p')}"
+            except: pass
+        
+        text = (
+            "💀 𝐁𝐆𝐌𝐈 𝐀𝐓𝐓𝐀𝐂𝐊 𝐁𝐎𝐓 💀\n\n"
+            f"{LINE}\n"
+            f"👤 {user.first_name}\n"
+            f"🆔 {uid}\n"
+            f"💳 {a_type}{expiry_text}\n"
+            f"{LINE}\n"
+            f"⚡ {info['threads']} Threads\n"
+            f"⏱️ {info['max_time']}s Max Time\n"
+            f"📹 {len(get_vids())} Videos\n"
+            f"{LINE}\n"
+            "⚔️ /attack IP PORT TIME\n"
+            "📋 /attack 1.2.3.4 8080 120\n"
+            "🎮 BGMI Ports: 7000-15000\n"
+            f"{LINE}\n"
+            "🔽 SELECT OPTION:"
+        )
+        await cb.message.edit_text(text, reply_markup=kb)
         return
+    
+    await cb.answer()
     
     if data == "back_admin":
         if uid != OWNER_ID: return
@@ -893,6 +975,11 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"🤖 𝘼𝙐𝙏𝙊 𝙂𝙀𝙉 𝙆𝙀𝙔\n\n{LINE}\n🔽 Select Duration:", reply_markup=auto_key_kb())
         return
     
+    if data == "admin_addsticker":
+        if uid != OWNER_ID: return
+        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation!", show_alert=True)
+        return
+    
     auto_keys = {
         "ak_20m": ("20min", "20m"), "ak_40m": ("40min", "40m"), "ak_60m": ("60min", "60m"),
         "ak_1d": ("1day", "1d"), "ak_3d": ("3day", "3d"), "ak_7d": ("7day", "7d"),
@@ -935,7 +1022,7 @@ async def auto_expire():
         remove_expired()
 
 # ═══════════════ INIT ═══════════════
-for f, d in [(VIDEO_DB, []), (USERS_DB, {"premium": [], "keys": {}}), (KEYS_DB, {}), (BLOCKED_DB, []), (HISTORY_DB, {})]:
+for f, d in [(VIDEO_DB, []), (USERS_DB, {"premium": [], "keys": {}}), (KEYS_DB, {}), (BLOCKED_DB, []), (HISTORY_DB, {}), (STICKER_DB, {"sticker_id": None})]:
     if not os.path.exists(f): jsave(f, d)
 
 os.makedirs("downloads", exist_ok=True)
@@ -945,7 +1032,7 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO 💀  ║
 ║  WELCOME ANIMATION | POPUP WORKING  ║
-║  STYLISH TEXT | DM LINK             ║
+║  STICKER SUPPORT | BACK FIXED       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
