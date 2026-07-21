@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT - FINAL
-Popup Working | Stylish Text | DM Link | All Features
+💎 PREMIUM BGMI ATTACK BOT - ULTRA PREMIUM
+Popup Working | Stylish Text | DM Link | All Features | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -19,10 +19,11 @@ logger = logging.getLogger(__name__)
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
-BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
+BOT_TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
 OWNER_ID = 1987818347
-OWNER_USERNAME = "BESTCHEAT_OWNER"
+OWNER_USERNAME = "FathersOfCreater"
 OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
+BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
 
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
@@ -259,6 +260,7 @@ def user_kb():
         [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
 
 def owner_kb():
@@ -271,6 +273,7 @@ def owner_kb():
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
+        [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
 
 def auto_key_kb():
@@ -322,20 +325,146 @@ def back_kb():
 def back_admin_kb():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
 
-# ═══════════════ SEND HELPERS ═══════════════
-async def send_vid(chat_id, text, kb=None, vid=None):
-    if vid is None: vid = rand_vid()
-    try:
-        if vid and os.path.exists(vid["path"]):
-            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
-        return await app.send_message(chat_id, text, reply_markup=kb)
-    except:
-        return await app.send_message(chat_id, text, reply_markup=kb)
+# ═══════════════ WELCOME ANIMATION ═══════════════
+WELCOME_EMOJIS = ["💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "🔥", "💜", "🩵"]
 
-# ═══════════════ START ═══════════════
-@app.on_message(filters.command("start"))
-async def start_cmd(client, msg):
-    uid = msg.from_user.id; user = msg.from_user
+async def welcome_animation(client, msg):
+    """Premium welcome animation with auto-delete messages"""
+    try:
+        user = msg.from_user
+        chat_id = msg.chat.id
+        first_name = user.first_name or "User"
+        user_id = user.id
+        
+        # Step 1: Reaction
+        try:
+            await msg.react("💖")
+        except:
+            pass
+        await asyncio.sleep(0.8)
+        
+        # Step 2: Welcome Text with user name and profile button
+        emoji_list = ["💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "💖"]
+        for i, emoji in enumerate(emoji_list[:6]):
+            text = f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ {first_name}.."
+            kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"👤 {first_name}'s Profile", url=f"tg://user?id={user_id}")]
+            ])
+            sent = await client.send_message(chat_id, text, reply_markup=kb)
+            await asyncio.sleep(0.4)
+            try:
+                await sent.delete()
+            except:
+                pass
+        await asyncio.sleep(0.5)
+        
+        # Step 3: ⚡ѕтαятιиg..... with typing effect
+        starting_emojis = ["⚡", "💫", "✨", "⚡", "💥"]
+        for i, emoji in enumerate(starting_emojis[:5]):
+            text = f"{emoji} ѕтαятιиg....."
+            sent = await client.send_message(chat_id, text)
+            await asyncio.sleep(0.35)
+            try:
+                await sent.delete()
+            except:
+                pass
+        
+        typing_text = "⚡ ѕтαятιиg....."
+        for i in range(1, len(typing_text) + 1):
+            partial = typing_text[:i]
+            sent = await client.send_message(chat_id, partial)
+            await asyncio.sleep(0.08)
+            try:
+                await sent.delete()
+            except:
+                pass
+        await asyncio.sleep(0.5)
+        
+        # Step 4: Solo motion words with typing effect
+        motion_words = ["𝐁𝐎𝐎𝐓𝐈𝐍𝐆", "𝐋𝐎𝐀𝐃𝐈𝐍𝐆", "𝐂𝐎𝐍𝐍𝐄𝐂𝐓𝐈𝐍𝐆", "𝐏𝐑𝐄𝐏𝐀𝐑𝐈𝐍𝐆", "𝐑𝐄𝐀𝐃𝐘"]
+        motion_emojis = ["💫", "✨", "⚡", "🔥", "💎"]
+        
+        for idx, word in enumerate(motion_words):
+            emoji = motion_emojis[idx % len(motion_emojis)]
+            full_text = f"{emoji} {word}"
+            for i in range(1, len(full_text) + 1):
+                partial = full_text[:i]
+                sent = await client.send_message(chat_id, partial)
+                await asyncio.sleep(0.06)
+                try:
+                    await sent.delete()
+                except:
+                    pass
+            sent = await client.send_message(chat_id, f"{emoji} {word} {emoji}")
+            await asyncio.sleep(0.3)
+            try:
+                await sent.delete()
+            except:
+                pass
+        await asyncio.sleep(0.5)
+        
+        # Step 5: Sticker with owner button
+        sticker_msg = await client.send_message(
+            chat_id,
+            "🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧\n\n✨ ᴄʟɪᴄᴋ ʙᴇʟᴏᴡ ᴛᴏ ᴄᴏɴᴛᴀᴄᴛ ᴏᴡɴᴇʀ ✨",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("👑 𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓", url=OWNER_LINK)]
+            ])
+        )
+        await asyncio.sleep(2.5)
+        try:
+            await sticker_msg.delete()
+        except:
+            pass
+        await asyncio.sleep(0.5)
+        
+        # Step 6: Final welcome message - BGMI ATTACK BOT THEMED with original style
+        final_text = f"""
+ʜᴇʏ, ⌬ {first_name} 
+ɪ'ᴍ ˹𝐁𝐆𝐌𝐈 ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
+
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
+┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
+┗━━━━━━━━━━━━━━━━━⧫
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
+┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 10 ᴍɪɴᴜᴛᴇꜱ.
+┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
+┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
+┗━━━━━━━━━━━━━━━━━⧫
+๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
+
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK}) ✔︎
+"""
+        
+        # Final message with user profile and all buttons
+        final_msg = await client.send_message(
+            chat_id,
+            final_text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(f"👤 {first_name}'s Profile", url=f"tg://user?id={user_id}")],
+                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
+                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
+                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu"),
+                 InlineKeyboardButton("📊 STATUS", callback_data="status_btn")],
+                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu"),
+                 InlineKeyboardButton("👑 𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓", url=OWNER_LINK)]
+            ])
+        )
+        
+        return final_msg
+        
+    except Exception as e:
+        logger.error(f"Welcome animation error: {e}")
+        return await normal_start(client, msg)
+
+async def normal_start(client, msg):
+    """Fallback start message"""
+    uid = msg.from_user.id
+    user = msg.from_user
     access, a_type = check_access(uid)
     
     if not access:
@@ -349,14 +478,14 @@ async def start_cmd(client, msg):
             "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
             "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
             "🍰 /redeem 𝙆𝙚𝙔\n"
-            f"🕸️ [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})"
+            f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
         )
         kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛒 𝘽𝙪𝙔-𝙆𝙚𝙔 🔑", url=OWNER_LINK)],
+            [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
             [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
+            [InlineKeyboardButton(f"👤 {user.first_name}'s Profile", url=f"tg://user?id={uid}")],
         ])
-        await send_vid(msg.chat.id, text, kb, vid)
-        return
+        return await send_vid(msg.chat.id, text, kb, vid)
     
     info = get_user_info(uid)
     vid = rand_vid()
@@ -371,7 +500,7 @@ async def start_cmd(client, msg):
         except: pass
     
     text = (
-        "💎 PREMIUM BGMI ATTACK BOT 💎\n\n"
+        "💀 𝐁𝐆𝐌𝐈 𝐀𝐓𝐓𝐀𝐂𝐊 𝐁𝐎𝐓 💀\n\n"
         f"{LINE}\n"
         f"👤 {user.first_name}\n"
         f"🆔 {uid}\n"
@@ -387,7 +516,22 @@ async def start_cmd(client, msg):
         f"{LINE}\n"
         "🔽 SELECT OPTION:"
     )
-    await send_vid(msg.chat.id, text, kb, vid)
+    return await send_vid(msg.chat.id, text, kb, vid)
+
+# ═══════════════ SEND HELPERS ═══════════════
+async def send_vid(chat_id, text, kb=None, vid=None):
+    if vid is None: vid = rand_vid()
+    try:
+        if vid and os.path.exists(vid["path"]):
+            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
+        return await app.send_message(chat_id, text, reply_markup=kb)
+    except:
+        return await app.send_message(chat_id, text, reply_markup=kb)
+
+# ═══════════════ START ═══════════════
+@app.on_message(filters.command("start") & filters.private)
+async def start_cmd(client, msg):
+    await welcome_animation(client, msg)
 
 # ═══════════════ REDEEM ═══════════════
 @app.on_message(filters.command("redeem"))
@@ -400,7 +544,7 @@ async def redeem_cmd(client, msg):
     
     parts = msg.text.split()
     if len(parts) != 2:
-        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})")
+        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
     
     key = parts[1].upper()
     success, result = redeem_key_code(key, uid)
@@ -410,7 +554,7 @@ async def redeem_cmd(client, msg):
         text = f"🎉 KEY REDEEMED!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
         await send_vid(msg.chat.id, text, None, vid)
     else:
-        await msg.reply_text(f"❌ {result}\n\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})")
+        await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
 
 # ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
@@ -571,18 +715,31 @@ async def gen_key_cmd(client, msg):
     else:
         await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
-# ═══════════════ CALLBACKS - POPUP FIXED ═══════════════
+# ═══════════════ COMMANDS MENU ═══════════════
+@app.on_message(filters.command("commands"))
+async def commands_cmd(client, msg):
+    await msg.reply_text(
+        "📝 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒 𝐌𝐄𝐍𝐔\n\n"
+        f"{LINE}\n"
+        "⚔️ /attack IP PORT TIME - Start Attack\n"
+        "⛔ /stop - Stop Attack\n"
+        "🔑 /redeem KEY - Redeem Key\n"
+        "📊 /status - Check Status\n"
+        f"{LINE}\n\n"
+        "🎮 𝐁𝐆𝐌𝐈 𝐏𝐎𝐑𝐓𝐒: 7000-15000\n"
+        f"👑 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
+    )
+
+# ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     
-    # SEPARATOR
     if data == "sep":
         await cb.answer()
         return
     
-    # REDEEM POPUP - SIMPLE + WORKING
     if data == "redeem_popup":
         await cb.answer(
             "🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡\n\n"
@@ -600,7 +757,21 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ALL OTHER CALLBACKS
+    if data == "commands_menu":
+        await cb.message.edit_text(
+            "📝 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒 𝐌𝐄𝐍𝐔\n\n"
+            f"{LINE}\n"
+            "⚔️ /attack IP PORT TIME - Start Attack\n"
+            "⛔ /stop - Stop Attack\n"
+            "🔑 /redeem KEY - Redeem Key\n"
+            "📊 /status - Check Status\n"
+            f"{LINE}\n\n"
+            "🎮 𝐁𝐆𝐌𝐈 𝐏𝐎𝐑𝐓𝐒: 7000-15000\n"
+            f"👑 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})",
+            reply_markup=back_kb()
+        )
+        return
+    
     await cb.answer()
     
     if data == "back":
@@ -679,7 +850,7 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.message.edit_text(f"✅ 𝘼𝘾𝘾𝙀𝙎𝙎 𝘼𝘾𝙏𝙄𝙑𝙀!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!", reply_markup=back_kb())
         else:
             await cb.message.edit_text(
-                f"🔑 𝙍𝙀𝘿𝙀𝙀𝙈 𝙆𝙀𝙔\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐁𝐄𝐒𝐓 𝘾𝙃𝙀𝘼𝙏 ᵒʷⁿᵉʳ]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
+                f"🔑 𝙍𝙀𝘿𝙀𝙀𝙈 𝙆𝙀𝙔\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
                     [InlineKeyboardButton("📲 𝘾𝙤𝙣𝙩𝙖𝙘𝙩-𝙁𝙖𝙏𝙝𝙀𝙧", url=OWNER_LINK)],
@@ -772,8 +943,9 @@ asyncio.get_event_loop().create_task(auto_expire())
 
 print("""
 ╔══════════════════════════════════════╗
-║  💎 PREMIUM BGMI ATTACK BOT 💎      ║
-║  POPUP WORKING | STYLISH TEXT       ║
+║  💀 BGMI ATTACK BOT - ULTRA PRO 💀  ║
+║  WELCOME ANIMATION | POPUP WORKING  ║
+║  STYLISH TEXT | DM LINK             ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
