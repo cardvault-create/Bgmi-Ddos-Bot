@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pytz
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 )
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
@@ -36,6 +36,7 @@ BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
+NORMAL_EMOJI_DB = "normal_emojis.json"  # Normal emoji reactions ke liye
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -109,6 +110,40 @@ def get_remaining(expiry_str):
         elif hours > 0: return f"{hours}H {minutes}M", False
         else: return f"{minutes}M", False
     except: return "ERROR", False
+
+# ═══════════════ NORMAL EMOJI FUNCTIONS ═══════════════
+def get_normal_emojis():
+    data = jload(NORMAL_EMOJI_DB, {"emojis": []})
+    return data
+
+def add_normal_emoji(emoji):
+    data = get_normal_emojis()
+    if emoji not in data["emojis"]:
+        data["emojis"].append(emoji)
+        jsave(NORMAL_EMOJI_DB, data)
+        return True, len(data["emojis"])
+    return False, len(data["emojis"])
+
+def remove_normal_emoji(index):
+    data = get_normal_emojis()
+    if 0 <= index < len(data["emojis"]):
+        removed = data["emojis"].pop(index)
+        jsave(NORMAL_EMOJI_DB, data)
+        return True, removed, len(data["emojis"])
+    return False, None, len(data["emojis"])
+
+def get_random_normal_emoji():
+    data = get_normal_emojis()
+    if data["emojis"]:
+        return random.choice(data["emojis"])
+    return "❤️"
+
+def get_all_normal_emojis():
+    return get_normal_emojis()["emojis"]
+
+def reset_normal_emojis():
+    jsave(NORMAL_EMOJI_DB, {"emojis": []})
+    return True
 
 # ═══════════════ EMOJI FUNCTIONS ═══════════════
 def get_emojis():
@@ -363,6 +398,7 @@ def owner_kb():
         [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
         [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("🎨 STICKER MANAGER", callback_data="sticker_menu")],
+        [InlineKeyboardButton("😊 REACTION EMOJIS", callback_data="reaction_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
         [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
     ])
@@ -409,6 +445,17 @@ def emoji_kb():
         [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
     ])
 
+def reaction_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📤 ADD REACTION EMOJI", callback_data="r_add")],
+        [InlineKeyboardButton("🗑️ REMOVE REACTION", callback_data="r_remove")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("📋 LIST REACTIONS", callback_data="r_list")],
+        [InlineKeyboardButton("🔄 RESET ALL", callback_data="r_reset")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
+    ])
+
 def sticker_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📤 ADD STICKER", callback_data="s_add")],
@@ -446,9 +493,10 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # Step 1: React with ❤️ to user's /start message
+        # Step 1: React with random emoji to user's /start message
         try:
-            await msg.react("❤️")
+            reaction_emoji = get_random_normal_emoji()
+            await msg.react(reaction_emoji)
         except:
             pass
         
@@ -548,7 +596,16 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 9: Final welcome message with EXACT text
+        # Step 9: Get user profile photo
+        user_photo = None
+        try:
+            photos = await client.get_chat_photos(user_id)
+            if photos and photos.total_count > 0:
+                user_photo = photos[0].file_id
+        except:
+            pass
+        
+        # Step 10: Final welcome message with user profile photo
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -575,7 +632,16 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+        # Send with profile photo if available
+        if user_photo:
+            final_msg = await client.send_photo(
+                chat_id,
+                user_photo,
+                caption=final_text,
+                reply_markup=kb
+            )
+        else:
+            final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
         return final_msg
         
@@ -651,13 +717,102 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
-    # React with ❤️ to user's /start message
-    try:
-        await msg.react("❤️")
-    except Exception:
-        pass
-    
     await welcome_animation(client, msg)
+
+# ═══════════════ NORMAL EMOJI COMMANDS ═══════════════
+@app.on_message(filters.command("addnormalemoji"))
+async def add_normal_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split(maxsplit=1)
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "📤 **ADD REACTION EMOJI**\n\n"
+            "Usage: `/addnormalemoji ❤️`\n\n"
+            "Add a normal emoji that will be used to react to /start messages.\n\n"
+            "**Examples:**\n"
+            "/addnormalemoji ❤️\n"
+            "/addnormalemoji 🔥\n"
+            "/addnormalemoji 💀"
+        )
+    
+    emoji = parts[1].strip()
+    
+    # Check if it's a single emoji
+    if len(emoji) > 2:
+        return await msg.reply_text("❌ Please send only one emoji!")
+    
+    success, total = add_normal_emoji(emoji)
+    if success:
+        await msg.reply_text(
+            f"✅ **REACTION EMOJI ADDED!** 🎉\n\n"
+            f"🔹 **Emoji:** {emoji}\n"
+            f"🔹 **Total Reaction Emojis:** {total}\n\n"
+            "✨ This emoji will now be used randomly to react to /start messages!"
+        )
+    else:
+        await msg.reply_text("❌ This emoji is already in the list!")
+
+@app.on_message(filters.command("removenormalemoji"))
+async def remove_normal_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "🗑️ **REMOVE REACTION EMOJI**\n\n"
+            "Usage: `/removenormalemoji index`\n\n"
+            "Get index from `/listnormalemojis` command."
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        success, removed, total = remove_normal_emoji(index)
+        if success:
+            await msg.reply_text(
+                f"✅ **REACTION EMOJI REMOVED!**\n\n"
+                f"🔹 **Removed:** {removed}\n"
+                f"🔹 **Remaining Reactions:** {total}"
+            )
+        else:
+            await msg.reply_text(f"❌ Invalid index! Total reactions: {total}")
+    except ValueError:
+        await msg.reply_text("❌ Invalid index! Use a number.")
+
+@app.on_message(filters.command("listnormalemojis"))
+async def list_normal_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    emojis = get_all_normal_emojis()
+    
+    if not emojis:
+        return await msg.reply_text(
+            "📭 **No reaction emojis added yet!**\n\n"
+            "Add using `/addnormalemoji ❤️`"
+        )
+    
+    text = "📋 **REACTION EMOJI LIST**\n\n"
+    for i, emoji in enumerate(emojis, 1):
+        text += f"**{i}.** {emoji}\n"
+    
+    text += f"\n🔹 **Total:** {len(emojis)}"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("resetnormalemojis"))
+async def reset_normal_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    reset_normal_emojis()
+    await msg.reply_text(
+        f"🔄 **REACTION EMOJIS RESET!**\n\n"
+        f"🔹 **Total Reactions:** 0\n\n"
+        "All reaction emojis have been removed.\n"
+        "Default reaction will be ❤️"
+    )
 
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji"))
@@ -1036,6 +1191,10 @@ async def commands_cmd(client, msg):
         "📋 /listemojis - List Emojis\n"
         "🗑️ /removeemoji index - Remove Emoji\n"
         "🔄 /resetemojis - Reset All Emojis\n\n"
+        "😊 /addnormalemoji - Add Reaction Emoji\n"
+        "📋 /listnormalemojis - List Reaction Emojis\n"
+        "🗑️ /removenormalemoji index - Remove Reaction\n"
+        "🔄 /resetnormalemojis - Reset Reactions\n\n"
         "🎨 /addsticker - Add Sticker\n"
         "📋 /liststickers - List Stickers\n"
         "🗑️ /removesticker index - Remove Sticker\n"
@@ -1090,10 +1249,10 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 /listemojis - List Emojis\n"
             "🗑️ /removeemoji index - Remove Emoji\n"
             "🔄 /resetemojis - Reset All Emojis\n\n"
-            "🎨 /addsticker - Add Sticker\n"
-            "📋 /liststickers - List Stickers\n"
-            "🗑️ /removesticker index - Remove Sticker\n"
-            "🔄 /resetstickers - Reset All Stickers\n\n"
+            "😊 /addnormalemoji - Add Reaction Emoji\n"
+            "📋 /listnormalemojis - List Reaction Emojis\n"
+            "🗑️ /removenormalemoji index - Remove Reaction\n"
+            "🔄 /resetnormalemojis - Reset Reactions\n\n"
             f"🎮 **BGMI PORTS:** 7000-15000\n"
             f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
             f"👑 [FATHER OF BOT]({OWNER_LINK})",
@@ -1167,6 +1326,83 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "back_admin":
         if uid != OWNER_ID: return
         await cb.message.edit_text("👑 **ADMIN PANEL**\n\n🔽 Select:", reply_markup=admin_kb())
+        return
+    
+    # ═══════════════ REACTION MENU ═══════════════
+    if data == "reaction_menu":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        reactions = get_all_normal_emojis()
+        await cb.message.edit_text(
+            f"😊 **REACTION EMOJI MANAGER**\n\n"
+            f"🔹 **Total Reactions:** {len(reactions)}\n"
+            f"🔹 **Commands:**\n"
+            f"• `/addnormalemoji ❤️` - Add reaction emoji\n"
+            f"• `/removenormalemoji index` - Remove by index\n"
+            f"• `/listnormalemojis` - List all reactions\n"
+            f"• `/resetnormalemojis` - Reset all\n\n"
+            f"✨ Reactions are used to react to /start messages randomly!",
+            reply_markup=reaction_kb()
+        )
+        return
+    
+    if data == "r_add":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        await cb.message.edit_text(
+            "😊 **ADD REACTION EMOJI**\n\n"
+            "Use: `/addnormalemoji ❤️`\n\n"
+            "Add any normal Telegram emoji.\n"
+            "It will be used randomly to react to /start messages!",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "r_remove":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        reactions = get_all_normal_emojis()
+        if not reactions:
+            await cb.answer("No reactions to remove!", show_alert=True)
+            return
+        await cb.message.edit_text(
+            "🗑️ **REMOVE REACTION EMOJI**\n\n"
+            "Use: `/removenormalemoji index`\n\n"
+            "Get index from `/listnormalemojis` command.",
+            reply_markup=back_admin_kb()
+        )
+        return
+    
+    if data == "r_list":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        reactions = get_all_normal_emojis()
+        if not reactions:
+            await cb.answer("No reactions added yet!", show_alert=True)
+            return
+        text = "📋 **REACTION EMOJI LIST**\n\n"
+        for i, emoji in enumerate(reactions, 1):
+            text += f"**{i}.** {emoji}\n"
+        text += f"\n🔹 **Total:** {len(reactions)}"
+        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        return
+    
+    if data == "r_reset":
+        if uid != OWNER_ID:
+            await cb.answer("Owner only!", show_alert=True)
+            return
+        reset_normal_emojis()
+        await cb.answer("🔄 All reactions reset!", show_alert=True)
+        await cb.message.edit_text(
+            f"🔄 **REACTIONS RESET!**\n\n"
+            f"🔹 **Total Reactions:** 0\n\n"
+            "Default reaction will be ❤️",
+            reply_markup=reaction_kb()
+        )
         return
     
     # ═══════════════ EMOJI MENU ═══════════════
@@ -1484,7 +1720,8 @@ for f, d in [
     (BLOCKED_DB, []), 
     (HISTORY_DB, {}), 
     (STICKER_DB, {"stickers": []}),
-    (EMOJI_DB, {"emojis": []})
+    (EMOJI_DB, {"emojis": []}),
+    (NORMAL_EMOJI_DB, {"emojis": []})
 ]:
     if not os.path.exists(f): jsave(f, d)
 
@@ -1496,8 +1733,8 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER             ║
-║  AUTO UPDATE + DELETE               ║
-║  USER PROFILE LINK                  ║
+║  REACTION EMOJI SUPPORT             ║
+║  USER PROFILE PHOTO                 ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
