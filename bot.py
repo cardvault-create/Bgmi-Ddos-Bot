@@ -452,6 +452,8 @@ async def welcome_animation(client, msg):
         except:
             pass
         
+        await asyncio.sleep(0.3)
+        
         # Step 2: Send random emoji
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -468,14 +470,14 @@ async def welcome_animation(client, msg):
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"🏖️ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})..."
+            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})...🩷"
         )
         
         # Change emojis in same message (0.3 sec interval)
         for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})...")
+                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})...{emoji}")
             except:
                 pass
         
@@ -486,30 +488,18 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.5)
-        
-        # Step 4: Welcome message convert to starting text
-        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️"]
-        
-        # First change emoji to starting emoji
-        for emoji in starting_emojis[:5]:
-            await asyncio.sleep(0.3)
-            try:
-                await welcome_msg.edit_text(f"{emoji} ѕтαятιиg.....")
-            except:
-                pass
-        
         await asyncio.sleep(0.3)
         
-        # Step 5: Starting animation with typing effect in same message
-        starting_msg = welcome_msg
+        # Step 4: Starting animation with typing effect
+        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
+        starting_msg = await client.send_message(chat_id, "🩵")
         
         # Character by character typing effect
-        chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
-        current_text = "🩵 s"
+        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
+        current_text = "🩵"
+        emoji_idx = 0
         
         # Add each character with emoji change
-        emoji_idx = 0
         for i, char in enumerate(chars_to_add):
             current_text += char
             await asyncio.sleep(0.08)
@@ -525,7 +515,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 6: Send random sticker
+        # Step 5: Send random sticker
         sticker_id = get_random_sticker()
         if sticker_id:
             try:
@@ -534,6 +524,12 @@ async def welcome_animation(client, msg):
                 sticker_msg = None
         else:
             sticker_msg = None
+        
+        # Step 6: Delete starting message
+        try:
+            await starting_msg.delete()
+        except:
+            pass
         
         await asyncio.sleep(3)
         
@@ -565,7 +561,7 @@ async def welcome_animation(client, msg):
 ┗━━━━━━━━━━━━━━━━━⧫
 ๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
 
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
         if user_id == OWNER_ID:
@@ -574,12 +570,6 @@ async def welcome_animation(client, msg):
             kb = user_kb()
         
         final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
-        
-        # Delete starting message
-        try:
-            await starting_msg.delete()
-        except:
-            pass
         
         return final_msg
         
