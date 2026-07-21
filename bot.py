@@ -526,7 +526,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER
+        # Step 5: SEND STICKER (4 seconds display)
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -535,11 +535,16 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 6: EXACTLY 4 SECOND WAIT - KOI COMMAND NAHI CHALEGA IS DAURAAN
-        await asyncio.sleep(STICKER_DISPLAY_TIME)
-        
-        # Step 7: DELETE STICKER AFTER EXACTLY 4 SECONDS
+        # Step 6: STICKER SEND HONE KA WAIT KARO PHIR 4 SECOND COUNT KARO
         if sticker_msg:
+            # Pehle sticker send hone ka wait karo
+            await asyncio.sleep(1)  # Sticker send hone mein 1 second lagta hai
+            
+            # Ab 4 second ka countdown shuru karo
+            for i in range(STICKER_DISPLAY_TIME, 0, -1):
+                await asyncio.sleep(1)
+            
+            # Sticker delete karo
             try:
                 await sticker_msg.delete()
             except:
