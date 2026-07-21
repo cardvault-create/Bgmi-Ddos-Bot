@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-Emoji Add Feature | Premium Emojis | Welcome Animation
+Only Emoji Add Feature | Premium + Normal Emojis
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -33,7 +33,7 @@ KEYS_DB = "keys.json"
 BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
-EMOJI_DB = "emojis.json"  # Naya DB for emojis
+EMOJI_DB = "emojis.json"  # Sirf emoji ke liye
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -364,7 +364,6 @@ def admin_kb():
         [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
         [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
         [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
-        [InlineKeyboardButton("🎯 ADD STICKER", callback_data="admin_addsticker")],
         [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
         [InlineKeyboardButton("🔙 BACK", callback_data="back")],
     ])
@@ -575,33 +574,47 @@ async def start_cmd(client, msg):
     
     await welcome_animation(client, msg)
 
-# ═══════════════ EMOJI COMMANDS ═══════════════
+# ═══════════════ EMOJI COMMANDS - SIRF EMOJI ═══════════════
 @app.on_message(filters.command("addemoji"))
 async def add_emoji_cmd(client, msg):
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
-    if msg.reply_to_message and msg.reply_to_message.sticker:
-        try:
-            emoji_id = msg.reply_to_message.sticker.file_id
-            
-            # Check if already exists
-            if add_emoji(emoji_id):
-                await msg.reply_text(
-                    "✅ **EMOJI ADDED SUCCESSFULLY!** 🎉\n\n"
-                    f"🔹 **Total Emojis:** {len(get_all_emojis())}\n\n"
-                    "✨ This emoji will now appear in welcome animation randomly!"
-                )
-            else:
-                await msg.reply_text("❌ This emoji is already in the list!")
-        except Exception as e:
-            await msg.reply_text(f"❌ Error: {e}")
-    else:
-        await msg.reply_text(
+    # Reply to message check
+    if not msg.reply_to_message:
+        return await msg.reply_text(
             "📤 **ADD EMOJI**\n\n"
-            "Reply to a sticker/emoji with:\n"
+            "Reply to a **premium emoji** or **normal emoji sticker** with:\n"
             "`/addemoji`\n\n"
             "The emoji will be added to welcome animation!"
+        )
+    
+    emoji_id = None
+    
+    # Check for sticker (premium emoji are stickers)
+    if msg.reply_to_message.sticker:
+        emoji_id = msg.reply_to_message.sticker.file_id
+    # Check for custom emoji (Telegram premium emoji)
+    elif hasattr(msg.reply_to_message, 'custom_emoji_id') and msg.reply_to_message.custom_emoji_id:
+        emoji_id = msg.reply_to_message.custom_emoji_id
+    
+    if emoji_id:
+        if add_emoji(emoji_id):
+            total = len(get_all_emojis())
+            await msg.reply_text(
+                f"✅ **EMOJI ADDED SUCCESSFULLY!** 🎉\n\n"
+                f"🔹 **Total Emojis:** {total}\n\n"
+                "✨ This emoji will now appear in welcome animation randomly!"
+            )
+        else:
+            await msg.reply_text("❌ This emoji is already in the list!")
+    else:
+        await msg.reply_text(
+            "❌ **No emoji found!**\n\n"
+            "Please reply to:\n"
+            "• A **premium emoji**\n"
+            "• A **custom emoji sticker**\n\n"
+            "Normal text emojis like ✨ cannot be added with this command."
         )
 
 @app.on_message(filters.command("removeemoji"))
@@ -834,7 +847,6 @@ async def gen_key_cmd(client, msg):
     else:
         await msg.reply_text("❌ 𝙄𝙣𝙫𝙖𝙡𝙞𝙙 𝙩𝙞𝙢𝙚! Use: 30m, 24h, 7d, 2w, 1mo")
 
-# ═══════════════ ADD STICKER ═══════════════
 @app.on_message(filters.command("addsticker"))
 async def add_sticker_cmd(client, msg):
     if msg.from_user.id != OWNER_ID: return
@@ -846,7 +858,7 @@ async def add_sticker_cmd(client, msg):
         except Exception as e:
             await msg.reply_text(f"❌ 𝙀𝙧𝙧𝙤𝙧: {e}")
     else:
-        await msg.reply_text("❌ 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙨𝙩𝙞𝙘𝙠𝙚𝙧!\n\n📋 /addsticker (reply to sticker)")
+        await msg.reply_text("❌ 𝙍𝙚𝙥𝙡𝙮 𝙩𝙤 𝙖 𝙨𝙩𝙞𝙘𝙠𝙚𝙧!")
 
 # ═══════════════ COMMANDS MENU ═══════════════
 @app.on_message(filters.command("commands"))
@@ -858,6 +870,9 @@ async def commands_cmd(client, msg):
         "⛔ /stop - Stop Attack\n"
         "🔑 /redeem KEY - Redeem Key\n"
         "📊 /status - Check Status\n"
+        "🎯 /addemoji - Add Premium Emoji\n"
+        "📋 /listemojis - List Emojis\n"
+        "🗑️ /removeemoji index - Remove Emoji\n"
         f"{LINE}\n\n"
         "🎮 𝐁𝐆𝐌𝐈 𝐏𝐎𝐑𝐓𝐒: 7000-15000\n"
         f"👑 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
@@ -898,6 +913,9 @@ async def callbacks(client, cb: CallbackQuery):
             "⛔ /stop - Stop Attack\n"
             "🔑 /redeem KEY - Redeem Key\n"
             "📊 /status - Check Status\n"
+            "🎯 /addemoji - Add Premium Emoji\n"
+            "📋 /listemojis - List Emojis\n"
+            "🗑️ /removeemoji index - Remove Emoji\n"
             f"{LINE}\n\n"
             "🎮 𝐁𝐆𝐌𝐈 𝐏𝐎𝐑𝐓𝐒: 7000-15000\n"
             f"👑 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})",
@@ -984,7 +1002,7 @@ async def callbacks(client, cb: CallbackQuery):
             f"🎯 **EMOJI MANAGER**\n\n"
             f"🔹 **Total Emojis:** {len(emojis)}\n"
             f"🔹 **Commands:**\n"
-            f"• `/addemoji` - Reply to sticker\n"
+            f"• `/addemoji` - Reply to premium emoji\n"
             f"• `/removeemoji index` - Remove by index\n"
             f"• `/listemojis` - List all emojis\n\n"
             f"✨ Emojis appear randomly in welcome animation!",
@@ -998,7 +1016,7 @@ async def callbacks(client, cb: CallbackQuery):
             return
         await cb.message.edit_text(
             "📤 **ADD EMOJI**\n\n"
-            "Reply to a sticker/emoji with:\n"
+            "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
             "The emoji will be added to welcome animation!",
             reply_markup=back_admin_kb()
@@ -1144,11 +1162,6 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"🤖 𝘼𝙐𝙏𝙊 𝙂𝙀𝙉 𝙆𝙀𝙔\n\n{LINE}\n🔽 Select Duration:", reply_markup=auto_key_kb())
         return
     
-    if data == "admin_addsticker":
-        if uid != OWNER_ID: return
-        await cb.answer("🎯 𝘼𝘿𝘿 𝙎𝙏𝙄𝘾𝙆𝙀𝙍\n\nReply to a sticker with:\n/addsticker\n\nThe sticker will appear in welcome animation for 5 seconds!", show_alert=True)
-        return
-    
     auto_keys = {
         "ak_20m": ("20min", "20m"), "ak_40m": ("40min", "40m"), "ak_60m": ("60min", "60m"),
         "ak_1d": ("1day", "1d"), "ak_3d": ("3day", "3d"), "ak_7d": ("7day", "7d"),
@@ -1208,8 +1221,8 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO 💀  ║
-║  EMOJI ADD FEATURE | PREMIUM       ║
-║  WELCOME ANIMATION | STICKER       ║
+║  ONLY EMOJI ADD FEATURE             ║
+║  PREMIUM + NORMAL EMOJIS            ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
