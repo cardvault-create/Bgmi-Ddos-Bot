@@ -525,7 +525,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER (3 seconds then delete)
+        # Step 5: SEND STICKER (3 seconds)
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -534,17 +534,17 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 6: WAIT 3 SECONDS for sticker
+        # Step 6: WAIT EXACTLY 3 SECONDS
         await asyncio.sleep(3)
         
-        # Step 7: DELETE STICKER
+        # Step 7: DELETE STICKER AFTER 3 SECONDS
         if sticker_msg:
             try:
                 await sticker_msg.delete()
             except:
                 pass
         
-        # Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE (no delay)
+        # Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -571,7 +571,7 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Send video with final message (instantly after sticker delete)
+        # Send video with final message
         video_data = rand_vid()
         final_msg = None
         
@@ -587,7 +587,6 @@ async def welcome_animation(client, msg):
                 logger.error(f"Video send error: {e}")
                 final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         else:
-            # No video, send only text
             final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
         return final_msg
