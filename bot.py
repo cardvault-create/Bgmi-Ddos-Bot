@@ -485,19 +485,6 @@ def back_kb():
 def back_admin_kb():
     return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
 
-# ═══════════════ REACTION ON ALL MESSAGES ═══════════════
-@app.on_message(filters.text & filters.private)
-async def react_to_all(client, msg):
-    """React to every message with random emoji"""
-    try:
-        reaction_emoji = get_random_normal_emoji()
-        await client.send_reaction(msg.chat.id, msg.id, reaction_emoji)
-    except:
-        try:
-            await msg.react(reaction_emoji)
-        except:
-            pass
-
 # ═══════════════ WELCOME ANIMATION ═══════════════
 async def welcome_animation(client, msg):
     try:
@@ -1747,7 +1734,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER             ║
-║  REACTION ON ALL MESSAGES           ║
+║  REACTION EMOJI SUPPORT             ║
 ║  USER PROFILE PHOTO                 ║
 ║  PREMIUM WELCOME ANIMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
