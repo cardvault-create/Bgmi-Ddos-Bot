@@ -2,16 +2,17 @@
 """
 🎯 EMOJI PACK EXTRACTOR BOT
 Emoji Pack Link Se Saare Emoji 1-1 Karke Bhejta Hai
+Bina requests module ke - Sirf Pyrogram
 """
 
-import asyncio, json, re, os, requests
+import asyncio, json, re, os
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
-BOT_TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
+BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
 OWNER_ID = 1987818347
 
 # ═══════════════ BOT ═══════════════
@@ -20,9 +21,6 @@ app = Client("emoji_extractor_bot", api_id=API_ID, api_hash=API_HASH, bot_token=
 # ═══════════════ HELPERS ═══════════════
 def extract_pack_name(link):
     """Emoji pack link se pack name extract karein"""
-    # Example: t.me/addemoji/MyCoolPack
-    # or: https://t.me/addemoji/MyCoolPack
-    
     patterns = [
         r"t\.me/addemoji/([^\s/]+)",
         r"https?://t\.me/addemoji/([^\s/]+)",
@@ -34,45 +32,6 @@ def extract_pack_name(link):
         if match:
             return match.group(1)
     return None
-
-def get_emoji_pack_data(pack_name):
-    """
-    @Stickers bot se pack data fetch karein
-    Note: Yeh official API nahi hai, alternative method hai
-    """
-    try:
-        # Telegram Sticker Pack API
-        url = f"https://api.telegram.org/bot{STICKER_BOT_TOKEN}/getStickerSet"
-        params = {"name": pack_name}
-        
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("ok"):
-                stickers = data.get("result", {}).get("stickers", [])
-                return [s.get("file_id") for s in stickers]
-    except:
-        pass
-    return []
-
-# ═══════════════ STICKER BOT TOKEN ═══════════════
-# @Stickers bot ka token (yeh public nahi hai, isliye alternative method)
-# Actual method: @Stickers bot se interact karna
-STICKER_BOT_TOKEN = "YOUR_STICKER_BOT_TOKEN"  # Ye nahi milega public
-
-# ═══════════════ ALTERNATIVE METHOD ═══════════════
-async def get_emoji_ids_from_pack(pack_name):
-    """
-    Alternative method - Pyrogram se pack fetch karein
-    """
-    try:
-        # Pyrogram ka get_sticker_set method
-        sticker_set = await app.get_sticker_set(pack_name)
-        if sticker_set:
-            return [sticker.file_id for sticker in sticker_set.stickers]
-    except Exception as e:
-        print(f"Error: {e}")
-    return []
 
 # ═══════════════ COMMAND: /start ═══════════════
 @app.on_message(filters.command("start"))
@@ -124,9 +83,8 @@ async def handle_emoji_pack(client, msg):
         "Please wait..."
     )
     
-    # Step 2: Get emoji IDs
+    # Step 2: Get emoji IDs using Pyrogram
     try:
-        # Try Pyrogram method
         sticker_set = await client.get_sticker_set(pack_name)
         
         if not sticker_set or not sticker_set.stickers:
@@ -186,7 +144,6 @@ async def extract_cmd(client, msg):
     
     pack_name = parts[1].strip()
     
-    # Same as above, process pack
     status_msg = await msg.reply_text(f"⏳ Fetching emojis from pack: `{pack_name}`...")
     
     try:
