@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-Server Freeze Bot | Random Emoji + Sticker + Video | Auto Update | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -12,7 +11,6 @@ from pyrogram.types import (
     Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery,
     ReplyKeyboardMarkup, KeyboardButton
 )
-from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
 
 # ═══════════════ LOGGING ═══════════════
@@ -29,6 +27,9 @@ OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
 BOT_LINK = f"https://t.me/{BOT_USERNAME}"
 
+IST = pytz.timezone('Asia/Kolkata')
+LINE = "━━━━━━━━━━━━━━━━━━━"
+
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
 USERS_DB = "users.json"
@@ -39,19 +40,10 @@ STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
 STICKER_TIME_DB = "sticker_times.json"
 
-IST = pytz.timezone('Asia/Kolkata')
-LINE = "━━━━━━━━━━━━━━━━━━━"
-
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
 DEFAULT_STICKER_TIME = 5
-
-# ═══════════════ TRACKING ═══════════════
-used_videos = []
-last_emoji_index = -1
-last_sticker_index = -1
-last_video_index = -1
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -114,7 +106,6 @@ def get_remaining(expiry_str):
         else: return f"{minutes}M", False
     except: return "ERROR", False
 
-# ═══════════════ STICKER TIME FUNCTIONS ═══════════════
 def get_sticker_times():
     return jload(STICKER_TIME_DB, {})
 
@@ -298,7 +289,6 @@ def remove_expired():
         if removed > 0: jsave(USERS_DB, u)
     return removed
 
-# ═══════════════ HISTORY ═══════════════
 def get_history(): return jload(HISTORY_DB, {})
 def add_history(uid, action, details):
     h = get_history()
@@ -310,7 +300,6 @@ def add_history(uid, action, details):
 def get_user_history(uid):
     return get_history().get(str(uid), [])
 
-# ═══════════════ KEY FUNCTIONS ═══════════════
 def get_keys(): return jload(KEYS_DB, {})
 def create_key(name, time_str):
     keys = get_keys()
@@ -371,11 +360,9 @@ attack_user = None
 # ═══════════════ BOT ═══════════════
 app = Client("final_bgmi_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ═══════════════ PERSISTENT KEYBOARD - SABKE LIYE ═══════════════
+# ═══════════════ PERSISTENT KEYBOARD ═══════════════
 def get_persistent_menu(is_owner=False):
-    """🔥 Keyboard ke byan ke liye - User aur Owner dono ke liye"""
     if is_owner:
-        # Owner ke liye full menu
         return ReplyKeyboardMarkup(
             [
                 [KeyboardButton("📝 Commands"), KeyboardButton("💀 Attack"), KeyboardButton("⛔ Stop")],
@@ -389,7 +376,6 @@ def get_persistent_menu(is_owner=False):
             persistent=True
         )
     else:
-        # User ke liye simple menu - sirf commands button
         return ReplyKeyboardMarkup(
             [
                 [KeyboardButton("📝 Commands")],
@@ -423,6 +409,24 @@ def owner_inline_kb():
         [InlineKeyboardButton("🎯 EMOJI MANAGER", callback_data="emoji_menu")],
         [InlineKeyboardButton("🎨 STICKER MANAGER", callback_data="sticker_menu")],
         [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
+    ])
+
+def back_kb():
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+
+def back_admin_kb():
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
+
+def admin_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🪪 ADD KEY", callback_data="admin_addkey")],
+        [InlineKeyboardButton("🤖 AUTO GEN KEY", callback_data="admin_auto")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
+        [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
+        [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
+        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
+        [InlineKeyboardButton("🔙 BACK", callback_data="back")],
     ])
 
 def auto_key_kb():
@@ -478,120 +482,88 @@ def sticker_kb():
         [InlineKeyboardButton("🔙 BACK", callback_data="back_admin")],
     ])
 
-def admin_kb():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🪪 ADD KEY", callback_data="admin_addkey")],
-        [InlineKeyboardButton("🤖 AUTO GEN KEY", callback_data="admin_auto")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ALL KEYS", callback_data="admin_keys")],
-        [InlineKeyboardButton("📊 STATS", callback_data="admin_stats")],
-        [InlineKeyboardButton("🔄 CLEAR EXPIRED", callback_data="admin_clear")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 BACK", callback_data="back")],
-    ])
-
-def back_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
-
-def back_admin_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back_admin")]])
-
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
     user_commands = """
 ╔══════════════════════════════════════╗
-║         📝 *__COMMANDS LIST__*        ║
+║         📝 COMMANDS LIST            ║
 ╚══════════════════════════════════════╝
 
 ╔══════════════════════════════════════╗
-║      👤 *__USER COMMANDS__*           ║
+║      👤 USER COMMANDS                ║
 ╚══════════════════════════════════════╝
 
-*__/start__* - ✨ *Bot Start Karein*
-*__/attack__* - ⚔️ *Attack Start Karein*  
-*__/stop__* - 🛑 *Attack Stop Karein*
-*__/redeem__* - 🔑 *Key Redeem Karein*
+/start - ✨ Bot Start Karein
+/attack - ⚔️ Attack Start Karein  
+/stop - 🛑 Attack Stop Karein
+/redeem - 🔑 Key Redeem Karein
 
 ╔══════════════════════════════════════╗
-║      🎯 *__ATTACK HELP__*            ║
+║      🎯 ATTACK HELP                  ║
 ╚══════════════════════════════════════╝
 
-*__Format:__* 
-`/attack IP PORT TIME`
-
-*__Example:__*
-`/attack 1.2.3.4 8080 600`
-
-*__BGMI Ports:__*
-`7000 - 15000`
-
-*__Max Time:__*
-`600 Seconds (10 Minutes)`
+Format: /attack IP PORT TIME
+Example: /attack 1.2.3.4 8080 600
+BGMI Ports: 7000 - 15000
+Max Time: 600 Seconds (10 Minutes)
 
 ╔══════════════════════════════════════╗
-║      🔑 *__REDEEM HELP__*            ║
+║      🔑 REDEEM HELP                  ║
 ╚══════════════════════════════════════╝
 
-*__Format:__*
-`/redeem KEY_CODE`
-
-*__Example:__*
-`/redeem BGMI-XXXX-XXXX-XXXX`
+Format: /redeem KEY_CODE
+Example: /redeem BGMI-XXXX-XXXX-XXXX
 
 ╔══════════════════════════════════════╗
-║      ⏱️ *__DURATIONS__*              ║
+║      ⏱️ DURATIONS                    ║
 ╚══════════════════════════════════════╝
 
-`30m` - 30 Minutes
-`1h` - 1 Hour
-`24h` - 24 Hours
-`7d` - 7 Days
-`2w` - 2 Weeks
-`1mo` - 1 Month
-`3mo` - 3 Months
+30m - 30 Minutes
+1h - 1 Hour
+24h - 24 Hours
+7d - 7 Days
+2w - 2 Weeks
+1mo - 1 Month
+3mo - 3 Months
 
 """
     
     owner_commands = """
 ╔══════════════════════════════════════╗
-║      👑 *__OWNER COMMANDS__*         ║
+║      👑 OWNER COMMANDS               ║
 ╚══════════════════════════════════════╝
 
-*__🎨 STICKER COMMANDS__*
+🎨 STICKER COMMANDS
+/addsticker - 📤 Sticker Add Karein
+/removesticker - 🗑️ Sticker Remove Karein
+/liststickers - 📋 Stickers Dekhein
+/resetstickers - 🔄 Stickers Reset Karein
+/setstickertime - ⏱️ Sticker Time Set Karein
 
-*__/addsticker__* - 📤 *Sticker Add Karein*
-*__/removesticker__* - 🗑️ *Sticker Remove Karein*
-*__/liststickers__* - 📋 *Stickers Dekhein*
-*__/resetstickers__* - 🔄 *Stickers Reset Karein*
-*__/setstickertime__* - ⏱️ *Sticker Time Set Karein*
+🎯 EMOJI COMMANDS
+/addemoji - 📤 Emoji Add Karein
+/removeemoji - 🗑️ Emoji Remove Karein
+/listemojis - 📋 Emojis Dekhein
+/resetemojis - 🔄 Emojis Reset Karein
 
-*__🎯 EMOJI COMMANDS__*
+🎬 VIDEO COMMANDS
+/addvideo - 📤 Video Add Karein
+/delvideo - 🗑️ Video Delete Karein
+/videos - 📋 Videos Dekhein
+/clearvideos - 🧹 Videos Clear Karein
 
-*__/addemoji__* - 📤 *Emoji Add Karein*
-*__/removeemoji__* - 🗑️ *Emoji Remove Karein*
-*__/listemojis__* - 📋 *Emojis Dekhein*
-*__/resetemojis__* - 🔄 *Emojis Reset Karein*
-
-*__🎬 VIDEO COMMANDS__*
-
-*__/addvideo__* - 📤 *Video Add Karein*
-*__/delvideo__* - 🗑️ *Video Delete Karein*
-*__/videos__* - 📋 *Videos Dekhein*
-*__/clearvideos__* - 🧹 *Videos Clear Karein*
-
-*__🔑 KEY COMMANDS__*
-
-*__/genkey__* - 🪪 *Key Generate Karein*
-*__/admin_keys__* - 📋 *All Keys Dekhein*
-*__/admin_stats__* - 📊 *Statistics Dekhein*
-*__/admin_clear__* - 🔄 *Expired Clear Karein*
+🔑 KEY COMMANDS
+/genkey - 🪪 Key Generate Karein
+/admin_keys - 📋 All Keys Dekhein
+/admin_stats - 📊 Statistics Dekhein
+/admin_clear - 🔄 Expired Clear Karein
 
 ╔══════════════════════════════════════╗
-║      📲 *__CONTACT__*                ║
+║      📲 CONTACT                      ║
 ╚══════════════════════════════════════╝
 
-👑 *Owner:* [FATHER OF BOT]({OWNER_LINK})
-🤖 *Bot:* @{BOT_USERNAME}
+👑 Owner: FATHER OF BOT
+🤖 Bot: @BeStChEaT_BGMIDdos_Bot
 
 """
     
@@ -599,38 +571,27 @@ def get_commands_list(is_owner=False):
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ SIMPLE START - BINA ANIMATION KE ═══════════════
+# ═══════════════ START COMMAND - SIMPLE & RELIABLE ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
-    """🔥 SIMPLE START - HAMESHA REPLY DEGA"""
     try:
         user = msg.from_user
-        chat_id = msg.chat.id
         user_id = user.id
         first_name = user.first_name or "User"
-        
-        # 🔥 CHECK KARO OWNER HAI YA USER
         is_owner = (user_id == OWNER_ID)
-        
-        # 🔥 PERSISTENT KEYBOARD - SABKE LIYE
-        persistent_kb = get_persistent_menu(is_owner)
         
         # 🔥 PEHLE PERSISTENT KEYBOARD SEND KARO
         await msg.reply_text(
-            "🔄 *Loading menu...*",
-            reply_markup=persistent_kb
+            "🔄 *Loading...*",
+            reply_markup=get_persistent_menu(is_owner)
         )
         
-        # 🔥 INLINE BUTTONS
+        # 🔥 AB MAIN MESSAGE SEND KARO
         if is_owner:
             inline_kb = owner_inline_kb()
         else:
             inline_kb = user_inline_kb()
         
-        # 🔥 GET RANDOM VIDEO
-        video_data = rand_vid()
-        
-        # 🔥 FINAL MESSAGE
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
@@ -652,32 +613,23 @@ async def start_cmd(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
-        # 🔥 SEND FINAL MESSAGE WITH VIDEO
-        if video_data and os.path.exists(video_data["path"]):
-            await client.send_video(
-                chat_id,
-                video_data["path"],
-                caption=final_text,
-                reply_markup=inline_kb
-            )
-        else:
-            await client.send_message(
-                chat_id,
-                final_text,
-                reply_markup=inline_kb
-            )
-            
+        # 🔥 SEND FINAL MESSAGE
+        await client.send_message(
+            msg.chat.id,
+            final_text,
+            reply_markup=inline_kb
+        )
+        
     except Exception as e:
         logger.error(f"Start error: {e}")
         # 🔥 AGAR KOI ERROR AAYE TOH SIMPLE REPLY
         await msg.reply_text(
             "👋 *Welcome to BGMI Attack Bot!*\n\n"
             "Use /attack IP PORT TIME to start attacking!\n"
-            "Use /commands to see all commands.",
-            reply_markup=get_persistent_menu(msg.from_user.id == OWNER_ID)
+            "Use /commands to see all commands."
         )
 
-# ═══════════════ KEYBOARD BUTTON HANDLERS - SABKE LIYE ═══════════════
+# ═══════════════ KEYBOARD BUTTON HANDLERS ═══════════════
 
 # 📝 Commands Button
 @app.on_message(filters.regex("^📝 Commands$") & filters.private)
@@ -685,8 +637,7 @@ async def commands_button_handler(client, msg):
     uid = msg.from_user.id
     is_owner = (uid == OWNER_ID)
     commands_text = get_commands_list(is_owner)
-    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    await msg.reply_text(formatted_text)
+    await msg.reply_text(commands_text)
 
 # 💀 Attack Button
 @app.on_message(filters.regex("^💀 Attack$") & filters.private)
@@ -816,10 +767,9 @@ async def admin_panel_button_handler(client, msg):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 @app.on_message(filters.regex("^━━━━━━━━━━━━━━━━━━$") & filters.private)
 async def separator_handler(client, msg):
-    """Ignore separator"""
     pass
 
-# ═══════════════ ATTACK WITH CHECKING ═══════════════
+# ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
 async def attack_cmd(client, msg):
     global attacking, ainfo, amsg, attack_user
@@ -1489,22 +1439,16 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "commands_menu":
         is_owner = (uid == OWNER_ID)
         commands_text = get_commands_list(is_owner)
-        formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-        kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
-        await cb.message.edit_text(formatted_text, reply_markup=kb)
+        await cb.message.edit_text(commands_text, reply_markup=back_kb())
         return
     
     if data == "back":
         user = cb.from_user
         uid = user.id
         access, a_type = check_access(uid)
-        
-        # 🔥 PERSISTENT KEYBOARD - SABKE LIYE
         is_owner = (uid == OWNER_ID)
-        persistent_kb = get_persistent_menu(is_owner)
         
         if not access:
-            vid = rand_vid()
             text = (
                 "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
                 "━━━━━━━━━━━━━━━━━━━\n"
@@ -1521,16 +1465,10 @@ async def callbacks(client, cb: CallbackQuery):
                 [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
                 [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
             ])
-            # 🔥 PERSISTENT KEYBOARD SEND KARO
-            await cb.message.reply_text(
-                "🔄 *Menu updated*",
-                reply_markup=persistent_kb
-            )
             await cb.message.edit_text(text, reply_markup=kb)
             return
         
         info = get_user_info(uid)
-        vid = rand_vid()
         
         if uid == OWNER_ID:
             kb = owner_inline_kb()
@@ -1561,11 +1499,6 @@ async def callbacks(client, cb: CallbackQuery):
             "🎮 BGMI Ports: 7000-15000\n"
             f"{LINE}\n"
             "🔽 SELECT OPTION:"
-        )
-        # 🔥 PERSISTENT KEYBOARD SEND KARO
-        await cb.message.reply_text(
-            "🔄 *Menu updated*",
-            reply_markup=persistent_kb
         )
         await cb.message.edit_text(text, reply_markup=kb)
         return
@@ -2002,11 +1935,10 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  SABKE LIYE KEYBOARD KE BYAN BUTTONS║
-║  USER: Simple Menu (Commands, Attack, Stop, Redeem, Status, Info)
-║  OWNER: Full Menu (Extra Admin Buttons)
+║  USER: Simple Menu                  ║
+║  OWNER: Full Menu                   ║
 ║  REAL-TIME CHECKING SYSTEM          ║
 ║  HACKER STYLE VERIFICATION          ║
-║  AUTO-DETECT STICKER DURATION       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
