@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 📢 AUTO-POST BOT - FINAL FIXED
-Admin Check Properly Working
+Jo Bhejo Waisa Hi Post Hoga (Premium Emoji + Text)
 """
 
 import asyncio, json, os, re
@@ -57,26 +57,17 @@ def remove_channel(channel_id):
 def get_all_channels():
     return get_channels()["channels"]
 
-# ═══════════════ CHECK ADMIN - FINAL FIXED ═══════════════
+# ═══════════════ CHECK ADMIN ═══════════════
 async def check_admin(client, chat_id):
-    """Check if bot is admin in channel - FINAL FIXED"""
     try:
-        # Try to get bot member info
         bot_member = await client.get_chat_member(chat_id, "me")
-        
-        # LOGIC FIX: Check status properly
-        # ChatMemberStatus.ADMINISTRATOR is an enum, compare with string or enum
         status = bot_member.status
         
-        # Convert to string for comparison if needed
         if isinstance(status, ChatMemberStatus):
             status_str = status.value if hasattr(status, 'value') else str(status)
         else:
             status_str = str(status)
         
-        print(f"Bot status: {status_str}")
-        
-        # Check if admin or creator
         if "administrator" in status_str.lower() or "creator" in status_str.lower():
             return True, "Admin ✅"
         else:
@@ -84,8 +75,6 @@ async def check_admin(client, chat_id):
             
     except Exception as e:
         error = str(e)
-        print(f"Error checking admin: {error}")
-        
         if "USER_NOT_PARTICIPANT" in error:
             return False, "❌ Bot is not a member of the channel!"
         elif "CHAT_ADMIN_REQUIRED" in error:
@@ -93,28 +82,43 @@ async def check_admin(client, chat_id):
         elif "CHAT_ID_INVALID" in error:
             return False, "❌ Invalid channel ID!"
         elif "Forbidden" in error:
-            return False, "❌ Bot cannot access this channel! Is bot added?"
+            return False, "❌ Bot cannot access this channel!"
         else:
             return False, f"⚠️ Error: {error[:100]}"
+
+# ═══════════════ SEND MESSAGE FUNCTION - JO BHEJO WAISA HI ═══════════════
+async def forward_to_channels(client, msg, channels):
+    """Forward message exactly as received - no changes"""
+    sent_count = 0
+    
+    for channel in channels:
+        channel_id = channel.get("id")
+        try:
+            # Forward the message as-is without any modification
+            await client.forward_messages(channel_id, msg.chat.id, msg.id)
+            sent_count += 1
+        except Exception as e:
+            print(f"Error forwarding to {channel_id}: {e}")
+    
+    return sent_count
 
 # ═══════════════ COMMANDS ═══════════════
 @app.on_message(filters.command("start"))
 async def start_cmd(client, msg):
     await msg.reply_text(
         "📢 **AUTO-POST BOT**\n\n"
-        "Mujhe channel admin banao aur main jo bhi msg bhejo ge woh channel par post kar dunga!\n\n"
+        "Mujhe channel admin banao aur main jo bhi msg bhejo ge woh channel par **exactly waisa hi** post kar dunga!\n\n"
         "**Commands:**\n"
         "/start - Show this message\n"
         "/help - Help menu\n"
         "/addchannel CHANNEL_ID - Add channel by ID\n"
         "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
-        "/check CHANNEL_ID - Check admin status\n"
-        "/post - Post message to channel\n\n"
+        "/check CHANNEL_ID - Check admin status\n\n"
         "**How to use:**\n"
         "1️⃣ Bot ko channel admin banao\n"
         "2️⃣ /addchannel -123456789 bhejo\n"
-        "3️⃣ Ab jo bhi message bhejo ge channel par post ho jayega!"
+        "3️⃣ Ab jo bhi message bhejo ge channel par **exactly waisa hi** post hoga!"
     )
 
 @app.on_message(filters.command("help"))
@@ -125,12 +129,12 @@ async def help_cmd(client, msg):
         "/addchannel CHANNEL_ID - Add channel by ID\n"
         "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
-        "/check CHANNEL_ID - Check admin status\n"
-        "/post - Post message to channel\n\n"
+        "/check CHANNEL_ID - Check admin status\n\n"
         "**How to get channel ID:**\n"
         "1️⃣ Channel mein @getidsbot bhejo\n"
         "2️⃣ Channel ID copy karo (negative number)\n"
-        "3️⃣ /addchannel -123456789 bhejo"
+        "3️⃣ /addchannel -123456789 bhejo\n\n"
+        "**Note:** Premium emoji, stickers, photos, videos sab **exactly waisa hi** post hoga jaisa aap bhejo ge!"
     )
 
 @app.on_message(filters.command("check"))
@@ -138,10 +142,7 @@ async def check_cmd(client, msg):
     parts = msg.text.split(maxsplit=1)
     
     if len(parts) != 2:
-        await msg.reply_text(
-            "❌ **Usage:** `/check CHANNEL_ID`\n\n"
-            "Example: `/check -100123456789`"
-        )
+        await msg.reply_text("❌ **Usage:** `/check CHANNEL_ID`")
         return
     
     try:
@@ -150,9 +151,7 @@ async def check_cmd(client, msg):
         await msg.reply_text("❌ Invalid channel ID!")
         return
     
-    # Send status message
     status_msg = await msg.reply_text(f"🔍 Checking admin status for `{channel_id}`...")
-    
     is_admin, status = await check_admin(client, channel_id)
     
     if is_admin:
@@ -171,11 +170,7 @@ async def check_cmd(client, msg):
             "**Please follow these steps:**\n"
             "1️⃣ Add bot to the channel\n"
             "2️⃣ Make bot admin with **Post Messages** permission\n"
-            "3️⃣ Wait 5 seconds and try `/check` again\n\n"
-            "**Make sure:**\n"
-            "✅ Bot is in the channel\n"
-            "✅ Bot has admin permissions\n"
-            "✅ Bot can post messages"
+            "3️⃣ Wait 5 seconds and try `/check` again"
         )
 
 @app.on_message(filters.command("addchannel"))
@@ -183,10 +178,7 @@ async def add_channel_cmd(client, msg):
     parts = msg.text.split(maxsplit=1)
     
     if len(parts) != 2:
-        await msg.reply_text(
-            "❌ **Usage:** `/addchannel CHANNEL_ID`\n\n"
-            "Example: `/addchannel -100123456789`"
-        )
+        await msg.reply_text("❌ **Usage:** `/addchannel CHANNEL_ID`")
         return
     
     try:
@@ -218,8 +210,8 @@ async def add_channel_cmd(client, msg):
             f"✅ **Channel Added!** 🎉\n\n"
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
-            "Now I will auto-post all messages to this channel!\n"
-            "Send any message to me privately."
+            "Now I will auto-post **exactly** whatever you send me!\n"
+            "Send any message, sticker, photo, or premium emoji!"
         )
     else:
         await status_msg.edit_text(
@@ -233,10 +225,7 @@ async def remove_channel_cmd(client, msg):
     parts = msg.text.split(maxsplit=1)
     
     if len(parts) != 2:
-        await msg.reply_text(
-            "❌ **Usage:** `/removechannel CHANNEL_ID`\n\n"
-            "Example: `/removechannel -100123456789`"
-        )
+        await msg.reply_text("❌ **Usage:** `/removechannel CHANNEL_ID`")
         return
     
     try:
@@ -246,15 +235,9 @@ async def remove_channel_cmd(client, msg):
         return
     
     if remove_channel(channel_id):
-        await msg.reply_text(
-            f"✅ **Channel Removed!**\n\n"
-            f"🆔 **ID:** `{channel_id}`"
-        )
+        await msg.reply_text(f"✅ **Channel Removed!**\n\n🆔 **ID:** `{channel_id}`")
     else:
-        await msg.reply_text(
-            f"❌ **Channel not found!**\n\n"
-            f"🆔 **ID:** `{channel_id}`"
-        )
+        await msg.reply_text(f"❌ **Channel not found!**\n\n🆔 **ID:** `{channel_id}`")
 
 @app.on_message(filters.command("listchannels"))
 async def list_channels_cmd(client, msg):
@@ -272,153 +255,92 @@ async def list_channels_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ AUTO-POST ═══════════════
-@app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
+# ═══════════════ AUTO-POST - EXACT FORWARD ═══════════════
+# Yeh saare messages ko EXACTLY waisa hi forward karega
+
+@app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_text(client, msg):
     channels = get_all_channels()
-    
-    if not channels:
-        await msg.reply_text(
-            "⚠️ **No channels added!**\n\n"
-            "Add a channel first using `/addchannel CHANNEL_ID`"
-        )
-        return
-    
-    sent_count = 0
-    for channel in channels:
-        channel_id = channel.get("id")
-        try:
-            await client.send_message(channel_id, msg.text)
-            sent_count += 1
-        except Exception as e:
-            print(f"Error posting to {channel_id}: {e}")
-    
-    if sent_count > 0:
-        await msg.reply_text(f"✅ **Message posted to {sent_count} channel(s)!**")
-    else:
-        await msg.reply_text("❌ Failed to post to any channel!")
-
-@app.on_message(filters.command("post"))
-async def post_cmd(client, msg):
-    channels = get_all_channels()
-    
     if not channels:
         await msg.reply_text("⚠️ No channels added! Use `/addchannel CHANNEL_ID` first.")
         return
     
-    if msg.reply_to_message:
-        reply_msg = msg.reply_to_message
-        sent_count = 0
-        
-        for channel in channels:
-            channel_id = channel.get("id")
-            try:
-                if reply_msg.text:
-                    await client.send_message(channel_id, reply_msg.text)
-                elif reply_msg.photo:
-                    await client.send_photo(channel_id, reply_msg.photo.file_id, caption=reply_msg.caption)
-                elif reply_msg.video:
-                    await client.send_video(channel_id, reply_msg.video.file_id, caption=reply_msg.caption)
-                elif reply_msg.sticker:
-                    await client.send_sticker(channel_id, reply_msg.sticker.file_id)
-                elif reply_msg.document:
-                    await client.send_document(channel_id, reply_msg.document.file_id, caption=reply_msg.caption)
-                sent_count += 1
-            except Exception as e:
-                print(f"Error: {e}")
-        
-        await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
+    sent_count = await forward_to_channels(client, msg, channels)
+    
+    if sent_count > 0:
+        await msg.reply_text(f"✅ **Message forwarded to {sent_count} channel(s) exactly as sent!**")
     else:
-        parts = msg.text.split(maxsplit=1)
-        if len(parts) < 2:
-            await msg.reply_text("❌ **Usage:** `/post Hello World!`\nOr reply to a message and `/post`")
-            return
-        
-        text = parts[1]
-        sent_count = 0
-        
-        for channel in channels:
-            channel_id = channel.get("id")
-            try:
-                await client.send_message(channel_id, text)
-                sent_count += 1
-            except Exception as e:
-                print(f"Error: {e}")
-        
-        await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
+        await msg.reply_text("❌ Failed to forward to any channel!")
 
-# ═══════════════ MEDIA AUTO-POST ═══════════════
-@app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
+@app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_photo(client, msg):
     channels = get_all_channels()
     if not channels:
         return
     
-    sent_count = 0
-    for channel in channels:
-        channel_id = channel.get("id")
-        try:
-            await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
-            sent_count += 1
-        except:
-            pass
-    
+    sent_count = await forward_to_channels(client, msg, channels)
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Photo posted to {sent_count} channel(s)!**")
+        await msg.reply_text(f"✅ **Photo forwarded to {sent_count} channel(s)!**")
 
-@app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
+@app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_video(client, msg):
     channels = get_all_channels()
     if not channels:
         return
     
-    sent_count = 0
-    for channel in channels:
-        channel_id = channel.get("id")
-        try:
-            await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
-            sent_count += 1
-        except:
-            pass
-    
+    sent_count = await forward_to_channels(client, msg, channels)
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Video posted to {sent_count} channel(s)!**")
+        await msg.reply_text(f"✅ **Video forwarded to {sent_count} channel(s)!**")
 
-@app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
+@app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_sticker(client, msg):
     channels = get_all_channels()
     if not channels:
         return
     
-    sent_count = 0
-    for channel in channels:
-        channel_id = channel.get("id")
-        try:
-            await client.send_sticker(channel_id, msg.sticker.file_id)
-            sent_count += 1
-        except:
-            pass
-    
+    sent_count = await forward_to_channels(client, msg, channels)
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Sticker posted to {sent_count} channel(s)!**")
+        await msg.reply_text(f"✅ **Sticker forwarded to {sent_count} channel(s)!**")
 
-@app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
+@app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_document(client, msg):
     channels = get_all_channels()
     if not channels:
         return
     
-    sent_count = 0
-    for channel in channels:
-        channel_id = channel.get("id")
-        try:
-            await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
-            sent_count += 1
-        except:
-            pass
-    
+    sent_count = await forward_to_channels(client, msg, channels)
     if sent_count > 0:
-        await msg.reply_text(f"✅ **Document posted to {sent_count} channel(s)!**")
+        await msg.reply_text(f"✅ **Document forwarded to {sent_count} channel(s)!**")
+
+@app.on_message(filters.animation & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
+async def auto_post_animation(client, msg):
+    channels = get_all_channels()
+    if not channels:
+        return
+    
+    sent_count = await forward_to_channels(client, msg, channels)
+    if sent_count > 0:
+        await msg.reply_text(f"✅ **Animation forwarded to {sent_count} channel(s)!**")
+
+@app.on_message(filters.voice & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
+async def auto_post_voice(client, msg):
+    channels = get_all_channels()
+    if not channels:
+        return
+    
+    sent_count = await forward_to_channels(client, msg, channels)
+    if sent_count > 0:
+        await msg.reply_text(f"✅ **Voice forwarded to {sent_count} channel(s)!**")
+
+@app.on_message(filters.audio & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
+async def auto_post_audio(client, msg):
+    channels = get_all_channels()
+    if not channels:
+        return
+    
+    sent_count = await forward_to_channels(client, msg, channels)
+    if sent_count > 0:
+        await msg.reply_text(f"✅ **Audio forwarded to {sent_count} channel(s)!**")
 
 # ═══════════════ GET ID ═══════════════
 @app.on_message(filters.command("getid"))
@@ -438,8 +360,8 @@ if not os.path.exists(CHANNEL_DB):
 print("""
 ╔══════════════════════════════════════╗
 ║  📢 AUTO-POST BOT - FINAL FIXED     ║
-║  Admin Check Properly Working       ║
-║  Token: 8771905727:AAEJ...          ║
+║  Jo Bhejo Waisa Hi Post Hoga        ║
+║  Premium Emoji + Text + Media       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
