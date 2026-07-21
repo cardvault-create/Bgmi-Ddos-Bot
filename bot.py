@@ -544,7 +544,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # Step 8: FINAL MESSAGE
+        # Step 8: FINAL MESSAGE WITH VIDEO (caption ke saath)
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -571,16 +571,26 @@ async def welcome_animation(client, msg):
         else:
             kb = user_kb()
         
-        # Send final message first
-        final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
-        
-        # Step 9: Try to send video as separate message (optional)
+        # Get random video
         video_data = rand_vid()
+        final_msg = None
+        
+        # Send video with caption (final message as caption)
         if video_data and os.path.exists(video_data["path"]):
             try:
-                await client.send_video(chat_id, video_data["path"])
+                final_msg = await client.send_video(
+                    chat_id,
+                    video_data["path"],
+                    caption=final_text,
+                    reply_markup=kb
+                )
             except Exception as e:
                 logger.error(f"Video send error: {e}")
+                # If video fails, send only text
+                final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+        else:
+            # No video, send only text
+            final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
         return final_msg
         
@@ -1544,7 +1554,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  4 SEC STICKER → INSTANT FINAL MSG  ║
+║  4 SEC STICKER → VIDEO + FINAL MSG  ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
