@@ -19,12 +19,15 @@ logger = logging.getLogger(__name__)
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
 API_HASH = "011f638e4acadee178c59afffc80193d"
-BOT_TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
+BOT_TOKEN = "8881462630:AAEQX_BDAkR9wRehuE2fO2RoCoNUybBwVWs"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "FathersOfCreater"
 OWNER_LINK = f"https://t.me/{OWNER_USERNAME}"
 BOT_USERNAME = "BeStChEaT_BGMIDdos_Bot"
 BOT_LINK = f"https://t.me/{BOT_USERNAME}"
+
+# Animated Emoji ID
+ANIMATED_EMOJI_ID = "CAACAgUAAxkBAAERk5JqXv5riEYAAe1iEC1eoJd1_HyaplYAAuQgAAJYAfFWCptc4IJ3B909BA"
 
 # ═══════════════ DATABASE ═══════════════
 VIDEO_DB = "videos.json"
@@ -342,27 +345,29 @@ async def welcome_animation(client, msg):
         chat_id = msg.chat.id
         first_name = user.first_name or "User"
         user_id = user.id
-        username = user.username or first_name
         
-        # Step 1: React to /start message with ❤️
+        # Step 1: Send animated emoji + auto delete after 2 seconds
         try:
-            await msg.react("❤️")
+            emoji_msg = await client.send_sticker(chat_id, ANIMATED_EMOJI_ID)
+            await asyncio.sleep(2)
+            await emoji_msg.delete()
         except:
             pass
+        
         await asyncio.sleep(0.5)
         
-        # Step 2: Send animated emoji with welcome message
-        welcome_emojis = ["✨", "🌟", "💫", "⭐", "🌈", "💎", "✨"]
+        # Step 2: Welcome message with animated emojis
+        welcome_emojis = ["✨", "🌟", "💫", "⭐", "🌈", "💎"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"✨ ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})"
+            f"HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})"
         )
         
-        # Change emojis in the same message (animated effect)
+        # Change emojis in the same message
         for emoji in welcome_emojis[:6]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"{emoji} ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})")
+                await welcome_msg.edit_text(f"{emoji} HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})")
             except:
                 pass
         
@@ -380,12 +385,11 @@ async def welcome_animation(client, msg):
         starting_msg = await client.send_message(chat_id, "s")
         
         # Build text character by character
-        full_text = "⚡ ѕтαятιиg....."
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "s"
         
         # Add each character
-        for i, char in enumerate(chars_to_add):
+        for char in chars_to_add:
             current_text += char
             await asyncio.sleep(0.08)
             try:
@@ -425,31 +429,28 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 5: Final welcome message with stylish format
+        # Step 5: Final welcome message with EXACT screenshot style
         final_text = f"""
-🌟 **ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})** 🌟
+HEY, ⚡ I'm → HeaVen  
+I'M 'BGMI ✘ ATTACK, ♪,  
 
-**ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪**
+- ❖ I HAVE SPECIAL FEATURES.  
+- ❖ ALL-IN-ONE BOT.  
 
-━━━━━━━━━━━━━━━━━━━━━━━━━
+- ❖ YOU CAN FREEZE BGMI SERVERS.  
+- ❖ YOU CAN DDOS ANY IP/PORT.  
+- ❖ YOU CAN USE 5000+ THREADS FOR MAX DAMAGE.  
 
-- ❖ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
-- ❖ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
+- ❖ I CAN ATTACK UPTO 4 MINUTES.  
+- ❖ SPECIAL WELCOME  
+- ❖ MORE FEATURES CLICK COMMANDS BUTTON...  
 
-━━━━━━━━━━━━━━━━━━━━━━━━━
+- ❍ CLICK ON THE HELP BUTTON TO GET INFORMATION ABOUT MY MODULES AND COMMANDS.  
 
-- ❖ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
-- ❖ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
-- ❖ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
-- ❖ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 4 ᴍɪɴᴜᴛᴇꜱ.
-- ❖ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
-- ❖ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━
-
-๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
-
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK}) ✔︎
+**DEVELOPER**  
+**[FATHER OF BOT]({OWNER_LINK})**
 """
         
         # Choose keyboard based on user type
