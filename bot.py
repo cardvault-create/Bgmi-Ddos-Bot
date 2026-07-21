@@ -43,7 +43,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-STICKER_DISPLAY_TIME = 5  # Sticker 4 second tak dikhega
+STICKER_DISPLAY_TIME = 5  # 🔥 AB 5 SECOND KAR DIYA
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -526,7 +526,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 5: SEND STICKER (4 seconds display)
+        # Step 5: SEND STICKER
         sticker_id = get_random_sticker()
         sticker_msg = None
         if sticker_id:
@@ -535,27 +535,18 @@ async def welcome_animation(client, msg):
             except:
                 sticker_msg = None
         
-        # Step 6: STICKER SEND HONE KA WAIT KARO PHIR 4 SECOND COUNT KARO
+        # 🔥 FIX: NO DELAY AFTER STICKER SEND - INSTANT DELETE
         if sticker_msg:
-            # Pehle sticker send hone ka wait karo
-            await asyncio.sleep(1)  # Sticker send hone mein 1 second lagta hai
-            
-            # Ab 4 second ka countdown shuru karo
-            for i in range(STICKER_DISPLAY_TIME, 0, -1):
-                await asyncio.sleep(1)
-            
-            # Sticker delete karo
+            # Delete sticker immediately after send
             try:
                 await sticker_msg.delete()
             except:
                 pass
         
-        await asyncio.sleep(0.3)
-        
-        # Step 8: FINAL MESSAGE WITH VIDEO
+        # Step 6: FINAL MESSAGE WITH VIDEO - SEND INSTANTLY
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
-ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
+ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
 
 ┏━━━━━━━━━━━━━━━━━⧫
 ┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
@@ -583,7 +574,7 @@ async def welcome_animation(client, msg):
         video_data = rand_vid()
         final_msg = None
         
-        # Send video with caption (final message as caption)
+        # Send video with caption (final message as caption) - INSTANT
         if video_data and os.path.exists(video_data["path"]):
             try:
                 final_msg = await client.send_video(
@@ -603,7 +594,7 @@ async def welcome_animation(client, msg):
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
         await normal_start(client, msg)
-
+        
 async def normal_start(client, msg):
     uid = msg.from_user.id
     user = msg.from_user
@@ -1566,7 +1557,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  EXACT 4 SEC STICKER DISPLAY        ║
+║  EXACT 5 SEC STICKER DISPLAY        ║
 ║  DETAILED ADD CONFIRMATION          ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
