@@ -452,8 +452,6 @@ async def welcome_animation(client, msg):
         except:
             pass
         
-        await asyncio.sleep(0.3)
-        
         # Step 2: Send random emoji
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -464,20 +462,20 @@ async def welcome_animation(client, msg):
         else:
             emoji_msg = None
         
-        await asyncio.sleep(3)
+        await asyncio.sleep(0.5)
         
         # Step 3: Welcome Baby with user name and profile link
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"🩷 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})..."
+            f"🏖️ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})..."
         )
         
         # Change emojis in same message (0.3 sec interval)
         for emoji in welcome_emojis[:5]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...")
+                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ ⌬ [{first_name}](tg://user?id={user_id})...")
             except:
                 pass
         
@@ -487,6 +485,8 @@ async def welcome_animation(client, msg):
                 await emoji_msg.delete()
             except:
                 pass
+        
+        await asyncio.sleep(0.5)
         
         # Step 4: Welcome message convert to starting text
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️"]
@@ -505,7 +505,6 @@ async def welcome_animation(client, msg):
         starting_msg = welcome_msg
         
         # Character by character typing effect
-        full_text = "🩵 ѕтαятιиg....."
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "🩵 s"
         
@@ -550,7 +549,7 @@ async def welcome_animation(client, msg):
         # Step 8: Final welcome message with EXACT text
         final_text = f"""
 ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
-ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪,
+ɪ'ᴍ ˹[𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄]({BOT_LINK})˼ ♪,
 
 ┏━━━━━━━━━━━━━━━━━⧫
 ┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
