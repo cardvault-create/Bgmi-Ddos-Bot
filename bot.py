@@ -457,93 +457,16 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        await asyncio.sleep(0.3)
-        
-        # Step 1: Send random emoji
-        emoji_id = get_random_emoji()
-        if emoji_id:
-            try:
-                emoji_msg = await client.send_sticker(chat_id, emoji_id)
-            except:
-                emoji_msg = None
-        else:
-            emoji_msg = None
-        
-        await asyncio.sleep(0.5)
-        
-        # Step 2: Welcome Baby message (emoji at end)
-        welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
-        welcome_msg = await client.send_message(
-            chat_id, 
-            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
-        )
-        
-        # Change emojis (emoji at end)
-        for emoji in welcome_emojis[:5]:
-            await asyncio.sleep(0.3)
-            try:
-                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
-            except:
-                pass
-        
-        # Delete emoji message
-        if emoji_msg:
-            try:
-                await emoji_msg.delete()
-            except:
-                pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 3: Starting animation with bold text
-        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
-        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
-        emoji_idx = 0
-        emoji = starting_emojis[emoji_idx % len(starting_emojis)]
-        
-        await welcome_msg.edit_text(f"**{emoji}**")
-        await asyncio.sleep(0.1)
-        
-        for i, char in enumerate(chars_to_add):
-            await asyncio.sleep(0.08)
-            try:
-                if i % 2 == 0:
-                    emoji_idx += 1
-                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
-                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
-                else:
-                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
-            except:
-                pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 4: DELETE STARTING MESSAGE
-        try:
-            await welcome_msg.delete()
-        except:
-            pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 5: SEND STICKER
+        # Get sticker and video BEFORE starting animation
         sticker_id = get_random_sticker()
-        sticker_msg = None
-        if sticker_id:
-            try:
-                sticker_msg = await client.send_sticker(chat_id, sticker_id)
-            except:
-                sticker_msg = None
+        video_data = rand_vid()
         
-        # 🔥 FIX: NO DELAY AFTER STICKER SEND - INSTANT DELETE
-        if sticker_msg:
-            # Delete sticker immediately after send
-            try:
-                await sticker_msg.delete()
-            except:
-                pass
+        # Prepare final text and keyboard
+        if user_id == OWNER_ID:
+            kb = owner_kb()
+        else:
+            kb = user_kb()
         
-        # Step 6: FINAL MESSAGE WITH VIDEO - SEND INSTANTLY
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
@@ -565,36 +488,110 @@ async def welcome_animation(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
-        if user_id == OWNER_ID:
-            kb = owner_kb()
-        else:
-            kb = user_kb()
-        
-        # Get random video
-        video_data = rand_vid()
-        final_msg = None
-        
-        # Send video with caption (final message as caption) - INSTANT
-        if video_data and os.path.exists(video_data["path"]):
+        # Step 1: Send random emoji (fast)
+        emoji_msg = None
+        emoji_id = get_random_emoji()
+        if emoji_id:
             try:
-                final_msg = await client.send_video(
+                emoji_msg = await client.send_sticker(chat_id, emoji_id)
+            except:
+                pass
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 2: Welcome Baby message
+        welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
+        welcome_msg = await client.send_message(
+            chat_id, 
+            f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
+        )
+        
+        for emoji in welcome_emojis[:3]:  # Only 3 to save time
+            await asyncio.sleep(0.2)
+            try:
+                await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
+            except:
+                pass
+        
+        if emoji_msg:
+            try:
+                await emoji_msg.delete()
+            except:
+                pass
+        
+        await asyncio.sleep(0.2)
+        
+        # Step 3: Starting animation (shortened)
+        starting_emojis = ["🩵", "🌠", "🪶", "🍓"]
+        chars_to_add = ["s", "t", "α", "я", "т", "i", "n", "g", "."]
+        emoji_idx = 0
+        emoji = starting_emojis[0]
+        
+        await welcome_msg.edit_text(f"**{emoji}**")
+        await asyncio.sleep(0.05)
+        
+        for i, char in enumerate(chars_to_add[:6]):  # Only 6 chars to save time
+            await asyncio.sleep(0.05)
+            try:
+                if i % 2 == 0 and i < len(starting_emojis):
+                    emoji = starting_emojis[i % len(starting_emojis)]
+                await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+            except:
+                pass
+        
+        await asyncio.sleep(0.2)
+        
+        # Step 4: DELETE STARTING MESSAGE
+        try:
+            await welcome_msg.delete()
+        except:
+            pass
+        
+        await asyncio.sleep(0.1)
+        
+        # Step 5: SEND STICKER + START VIDEO SENDING IN BACKGROUND
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                pass
+        
+        # 🔥 START SENDING VIDEO IMMEDIATELY (in background)
+        video_task = None
+        if video_data and os.path.exists(video_data["path"]):
+            video_task = asyncio.create_task(
+                client.send_video(
                     chat_id,
                     video_data["path"],
                     caption=final_text,
                     reply_markup=kb
                 )
-            except Exception as e:
-                logger.error(f"Video send error: {e}")
-                final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+            )
         else:
-            final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+            video_task = asyncio.create_task(
+                client.send_message(chat_id, final_text, reply_markup=kb)
+            )
+        
+        # Step 6: WAIT FOR STICKER DISPLAY TIME
+        await asyncio.sleep(STICKER_DISPLAY_TIME)
+        
+        # Step 7: DELETE STICKER
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        # Step 8: WAIT FOR VIDEO TO COMPLETE SENDING
+        final_msg = await video_task
         
         return final_msg
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
         await normal_start(client, msg)
-        
+
 async def normal_start(client, msg):
     uid = msg.from_user.id
     user = msg.from_user
@@ -1557,8 +1554,8 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  EXACT 5 SEC STICKER DISPLAY        ║
-║  DETAILED ADD CONFIRMATION          ║
+║  INSTANT VIDEO AFTER STICKER        ║
+║  PARALLEL PROCESSING                ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
