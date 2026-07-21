@@ -36,7 +36,7 @@ BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
-NORMAL_EMOJI_DB = "normal_emojis.json"  # Normal emoji reactions ke liye
+NORMAL_EMOJI_DB = "normal_emojis.json"
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -496,9 +496,13 @@ async def welcome_animation(client, msg):
         # Step 1: React with random emoji to user's /start message
         try:
             reaction_emoji = get_random_normal_emoji()
-            await msg.react(reaction_emoji)
-        except:
-            pass
+            await client.send_reaction(chat_id, msg.id, reaction_emoji)
+        except Exception as e:
+            print(f"Reaction error: {e}")
+            try:
+                await msg.react(reaction_emoji)
+            except:
+                pass
         
         await asyncio.sleep(0.3)
         
@@ -577,17 +581,26 @@ async def welcome_animation(client, msg):
         
         # Step 7: Send random sticker
         sticker_id = get_random_sticker()
+        sticker_msg = None
         if sticker_id:
             try:
                 sticker_msg = await client.send_sticker(chat_id, sticker_id)
             except:
                 sticker_msg = None
-        else:
-            sticker_msg = None
         
+        # Step 8: Wait 3 seconds
         await asyncio.sleep(3)
         
-        # Step 8: Delete sticker
+        # Step 9: Get user profile photo
+        user_photo = None
+        try:
+            photos = await client.get_chat_photos(user_id, limit=1)
+            if photos and photos.total_count > 0:
+                user_photo = photos[0].file_id
+        except:
+            pass
+        
+        # Step 10: Delete sticker (after 3 seconds)
         if sticker_msg:
             try:
                 await sticker_msg.delete()
@@ -596,16 +609,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # Step 9: Get user profile photo
-        user_photo = None
-        try:
-            photos = await client.get_chat_photos(user_id)
-            if photos and photos.total_count > 0:
-                user_photo = photos[0].file_id
-        except:
-            pass
-        
-        # Step 10: Final welcome message with user profile photo
+        # Step 11: Final welcome message with user profile photo
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -739,7 +743,6 @@ async def add_normal_emoji_cmd(client, msg):
     
     emoji = parts[1].strip()
     
-    # Check if it's a single emoji
     if len(emoji) > 2:
         return await msg.reply_text("❌ Please send only one emoji!")
     
