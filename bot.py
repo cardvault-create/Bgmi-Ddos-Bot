@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-📢 AUTO-POST BOT - FIXED
-Channel Admin Check Properly
+📢 AUTO-POST BOT - FINAL FIXED
+Admin Check Properly Working
 """
 
 import asyncio, json, os, re
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.enums import ChatMemberStatus
 
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
@@ -56,37 +57,47 @@ def remove_channel(channel_id):
 def get_all_channels():
     return get_channels()["channels"]
 
-# ═══════════════ CHECK ADMIN - IMPROVED ═══════════════
+# ═══════════════ CHECK ADMIN - FINAL FIXED ═══════════════
 async def check_admin(client, chat_id):
-    """Check if bot is admin in channel - Improved"""
+    """Check if bot is admin in channel - FINAL FIXED"""
     try:
-        # First try to get chat info
-        chat = await client.get_chat(chat_id)
-        print(f"Chat found: {chat.title}")
-        
         # Try to get bot member info
         bot_member = await client.get_chat_member(chat_id, "me")
-        print(f"Bot status: {bot_member.status}")
         
-        if bot_member.status in ["administrator", "creator"]:
-            return True, "Admin"
+        # LOGIC FIX: Check status properly
+        # ChatMemberStatus.ADMINISTRATOR is an enum, compare with string or enum
+        status = bot_member.status
+        
+        # Convert to string for comparison if needed
+        if isinstance(status, ChatMemberStatus):
+            status_str = status.value if hasattr(status, 'value') else str(status)
         else:
-            return False, f"Bot is {bot_member.status}"
+            status_str = str(status)
+        
+        print(f"Bot status: {status_str}")
+        
+        # Check if admin or creator
+        if "administrator" in status_str.lower() or "creator" in status_str.lower():
+            return True, "Admin ✅"
+        else:
+            return False, f"Bot is {status_str}"
             
     except Exception as e:
         error = str(e)
         print(f"Error checking admin: {error}")
         
         if "USER_NOT_PARTICIPANT" in error:
-            return False, "Bot is not a member of the channel!"
+            return False, "❌ Bot is not a member of the channel!"
         elif "CHAT_ADMIN_REQUIRED" in error:
-            return False, "Bot is not admin!"
+            return False, "❌ Bot is not admin!"
         elif "CHAT_ID_INVALID" in error:
-            return False, "Invalid channel ID!"
+            return False, "❌ Invalid channel ID!"
+        elif "Forbidden" in error:
+            return False, "❌ Bot cannot access this channel! Is bot added?"
         else:
-            return False, f"Error: {error[:100]}"
+            return False, f"⚠️ Error: {error[:100]}"
 
-# ═══════════════ START COMMAND ═══════════════
+# ═══════════════ COMMANDS ═══════════════
 @app.on_message(filters.command("start"))
 async def start_cmd(client, msg):
     await msg.reply_text(
@@ -98,6 +109,7 @@ async def start_cmd(client, msg):
         "/addchannel CHANNEL_ID - Add channel by ID\n"
         "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
+        "/check CHANNEL_ID - Check admin status\n"
         "/post - Post message to channel\n\n"
         "**How to use:**\n"
         "1️⃣ Bot ko channel admin banao\n"
@@ -113,17 +125,59 @@ async def help_cmd(client, msg):
         "/addchannel CHANNEL_ID - Add channel by ID\n"
         "/removechannel CHANNEL_ID - Remove channel\n"
         "/listchannels - List all channels\n"
+        "/check CHANNEL_ID - Check admin status\n"
         "/post - Post message to channel\n\n"
         "**How to get channel ID:**\n"
         "1️⃣ Channel mein @getidsbot bhejo\n"
         "2️⃣ Channel ID copy karo (negative number)\n"
-        "3️⃣ /addchannel -123456789 bhejo\n\n"
-        "**How to post manually:**\n"
-        "/post Hello World!\n"
-        "Reply to a message and /post"
+        "3️⃣ /addchannel -123456789 bhejo"
     )
 
-# ═══════════════ CHANNEL MANAGEMENT ═══════════════
+@app.on_message(filters.command("check"))
+async def check_cmd(client, msg):
+    parts = msg.text.split(maxsplit=1)
+    
+    if len(parts) != 2:
+        await msg.reply_text(
+            "❌ **Usage:** `/check CHANNEL_ID`\n\n"
+            "Example: `/check -100123456789`"
+        )
+        return
+    
+    try:
+        channel_id = int(parts[1].strip())
+    except ValueError:
+        await msg.reply_text("❌ Invalid channel ID!")
+        return
+    
+    # Send status message
+    status_msg = await msg.reply_text(f"🔍 Checking admin status for `{channel_id}`...")
+    
+    is_admin, status = await check_admin(client, channel_id)
+    
+    if is_admin:
+        await status_msg.edit_text(
+            f"✅ **Bot is Admin!** 🎉\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n"
+            f"🔹 **Status:** {status}\n\n"
+            "You can now add this channel using:\n"
+            f"`/addchannel {channel_id}`"
+        )
+    else:
+        await status_msg.edit_text(
+            f"❌ **Bot is NOT Admin!**\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n"
+            f"🚫 **Reason:** {status}\n\n"
+            "**Please follow these steps:**\n"
+            "1️⃣ Add bot to the channel\n"
+            "2️⃣ Make bot admin with **Post Messages** permission\n"
+            "3️⃣ Wait 5 seconds and try `/check` again\n\n"
+            "**Make sure:**\n"
+            "✅ Bot is in the channel\n"
+            "✅ Bot has admin permissions\n"
+            "✅ Bot can post messages"
+        )
+
 @app.on_message(filters.command("addchannel"))
 async def add_channel_cmd(client, msg):
     parts = msg.text.split(maxsplit=1)
@@ -131,52 +185,36 @@ async def add_channel_cmd(client, msg):
     if len(parts) != 2:
         await msg.reply_text(
             "❌ **Usage:** `/addchannel CHANNEL_ID`\n\n"
-            "Example: `/addchannel -100123456789`\n\n"
-            "**How to get channel ID:**\n"
-            "1️⃣ Channel mein @getidsbot bhejo\n"
-            "2️⃣ Channel ID copy karo (negative number)"
+            "Example: `/addchannel -100123456789`"
         )
         return
     
     try:
         channel_id = int(parts[1].strip())
     except ValueError:
-        await msg.reply_text(
-            "❌ **Invalid channel ID!**\n\n"
-            "Channel ID must be a number.\n"
-            "Example: `/addchannel -100123456789`"
-        )
+        await msg.reply_text("❌ Invalid channel ID!")
         return
     
-    # Check if bot is admin - IMPROVED
+    status_msg = await msg.reply_text(f"🔍 Checking admin status for `{channel_id}`...")
     is_admin, status = await check_admin(client, channel_id)
     
     if not is_admin:
-        await msg.reply_text(
+        await status_msg.edit_text(
             f"❌ **I'm not an admin!**\n\n"
-            f"📢 **Channel ID:** `{channel_id}`\n\n"
+            f"📢 **Channel ID:** `{channel_id}`\n"
             f"🚫 **Reason:** {status}\n\n"
-            "**Please follow these steps:**\n"
-            "1️⃣ Add bot to the channel (if not added)\n"
-            "2️⃣ Make bot admin with **Post Messages** permission\n"
-            "3️⃣ Wait 5 seconds and try again\n\n"
-            "**Make sure:**\n"
-            "✅ Bot is in the channel\n"
-            "✅ Bot has admin permissions\n"
-            "✅ Channel is public or bot can access it"
+            "Use `/check CHANNEL_ID` to verify first."
         )
         return
     
-    # Get channel name
     try:
         chat = await client.get_chat(channel_id)
         channel_name = chat.title or "Unknown"
     except:
         channel_name = "Unknown"
     
-    # Add channel
     if add_channel(channel_id, channel_name):
-        await msg.reply_text(
+        await status_msg.edit_text(
             f"✅ **Channel Added!** 🎉\n\n"
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
@@ -184,7 +222,7 @@ async def add_channel_cmd(client, msg):
             "Send any message to me privately."
         )
     else:
-        await msg.reply_text(
+        await status_msg.edit_text(
             f"⚠️ **Channel already added!**\n\n"
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`"
@@ -210,14 +248,12 @@ async def remove_channel_cmd(client, msg):
     if remove_channel(channel_id):
         await msg.reply_text(
             f"✅ **Channel Removed!**\n\n"
-            f"🆔 **ID:** `{channel_id}`\n\n"
-            "I will no longer auto-post to this channel."
+            f"🆔 **ID:** `{channel_id}`"
         )
     else:
         await msg.reply_text(
             f"❌ **Channel not found!**\n\n"
-            f"🆔 **ID:** `{channel_id}`\n\n"
-            "This channel is not in my list."
+            f"🆔 **ID:** `{channel_id}`"
         )
 
 @app.on_message(filters.command("listchannels"))
@@ -225,13 +261,7 @@ async def list_channels_cmd(client, msg):
     channels = get_all_channels()
     
     if not channels:
-        await msg.reply_text(
-            "📭 **No channels added yet!**\n\n"
-            "Use `/addchannel CHANNEL_ID` to add a channel.\n\n"
-            "**How to get channel ID:**\n"
-            "1️⃣ Channel mein @getidsbot bhejo\n"
-            "2️⃣ Channel ID copy karo (negative number)"
-        )
+        await msg.reply_text("📭 **No channels added yet!**\n\nUse `/addchannel CHANNEL_ID` to add.")
         return
     
     text = "📋 **CHANNEL LIST**\n\n"
@@ -242,45 +272,32 @@ async def list_channels_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ AUTO-POST SYSTEM ═══════════════
-@app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
+# ═══════════════ AUTO-POST ═══════════════
+@app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
 async def auto_post_text(client, msg):
     channels = get_all_channels()
     
     if not channels:
         await msg.reply_text(
             "⚠️ **No channels added!**\n\n"
-            "Add a channel first using `/addchannel CHANNEL_ID`\n\n"
-            "**How to get channel ID:**\n"
-            "1️⃣ Channel mein @getidsbot bhejo\n"
-            "2️⃣ Channel ID copy karo (negative number)\n"
-            "3️⃣ /addchannel -100123456789"
+            "Add a channel first using `/addchannel CHANNEL_ID`"
         )
         return
     
     sent_count = 0
-    failed_channels = []
-    
     for channel in channels:
         channel_id = channel.get("id")
         try:
             await client.send_message(channel_id, msg.text)
             sent_count += 1
         except Exception as e:
-            failed_channels.append(channel_id)
             print(f"Error posting to {channel_id}: {e}")
     
     if sent_count > 0:
-        await msg.reply_text(
-            f"✅ **Message posted to {sent_count} channel(s)!**"
-        )
+        await msg.reply_text(f"✅ **Message posted to {sent_count} channel(s)!**")
     else:
-        await msg.reply_text(
-            f"❌ **Failed to post to any channel!**\n\n"
-            "Make sure I'm still admin in the channels."
-        )
+        await msg.reply_text("❌ Failed to post to any channel!")
 
-# ═══════════════ POST COMMAND ═══════════════
 @app.on_message(filters.command("post"))
 async def post_cmd(client, msg):
     channels = get_all_channels()
@@ -291,8 +308,8 @@ async def post_cmd(client, msg):
     
     if msg.reply_to_message:
         reply_msg = msg.reply_to_message
-        
         sent_count = 0
+        
         for channel in channels:
             channel_id = channel.get("id")
             try:
@@ -311,20 +328,15 @@ async def post_cmd(client, msg):
                 print(f"Error: {e}")
         
         await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
-        
     else:
         parts = msg.text.split(maxsplit=1)
         if len(parts) < 2:
-            await msg.reply_text(
-                "❌ **Usage:**\n"
-                "/post Hello World!\n"
-                "Or reply to a message and /post"
-            )
+            await msg.reply_text("❌ **Usage:** `/post Hello World!`\nOr reply to a message and `/post`")
             return
         
         text = parts[1]
-        
         sent_count = 0
+        
         for channel in channels:
             channel_id = channel.get("id")
             try:
@@ -335,8 +347,8 @@ async def post_cmd(client, msg):
         
         await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
 
-# ═══════════════ PHOTO/VIDEO/STICKER AUTO-POST ═══════════════
-@app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
+# ═══════════════ MEDIA AUTO-POST ═══════════════
+@app.on_message(filters.photo & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
 async def auto_post_photo(client, msg):
     channels = get_all_channels()
     if not channels:
@@ -354,7 +366,7 @@ async def auto_post_photo(client, msg):
     if sent_count > 0:
         await msg.reply_text(f"✅ **Photo posted to {sent_count} channel(s)!**")
 
-@app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
+@app.on_message(filters.video & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
 async def auto_post_video(client, msg):
     channels = get_all_channels()
     if not channels:
@@ -372,7 +384,7 @@ async def auto_post_video(client, msg):
     if sent_count > 0:
         await msg.reply_text(f"✅ **Video posted to {sent_count} channel(s)!**")
 
-@app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
+@app.on_message(filters.sticker & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
 async def auto_post_sticker(client, msg):
     channels = get_all_channels()
     if not channels:
@@ -390,7 +402,7 @@ async def auto_post_sticker(client, msg):
     if sent_count > 0:
         await msg.reply_text(f"✅ **Sticker posted to {sent_count} channel(s)!**")
 
-@app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post"]))
+@app.on_message(filters.document & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "post", "check"]))
 async def auto_post_document(client, msg):
     channels = get_all_channels()
     if not channels:
@@ -408,7 +420,7 @@ async def auto_post_document(client, msg):
     if sent_count > 0:
         await msg.reply_text(f"✅ **Document posted to {sent_count} channel(s)!**")
 
-# ═══════════════ CHANNEL ID GETTER ═══════════════
+# ═══════════════ GET ID ═══════════════
 @app.on_message(filters.command("getid"))
 async def get_id_cmd(client, msg):
     chat = msg.chat
@@ -416,49 +428,8 @@ async def get_id_cmd(client, msg):
         f"📋 **Chat Info**\n\n"
         f"📢 **Name:** {chat.title or chat.first_name or 'Unknown'}\n"
         f"🆔 **ID:** `{chat.id}`\n"
-        f"📂 **Type:** {chat.type}\n\n"
-        f"Use this ID in /addchannel command."
+        f"📂 **Type:** {chat.type}"
     )
-
-# ═══════════════ CHECK COMMAND ═══════════════
-@app.on_message(filters.command("check"))
-async def check_cmd(client, msg):
-    """Check bot status in a channel"""
-    parts = msg.text.split(maxsplit=1)
-    
-    if len(parts) != 2:
-        await msg.reply_text(
-            "❌ **Usage:** `/check CHANNEL_ID`\n\n"
-            "Example: `/check -100123456789`"
-        )
-        return
-    
-    try:
-        channel_id = int(parts[1].strip())
-    except ValueError:
-        await msg.reply_text("❌ Invalid channel ID!")
-        return
-    
-    is_admin, status = await check_admin(client, channel_id)
-    
-    if is_admin:
-        await msg.reply_text(
-            f"✅ **Bot is Admin!**\n\n"
-            f"📢 **Channel ID:** `{channel_id}`\n"
-            f"🔹 **Status:** {status}\n\n"
-            "You can now add this channel using:\n"
-            f"`/addchannel {channel_id}`"
-        )
-    else:
-        await msg.reply_text(
-            f"❌ **Bot is NOT Admin!**\n\n"
-            f"📢 **Channel ID:** `{channel_id}`\n"
-            f"🚫 **Reason:** {status}\n\n"
-            "**Please follow these steps:**\n"
-            "1️⃣ Add bot to the channel\n"
-            "2️⃣ Make bot admin with **Post Messages** permission\n"
-            "3️⃣ Wait 5 seconds and try `/check` again"
-        )
 
 # ═══════════════ RUN ═══════════════
 if not os.path.exists(CHANNEL_DB):
@@ -466,9 +437,9 @@ if not os.path.exists(CHANNEL_DB):
 
 print("""
 ╔══════════════════════════════════════╗
-║  📢 AUTO-POST BOT - FIXED           ║
-║  Better Admin Check                  ║
-║  /check command added               ║
+║  📢 AUTO-POST BOT - FINAL FIXED     ║
+║  Admin Check Properly Working       ║
+║  Token: 8771905727:AAEJ...          ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
