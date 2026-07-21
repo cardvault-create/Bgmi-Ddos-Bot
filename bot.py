@@ -342,6 +342,7 @@ async def welcome_animation(client, msg):
         chat_id = msg.chat.id
         first_name = user.first_name or "User"
         user_id = user.id
+        username = user.username or first_name
         
         # Step 1: React to /start message with ❤️
         try:
@@ -350,18 +351,18 @@ async def welcome_animation(client, msg):
             pass
         await asyncio.sleep(0.5)
         
-        # Step 2: Welcome message with animated emojis
+        # Step 2: Send animated emoji with welcome message
         welcome_emojis = ["✨", "🌟", "💫", "⭐", "🌈", "💎", "✨"]
         welcome_msg = await client.send_message(
             chat_id, 
-            f"✨ 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
+            f"✨ ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})"
         )
         
-        # Change emojis in the same message
+        # Change emojis in the same message (animated effect)
         for emoji in welcome_emojis[:6]:
             await asyncio.sleep(0.3)
             try:
-                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})")
+                await welcome_msg.edit_text(f"{emoji} ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})")
             except:
                 pass
         
@@ -424,50 +425,38 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # Step 5: Final welcome message with user profile and bot link
+        # Step 5: Final welcome message with stylish format
         final_text = f"""
-ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id}) 
-ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪,
+🌟 **ʜᴇʏ, ⌬ [{first_name}](tg://user?id={user_id})** 🌟
 
-┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
-┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
-┗━━━━━━━━━━━━━━━━━⧫
-┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
-┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 4 ᴍɪɴᴜᴛᴇꜱ.
-┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
-┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
-┗━━━━━━━━━━━━━━━━━⧫
+**ɪ'ᴍ ˹[{BOT_USERNAME}]({BOT_LINK}) ✘ 𝘼𝙏𝙏𝘼𝘾𝙆˼ ♪**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- ❖ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
+- ❖ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- ❖ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
+- ❖ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
+- ❖ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
+- ❖ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 4 ᴍɪɴᴜᴛᴇꜱ.
+- ❖ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
+- ❖ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
 
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🫧 ➪ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK}) ✔︎
 """
         
-        # Check if user is owner
+        # Choose keyboard based on user type
         if user_id == OWNER_ID:
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
-                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
-                [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
-                 InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
-                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
-                [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-                [InlineKeyboardButton("🎬 VIDEO MANAGER", callback_data="video_menu")],
-                [InlineKeyboardButton("👑 ADMIN PANEL", callback_data="admin_menu")],
-                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
-            ])
+            kb = owner_kb()
         else:
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
-                 InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
-                [InlineKeyboardButton("📊 STATUS", callback_data="status_btn"),
-                 InlineKeyboardButton("ℹ️ INFO", callback_data="info_menu")],
-                [InlineKeyboardButton("🔑 REDEEM KEY", callback_data="redeem_menu")],
-                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
-            ])
+            kb = user_kb()
         
         # Final message with buttons
         final_msg = await client.send_message(
