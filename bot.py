@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 📢 AUTO-POST BOT - FINAL FIXED
-Forward Message Bina "Forwarded From" Tag Ke Post Hoga
+Forward Message Waisa Hi Post Hoga, Sirf "Forwarded From" Tag Hatega
 """
 
 import asyncio, json, os, re
@@ -9,6 +9,7 @@ from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ChatMemberStatus
+from pyrogram.raw import functions, types
 
 # ═══════════════ CONFIG ═══════════════
 API_ID = 35140329
@@ -86,50 +87,49 @@ async def check_admin(client, chat_id):
         else:
             return False, f"⚠️ Error: {error[:100]}"
 
-# ═══════════════ FORWARD WITHOUT TAG ═══════════════
-async def forward_without_tag(client, msg, channel_id):
-    """Forward message without 'Forwarded From' tag"""
+# ═══════════════ COPY MESSAGE - EXACTLY WAISA HI ═══════════════
+async def copy_message_exact(client, from_chat, msg_id, to_chat):
+    """
+    Message ko copy karega EXACTLY waisa hi, bina "Forwarded From" tag ke
+    Premium emoji, formatting, sab same rahega
+    """
     try:
-        # Agar message forward hai toh original content copy karo
-        if msg.forward_from or msg.forward_from_chat:
-            # Original message ka content copy karo
-            if msg.text:
-                await client.send_message(channel_id, msg.text)
-            elif msg.photo:
-                await client.send_photo(channel_id, msg.photo.file_id, caption=msg.caption)
-            elif msg.video:
-                await client.send_video(channel_id, msg.video.file_id, caption=msg.caption)
-            elif msg.sticker:
-                await client.send_sticker(channel_id, msg.sticker.file_id)
-            elif msg.document:
-                await client.send_document(channel_id, msg.document.file_id, caption=msg.caption)
-            elif msg.animation:
-                await client.send_animation(channel_id, msg.animation.file_id, caption=msg.caption)
-            elif msg.voice:
-                await client.send_voice(channel_id, msg.voice.file_id, caption=msg.caption)
-            elif msg.audio:
-                await client.send_audio(channel_id, msg.audio.file_id, caption=msg.caption)
-            else:
-                # Fallback - forward normally
-                await client.forward_messages(channel_id, msg.chat.id, msg.id)
-            return True
-        else:
-            # Normal message - direct forward
-            await client.forward_messages(channel_id, msg.chat.id, msg.id)
-            return True
+        # Raw API call - copy message without forward tag
+        result = await client.invoke(
+            functions.messages.CopyMessages(
+                from_peer=await client.resolve_peer(from_chat),
+                id=[msg_id],
+                to_peer=await client.resolve_peer(to_chat),
+                silent=False,
+                send_as=None,
+                schedule_date=None
+            )
+        )
+        return True
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Copy error: {e}")
         return False
 
-# ═══════════════ SEND TO CHANNELS ═══════════════
-async def send_to_channels(client, msg, channels):
-    """Send message to all channels without forward tag"""
+async def copy_to_channels(client, msg, channels):
+    """Message ko channels mein copy karega EXACTLY waisa hi"""
     sent_count = 0
     
     for channel in channels:
         channel_id = channel.get("id")
-        if await forward_without_tag(client, msg, channel_id):
-            sent_count += 1
+        try:
+            # Copy message (not forward) - no "Forwarded From" tag
+            result = await client.invoke(
+                functions.messages.CopyMessages(
+                    from_peer=await client.resolve_peer(msg.chat.id),
+                    id=[msg.id],
+                    to_peer=await client.resolve_peer(channel_id),
+                    silent=False
+                )
+            )
+            if result:
+                sent_count += 1
+        except Exception as e:
+            print(f"Error copying to {channel_id}: {e}")
     
     return sent_count
 
@@ -139,7 +139,8 @@ async def start_cmd(client, msg):
     await msg.reply_text(
         "📢 **AUTO-POST BOT**\n\n"
         "Mujhe channel admin banao aur main jo bhi msg bhejo ge woh channel par **exactly waisa hi** post kar dunga!\n\n"
-        "✅ Forward message bina 'Forwarded From' tag ke post hoga!\n\n"
+        "✅ Forward message bina 'Forwarded From' tag ke post hoga!\n"
+        "✅ Premium emoji, text, media sab exactly waisa hi rahega!\n\n"
         "**Commands:**\n"
         "/start - Show this message\n"
         "/help - Help menu\n"
@@ -162,8 +163,10 @@ async def help_cmd(client, msg):
         "1️⃣ Channel mein @getidsbot bhejo\n"
         "2️⃣ Channel ID copy karo (negative number)\n"
         "3️⃣ /addchannel -123456789 bhejo\n\n"
-        "**Note:** Premium emoji, stickers, photos, videos sab **exactly waisa hi** post hoga!\n"
-        "Forward message bina 'Forwarded From' tag ke post hoga!"
+        "**Features:**\n"
+        "✅ Premium emoji exactly waisa hi post hoga\n"
+        "✅ Forward message bina 'Forwarded From' tag ke\n"
+        "✅ Text, photo, video, sticker sab exactly waisa hi"
     )
 
 @app.on_message(filters.command("check"))
@@ -235,7 +238,8 @@ async def add_channel_cmd(client, msg):
             f"📢 **Name:** {channel_name}\n"
             f"🆔 **ID:** `{channel_id}`\n\n"
             "Now I will auto-post **exactly** whatever you send me!\n"
-            "✅ Forward messages bina tag ke post honge!"
+            "✅ Forward messages bina tag ke post honge!\n"
+            "✅ Premium emoji exactly waisa hi rahega!"
         )
     else:
         await status_msg.edit_text(
@@ -279,7 +283,7 @@ async def list_channels_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ AUTO-POST - ALL MEDIA ═══════════════
+# ═══════════════ AUTO-POST - EXACT COPY ═══════════════
 @app.on_message(filters.text & filters.private & ~filters.command(["start", "help", "addchannel", "removechannel", "listchannels", "check"]))
 async def auto_post_text(client, msg):
     channels = get_all_channels()
@@ -287,7 +291,7 @@ async def auto_post_text(client, msg):
         await msg.reply_text("⚠️ No channels added!")
         return
     
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     
     if sent_count > 0:
         await msg.reply_text(f"✅ **Posted to {sent_count} channel(s)!**")
@@ -297,7 +301,7 @@ async def auto_post_photo(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Photo posted to {sent_count} channel(s)!**")
 
@@ -306,7 +310,7 @@ async def auto_post_video(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Video posted to {sent_count} channel(s)!**")
 
@@ -315,7 +319,7 @@ async def auto_post_sticker(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Sticker posted to {sent_count} channel(s)!**")
 
@@ -324,7 +328,7 @@ async def auto_post_document(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Document posted to {sent_count} channel(s)!**")
 
@@ -333,7 +337,7 @@ async def auto_post_animation(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Animation posted to {sent_count} channel(s)!**")
 
@@ -342,7 +346,7 @@ async def auto_post_voice(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Voice posted to {sent_count} channel(s)!**")
 
@@ -351,7 +355,7 @@ async def auto_post_audio(client, msg):
     channels = get_all_channels()
     if not channels:
         return
-    sent_count = await send_to_channels(client, msg, channels)
+    sent_count = await copy_to_channels(client, msg, channels)
     if sent_count > 0:
         await msg.reply_text(f"✅ **Audio posted to {sent_count} channel(s)!**")
 
@@ -372,9 +376,10 @@ if not os.path.exists(CHANNEL_DB):
 
 print("""
 ╔══════════════════════════════════════╗
-║  📢 AUTO-POST BOT                   ║
-║  Forward Bina Tag Ke Post Hoga      ║
-║  Premium Emoji + Text + Media       ║
+║  📢 AUTO-POST BOT - FINAL           ║
+║  Copy Message Without Forward Tag   ║
+║  Premium Emoji + Text + Media      ║
+║  Sab Exactly Waisa Hi Rahega       ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
