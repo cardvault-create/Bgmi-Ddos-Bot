@@ -526,25 +526,25 @@ async def welcome_animation(client, msg):
         await asyncio.sleep(0.3)
         
         # Step 5: SEND STICKER (4 seconds)
-sticker_id = get_random_sticker()
-sticker_msg = None
-if sticker_id:
-    try:
-        sticker_msg = await client.send_sticker(chat_id, sticker_id)
-    except:
+        sticker_id = get_random_sticker()
         sticker_msg = None
-
-# Step 6: WAIT EXACTLY 4 SECONDS
-await asyncio.sleep(4)
-
-# Step 7: DELETE STICKER AFTER 4 SECONDS
-if sticker_msg:
-    try:
-        await sticker_msg.delete()
-    except:
-        pass
-
-# Step 8: INSTANTLY SEND VIDEO + FINAL MESSAGE
+        if sticker_id:
+            try:
+                sticker_msg = await client.send_sticker(chat_id, sticker_id)
+            except:
+                sticker_msg = None
+        
+        # Step 6: WAIT EXACTLY 4 SECONDS
+        await asyncio.sleep(4)
+        
+        # Step 7: DELETE STICKER AFTER 4 SECONDS
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        # Step 8: FINAL MESSAGE
         final_text = f"""
 ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˼ ♪]({BOT_LINK}),
@@ -571,23 +571,16 @@ if sticker_msg:
         else:
             kb = user_kb()
         
-        # Send video with final message
-        video_data = rand_vid()
-        final_msg = None
+        # Send final message first
+        final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
+        # Step 9: Try to send video as separate message (optional)
+        video_data = rand_vid()
         if video_data and os.path.exists(video_data["path"]):
             try:
-                final_msg = await client.send_video(
-                    chat_id,
-                    video_data["path"],
-                    caption=final_text,
-                    reply_markup=kb
-                )
+                await client.send_video(chat_id, video_data["path"])
             except Exception as e:
                 logger.error(f"Video send error: {e}")
-                final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
-        else:
-            final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
         
         return final_msg
         
@@ -1551,7 +1544,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
-║  3 SEC STICKER → INSTANT VIDEO      ║
+║  4 SEC STICKER → INSTANT FINAL MSG  ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
