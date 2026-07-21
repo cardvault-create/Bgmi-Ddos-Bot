@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-Server Freeze Bot | Add Sticker | Add Emoji | Auto Update | Delete Feature
+Server Freeze Bot | Random Emoji + Sticker | Auto Update | Welcome Animation
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -46,6 +46,8 @@ PREMIUM_TIME = 400
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
+last_emoji_index = -1
+last_sticker_index = -1
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -130,9 +132,17 @@ def remove_emoji(index):
     return False, None, len(data["emojis"])
 
 def get_random_emoji():
+    global last_emoji_index
     data = get_emojis()
     if data["emojis"]:
-        return random.choice(data["emojis"])
+        # Ensure we don't get the same emoji twice in a row
+        if len(data["emojis"]) > 1:
+            available = [i for i in range(len(data["emojis"])) if i != last_emoji_index]
+            if available:
+                last_emoji_index = random.choice(available)
+                return data["emojis"][last_emoji_index]
+        last_emoji_index = 0
+        return data["emojis"][0]
     return None
 
 def get_all_emojis():
@@ -144,7 +154,8 @@ def reset_emojis():
 
 # ═══════════════ STICKER FUNCTIONS ═══════════════
 def get_stickers():
-    return jload(STICKER_DB, {"stickers": []})
+    data = jload(STICKER_DB, {"stickers": []})
+    return data
 
 def add_sticker(sticker_id):
     data = get_stickers()
@@ -163,9 +174,17 @@ def remove_sticker(index):
     return False, None, len(data["stickers"])
 
 def get_random_sticker():
+    global last_sticker_index
     data = get_stickers()
     if data["stickers"]:
-        return random.choice(data["stickers"])
+        # Ensure we don't get the same sticker twice in a row
+        if len(data["stickers"]) > 1:
+            available = [i for i in range(len(data["stickers"])) if i != last_sticker_index]
+            if available:
+                last_sticker_index = random.choice(available)
+                return data["stickers"][last_sticker_index]
+        last_sticker_index = 0
+        return data["stickers"][0]
     return None
 
 def get_all_stickers():
@@ -435,83 +454,94 @@ async def welcome_animation(client, msg):
         except:
             pass
         
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.3)
         
-        # Step 2: Send random premium emoji from DB
+        # Step 2: Send random emoji
         emoji_id = get_random_emoji()
         if emoji_id:
             try:
                 emoji_msg = await client.send_sticker(chat_id, emoji_id)
-                await asyncio.sleep(1.5)
+            except:
+                emoji_msg = None
+        else:
+            emoji_msg = None
+        
+        await asyncio.sleep(0.3)
+        
+        # Step 3: Welcome Baby with user name and profile link
+        welcome_emojis = ["💞", "💖", "✨", "🌟", "💫", "⭐", "🌈", "💎", "🔥", "💜", "🩵", "❤️", "🧡", "💛", "💚", "💙"]
+        welcome_msg = await client.send_message(
+            chat_id, 
+            f"💞 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})"
+        )
+        
+        # Change emojis in same message (0.3 sec interval)
+        for emoji in welcome_emojis[:8]:
+            await asyncio.sleep(0.3)
+            try:
+                await welcome_msg.edit_text(f"{emoji} 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})")
+            except:
+                pass
+        
+        # Delete emoji message
+        if emoji_msg:
+            try:
                 await emoji_msg.delete()
             except:
                 pass
         
-        await asyncio.sleep(0.3)
+        # Step 4: Delete welcome message after 0.9 seconds
+        await asyncio.sleep(0.9)
+        try:
+            await welcome_msg.delete()
+        except:
+            pass
         
-        # Step 3: Welcome Text 1
-        welcome1 = await client.send_message(
-            chat_id, 
-            f"HEY, ⚡ I'm → [{first_name}](tg://user?id={user_id})"
-        )
-        await asyncio.sleep(1.5)
-        await welcome1.delete()
+        await asyncio.sleep(0.2)
         
-        await asyncio.sleep(0.3)
-        
-        # Step 4: Send another random premium emoji
-        emoji_id2 = get_random_emoji()
-        if emoji_id2:
-            try:
-                emoji_msg2 = await client.send_sticker(chat_id, emoji_id2)
-                await asyncio.sleep(1.5)
-                await emoji_msg2.delete()
-            except:
-                pass
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 5: Welcome Text 2
-        welcome2 = await client.send_message(
-            chat_id, 
-            f"I'M 'BGMI ✘ ATTACK, ♪,"
-        )
-        await asyncio.sleep(1.5)
-        await welcome2.delete()
-        
-        await asyncio.sleep(0.3)
-        
-        # Step 6: Starting animation
+        # Step 5: Starting animation with typing effect
+        starting_emojis = ["⚡", "💫", "✨", "🔥", "💥", "⚡", "💫", "✨"]
         starting_msg = await client.send_message(chat_id, "s")
+        
+        # Character by character typing effect
+        full_text = "⚡ ѕтαятιиg....."
         chars_to_add = ["t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         current_text = "s"
         
-        for char in chars_to_add:
+        # Add each character with emoji change
+        emoji_idx = 0
+        for i, char in enumerate(chars_to_add):
             current_text += char
             await asyncio.sleep(0.08)
             try:
-                await starting_msg.edit_text(current_text)
+                # Change emoji every few characters
+                if i % 2 == 0:
+                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+                    await starting_msg.edit_text(f"{emoji} {current_text}")
+                    emoji_idx += 1
+                else:
+                    await starting_msg.edit_text(current_text)
             except:
                 pass
         
         await asyncio.sleep(0.5)
         await starting_msg.delete()
         
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
         
-        # Step 7: Send random sticker if available (auto delete after 5 seconds)
+        # Step 6: Send random sticker
         sticker_id = get_random_sticker()
         if sticker_id:
             try:
                 sticker_msg = await client.send_sticker(chat_id, sticker_id)
-                await asyncio.sleep(5)
-                await sticker_msg.delete()
             except:
-                pass
+                sticker_msg = None
+        else:
+            sticker_msg = None
         
         await asyncio.sleep(0.5)
         
-        # Step 8: Final Message
+        # Step 7: Final welcome message
         final_text = f"""
 HEY, ⚡ I'm → HeaVen  
 I'M 'BGMI ✘ ATTACK, ♪,  
@@ -540,7 +570,17 @@ I'M 'BGMI ✘ ATTACK, ♪,
         else:
             kb = user_kb()
         
-        await client.send_message(chat_id, final_text, reply_markup=kb)
+        final_msg = await client.send_message(chat_id, final_text, reply_markup=kb)
+        
+        # Step 8: Delete sticker after 5 seconds
+        if sticker_msg:
+            await asyncio.sleep(5)
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        return final_msg
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
@@ -679,7 +719,6 @@ async def remove_emoji_cmd(client, msg):
         if success:
             await msg.reply_text(
                 f"✅ **EMOJI REMOVED!**\n\n"
-                f"🔹 **Removed ID:** `{removed[:30]}...`\n"
                 f"🔹 **Remaining Emojis:** {total}"
             )
         else:
@@ -766,7 +805,6 @@ async def remove_sticker_cmd(client, msg):
         if success:
             await msg.reply_text(
                 f"✅ **STICKER REMOVED!**\n\n"
-                f"🔹 **Removed ID:** `{removed[:30]}...`\n"
                 f"🔹 **Remaining Stickers:** {total}"
             )
         else:
@@ -1457,9 +1495,9 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  ADD EMOJI + ADD STICKER            ║
-║  AUTO UPDATE + DELETE FEATURE       ║
-║  OWNER ID VERIFIED                  ║
+║  RANDOM EMOJI + STICKER             ║
+║  AUTO UPDATE + DELETE               ║
+║  USER PROFILE LINK                  ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
