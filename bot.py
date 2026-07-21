@@ -36,6 +36,7 @@ BLOCKED_DB = "blocked.json"
 HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
+STICKER_TIME_DB = "sticker_times.json"  # 🔥 New DB for sticker times
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -43,7 +44,7 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-STICKER_DISPLAY_TIME = 5  # 🔥 AB 5 SECOND KAR DIYA
+DEFAULT_STICKER_TIME = 5  # Default if time not detected
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -112,6 +113,20 @@ def get_remaining(expiry_str):
         else: return f"{minutes}M", False
     except: return "ERROR", False
 
+# ═══════════════ STICKER TIME FUNCTIONS ═══════════════
+def get_sticker_times():
+    return jload(STICKER_TIME_DB, {})
+
+def save_sticker_time(sticker_id, duration):
+    data = get_sticker_times()
+    data[sticker_id] = duration
+    jsave(STICKER_TIME_DB, data)
+    return True
+
+def get_sticker_time(sticker_id):
+    data = get_sticker_times()
+    return data.get(sticker_id, DEFAULT_STICKER_TIME)
+
 # ═══════════════ EMOJI FUNCTIONS ═══════════════
 def get_emojis():
     data = jload(EMOJI_DB, {"emojis": []})
@@ -158,11 +173,14 @@ def get_stickers():
     data = jload(STICKER_DB, {"stickers": []})
     return data
 
-def add_sticker(sticker_id):
+def add_sticker(sticker_id, duration=None):
     data = get_stickers()
     if sticker_id not in data["stickers"]:
         data["stickers"].append(sticker_id)
         jsave(STICKER_DB, data)
+        # Save sticker time if provided
+        if duration:
+            save_sticker_time(sticker_id, duration)
         return True, len(data["stickers"])
     return False, len(data["stickers"])
 
@@ -192,6 +210,7 @@ def get_all_stickers():
 
 def reset_stickers():
     jsave(STICKER_DB, {"stickers": []})
+    jsave(STICKER_TIME_DB, {})
     return True
 
 # ═══════════════ VIDEO FUNCTIONS ═══════════════
@@ -461,6 +480,11 @@ async def welcome_animation(client, msg):
         sticker_id = get_random_sticker()
         video_data = rand_vid()
         
+        # Get sticker display time (auto-detected or default)
+        sticker_display_time = DEFAULT_STICKER_TIME
+        if sticker_id:
+            sticker_display_time = get_sticker_time(sticker_id)
+        
         # Prepare final text and keyboard
         if user_id == OWNER_ID:
             kb = owner_kb()
@@ -497,7 +521,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.5)
         
         # Step 2: Welcome Baby message
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
@@ -506,8 +530,8 @@ async def welcome_animation(client, msg):
             f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...🩷"
         )
         
-        for emoji in welcome_emojis[:3]:  # Only 3 to save time
-            await asyncio.sleep(0.2)
+        for emoji in welcome_emojis:
+            await asyncio.sleep(0.4)
             try:
                 await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
             except:
@@ -519,27 +543,30 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.3)
         
-        # Step 3: Starting animation (shortened)
-        starting_emojis = ["🩵", "🌠", "🪶", "🍓"]
-        chars_to_add = ["s", "t", "α", "я", "т", "i", "n", "g", "."]
+        # Step 3: Starting animation
+        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
+        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
-        emoji = starting_emojis[0]
+        emoji = starting_emojis[emoji_idx % len(starting_emojis)]
         
         await welcome_msg.edit_text(f"**{emoji}**")
-        await asyncio.sleep(0.05)
+        await asyncio.sleep(0.2)
         
-        for i, char in enumerate(chars_to_add[:6]):  # Only 6 chars to save time
-            await asyncio.sleep(0.05)
+        for i, char in enumerate(chars_to_add):
+            await asyncio.sleep(0.1)
             try:
-                if i % 2 == 0 and i < len(starting_emojis):
-                    emoji = starting_emojis[i % len(starting_emojis)]
-                await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+                if i % 2 == 0:
+                    emoji_idx += 1
+                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+                else:
+                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
             except:
                 pass
         
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.3)
         
         # Step 4: DELETE STARTING MESSAGE
         try:
@@ -547,7 +574,7 @@ async def welcome_animation(client, msg):
         except:
             pass
         
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.3)
         
         # Step 5: SEND STICKER + START VIDEO SENDING IN BACKGROUND
         sticker_msg = None
@@ -573,8 +600,8 @@ async def welcome_animation(client, msg):
                 client.send_message(chat_id, final_text, reply_markup=kb)
             )
         
-        # Step 6: WAIT FOR STICKER DISPLAY TIME
-        await asyncio.sleep(STICKER_DISPLAY_TIME)
+        # Step 6: WAIT FOR STICKER DISPLAY TIME (auto-detected)
+        await asyncio.sleep(sticker_display_time)
         
         # Step 7: DELETE STICKER
         if sticker_msg:
@@ -607,7 +634,7 @@ async def normal_start(client, msg):
             "━━━━━━━━━━━━━━━━━━━\n\n"
             "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
             "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
-            "🍰 /redeem 𝙆𝙚𝙔\n"
+            "🍰 /redeem 𝙆𝙚𝙮\n"
             f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
         )
         kb = InlineKeyboardMarkup([
@@ -689,7 +716,6 @@ async def add_emoji_cmd(client, msg):
             await msg.reply_text(
                 f"✅ **EMOJI ADDED!** 🎉\n\n"
                 f"🔹 **Total Emojis:** {total}\n\n"
-                f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n\n"
                 "✨ This emoji will appear randomly in welcome animation!"
             )
         else:
@@ -766,21 +792,42 @@ async def add_sticker_cmd(client, msg):
             "🎨 **ADD STICKER**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
-            "The sticker will appear randomly in welcome animation!"
+            "The sticker will appear randomly in welcome animation!\n\n"
+            "⏱️ **Auto-Detect:** Sticker duration will be detected automatically!"
         )
     
     if not msg.reply_to_message.sticker:
         return await msg.reply_text("❌ Please reply to a sticker!")
     
     sticker_id = msg.reply_to_message.sticker.file_id
-    success, total = add_sticker(sticker_id)
+    
+    # 🔥 AUTO-DETECT STICKER DURATION
+    duration = DEFAULT_STICKER_TIME
+    try:
+        # Try to get sticker duration from telegram
+        if hasattr(msg.reply_to_message.sticker, 'duration'):
+            duration = msg.reply_to_message.sticker.duration
+        elif hasattr(msg.reply_to_message.sticker, 'emoji'):
+            # For animated stickers, check if duration exists
+            sticker_obj = msg.reply_to_message.sticker
+            if hasattr(sticker_obj, 'duration'):
+                duration = sticker_obj.duration
+    except:
+        duration = DEFAULT_STICKER_TIME
+    
+    # Ensure minimum duration
+    if duration < 2:
+        duration = DEFAULT_STICKER_TIME
+    
+    success, total = add_sticker(sticker_id, duration)
     
     if success:
         await msg.reply_text(
             f"✅ **STICKER ADDED!** 🎉\n\n"
-            f"🔹 **Total Stickers:** {total}\n\n"
-            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n\n"
-            "✨ This sticker will appear randomly in welcome animation!"
+            f"🔹 **Total Stickers:** {total}\n"
+            f"⏱️ **Detected Duration:** {duration} seconds\n\n"
+            "✨ This sticker will appear randomly in welcome animation!\n"
+            f"🔄 Sticker will be visible for exactly {duration} seconds then video appears instantly!"
         )
     else:
         await msg.reply_text("❌ This sticker is already in the list!")
@@ -817,13 +864,15 @@ async def list_stickers_cmd(client, msg):
         return await msg.reply_text("❌ Owner only!")
     
     stickers = get_all_stickers()
+    sticker_times = get_sticker_times()
     
     if not stickers:
         return await msg.reply_text("📭 **No stickers added yet!**\n\nAdd using `/addsticker`")
     
     text = "📋 **STICKER LIST**\n\n"
     for i, sticker_id in enumerate(stickers, 1):
-        text += f"**{i}.** `{sticker_id[:30]}...`\n"
+        time = sticker_times.get(sticker_id, DEFAULT_STICKER_TIME)
+        text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
     
     text += f"\n🔹 **Total:** {len(stickers)}"
     await msg.reply_text(text)
@@ -839,6 +888,45 @@ async def reset_stickers_cmd(client, msg):
         f"🔹 **Total Stickers:** 0\n\n"
         "All stickers have been removed from the list."
     )
+
+@app.on_message(filters.command("setstickertime"))
+async def set_sticker_time_cmd(client, msg):
+    """Manually set sticker display time"""
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 3:
+        return await msg.reply_text(
+            "⏱️ **SET STICKER TIME**\n\n"
+            "Use: `/setstickertime index seconds`\n\n"
+            "Example: `/setstickertime 1 10`\n"
+            "This sets sticker #1 to display for 10 seconds\n\n"
+            "Get index from `/liststickers` command."
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        duration = int(parts[2])
+        
+        if duration < 1:
+            return await msg.reply_text("❌ Duration must be at least 1 second!")
+        
+        stickers = get_all_stickers()
+        if index < 0 or index >= len(stickers):
+            return await msg.reply_text(f"❌ Invalid index! Total stickers: {len(stickers)}")
+        
+        sticker_id = stickers[index]
+        save_sticker_time(sticker_id, duration)
+        
+        await msg.reply_text(
+            f"✅ **STICKER TIME UPDATED!**\n\n"
+            f"🆔 Sticker #{index+1}\n"
+            f"⏱️ New Duration: {duration} seconds\n\n"
+            "✨ Sticker will now display for this duration!"
+        )
+    except ValueError:
+        await msg.reply_text("❌ Invalid input! Use numbers only.")
 
 # ═══════════════ VIDEO COMMANDS ═══════════════
 @app.on_message(filters.command("addvideo"))
@@ -1035,15 +1123,16 @@ async def commands_cmd(client, msg):
         "📋 /listemojis - List Emojis\n"
         "🗑️ /removeemoji index - Remove Emoji\n"
         "🔄 /resetemojis - Reset All Emojis\n\n"
-        "🎨 /addsticker - Add Sticker\n"
-        "📋 /liststickers - List Stickers\n"
+        "🎨 /addsticker - Add Sticker (Auto-Detect Time)\n"
+        "📋 /liststickers - List Stickers with Times\n"
         "🗑️ /removesticker index - Remove Sticker\n"
-        "🔄 /resetstickers - Reset All Stickers\n\n"
+        "🔄 /resetstickers - Reset All Stickers\n"
+        "⏱️ /setstickertime index seconds - Set Sticker Time\n\n"
         "🎬 /addvideo - Add Video\n"
         "📋 /videos - List Videos\n"
         "🗑️ /delvideo ID - Delete Video\n"
         "🧹 /clearvideos - Clear All Videos\n\n"
-        f"⏱️ **Sticker Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+        f"⏱️ **Default Sticker Time:** {DEFAULT_STICKER_TIME} seconds\n"
         f"🎮 **BGMI PORTS:** 7000-15000\n"
         f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
         f"👑 [FATHER OF BOT]({OWNER_LINK})"
@@ -1089,11 +1178,12 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 /listemojis - List Emojis\n"
             "🗑️ /removeemoji index - Remove Emoji\n"
             "🔄 /resetemojis - Reset All Emojis\n\n"
-            "🎨 /addsticker - Add Sticker\n"
+            "🎨 /addsticker - Add Sticker (Auto-Detect)\n"
             "📋 /liststickers - List Stickers\n"
             "🗑️ /removesticker index - Remove Sticker\n"
-            "🔄 /resetstickers - Reset All Stickers\n\n"
-            f"⏱️ **Sticker Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            "🔄 /resetstickers - Reset All Stickers\n"
+            "⏱️ /setstickertime index seconds - Set Time\n\n"
+            f"⏱️ **Default Sticker Time:** {DEFAULT_STICKER_TIME} seconds\n"
             f"🎮 **BGMI PORTS:** 7000-15000\n"
             f"⏱️ **MAX ATTACK:** 600 seconds (10 minutes)\n"
             f"👑 [FATHER OF BOT]({OWNER_LINK})",
@@ -1116,7 +1206,7 @@ async def callbacks(client, cb: CallbackQuery):
                 "━━━━━━━━━━━━━━━━━━━\n\n"
                 "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
                 "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
-                "🍰 /redeem 𝙆𝙚𝙔\n"
+                "🍰 /redeem 𝙆𝙚𝙮\n"
                 f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
             )
             kb = InlineKeyboardMarkup([
@@ -1183,7 +1273,6 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/removeemoji index` - Remove by index\n"
             f"• `/listemojis` - List all emojis\n"
             f"• `/resetemojis` - Reset all\n\n"
-            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
             f"✨ Emojis appear randomly in welcome animation!",
             reply_markup=emoji_kb()
         )
@@ -1197,7 +1286,6 @@ async def callbacks(client, cb: CallbackQuery):
             "📤 **ADD EMOJI**\n\n"
             "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
-            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
             "✨ The emoji will be added to welcome animation!",
             reply_markup=back_admin_kb()
         )
@@ -1254,18 +1342,24 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("Owner only!", show_alert=True)
             return
         stickers = get_all_stickers()
-        await cb.message.edit_text(
-            f"🎨 **STICKER MANAGER**\n\n"
-            f"🔹 **Total Stickers:** {len(stickers)}\n"
-            f"🔹 **Commands:**\n"
-            f"• `/addsticker` - Reply to sticker\n"
-            f"• `/removesticker index` - Remove by index\n"
-            f"• `/liststickers` - List all stickers\n"
-            f"• `/resetstickers` - Reset all\n\n"
-            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
-            f"✨ Stickers appear randomly in welcome animation!",
-            reply_markup=sticker_kb()
-        )
+        sticker_times = get_sticker_times()
+        text = f"🎨 **STICKER MANAGER**\n\n"
+        text += f"🔹 **Total Stickers:** {len(stickers)}\n"
+        if stickers:
+            text += "🔹 **Sticker Times:**\n"
+            for i, sid in enumerate(stickers[:5], 1):
+                time = sticker_times.get(sid, DEFAULT_STICKER_TIME)
+                text += f"   #{i}: {time}s\n"
+        text += f"\n🔹 **Commands:**\n"
+        text += f"• `/addsticker` - Reply to sticker (Auto-detect)\n"
+        text += f"• `/removesticker index` - Remove by index\n"
+        text += f"• `/liststickers` - List all stickers\n"
+        text += f"• `/resetstickers` - Reset all\n"
+        text += f"• `/setstickertime index seconds` - Set time\n\n"
+        text += f"⏱️ **Default Time:** {DEFAULT_STICKER_TIME} seconds\n"
+        text += f"✨ Stickers appear randomly in welcome animation!\n"
+        text += f"🔄 Auto-detects sticker duration when added!",
+        await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
     if data == "s_add":
@@ -1276,7 +1370,7 @@ async def callbacks(client, cb: CallbackQuery):
             "🎨 **ADD STICKER**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
-            f"⏱️ **Display Time:** {STICKER_DISPLAY_TIME} seconds\n"
+            "⏱️ **Auto-Detect:** Duration will be detected automatically!\n"
             "✨ The sticker will be added to welcome animation!",
             reply_markup=back_admin_kb()
         )
@@ -1306,9 +1400,11 @@ async def callbacks(client, cb: CallbackQuery):
         if not stickers:
             await cb.answer("No stickers added yet!", show_alert=True)
             return
+        sticker_times = get_sticker_times()
         text = "📋 **STICKER LIST**\n\n"
         for i, sticker_id in enumerate(stickers, 1):
-            text += f"**{i}.** `{sticker_id[:30]}...`\n"
+            time = sticker_times.get(sticker_id, DEFAULT_STICKER_TIME)
+            text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
         text += f"\n🔹 **Total:** {len(stickers)}"
         await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
@@ -1542,7 +1638,8 @@ for f, d in [
     (BLOCKED_DB, []), 
     (HISTORY_DB, {}), 
     (STICKER_DB, {"stickers": []}),
-    (EMOJI_DB, {"emojis": []})
+    (EMOJI_DB, {"emojis": []}),
+    (STICKER_TIME_DB, {})
 ]:
     if not os.path.exists(f): jsave(f, d)
 
@@ -1554,6 +1651,7 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  RANDOM EMOJI + STICKER + VIDEO     ║
+║  AUTO-DETECT STICKER DURATION       ║
 ║  INSTANT VIDEO AFTER STICKER        ║
 ║  PARALLEL PROCESSING                ║
 ║  MAX ATTACK: 600 SECONDS (10 MIN)   ║
