@@ -1,3 +1,4 @@
+```python
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
@@ -45,8 +46,8 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-DEFAULT_STICKER_TIME = 5  # 🔥 STICKER 5 SECOND
-DEFAULT_VIDEO_DELAY = 3   # 🔥 VIDEO 3 SECOND
+DEFAULT_STICKER_TIME = 5
+DEFAULT_VIDEO_DELAY = 3
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -1141,6 +1142,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=kb)
         return
     
+    # ═══════════════ ALL OTHER CALLBACKS ═══════════════
     await cb.answer()
     
     if data == "back_admin":
@@ -1571,6 +1573,126 @@ async def send_vid(chat_id, text, kb=None, vid=None):
     except:
         return await app.send_message(chat_id, text, reply_markup=kb)
 
+# ═══════════════ STOP BUTTON HANDLER ═══════════════
+@app.on_message(filters.command("stop"))
+async def stop_cmd(client, msg):
+    global attacking
+    uid = msg.from_user.id
+    
+    # Check if user has access
+    if not check_access(uid)[0]:
+        sticker_id = get_random_sticker()
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        await msg.reply_text(
+            f"⛔ **{premium_text('ACCESS DENIED', 5)}**\n\n"
+            f"🔒 {premium_text('You don\'t have access to stop attacks!', 1)}\n\n"
+            f"👑 {premium_text('Contact:', 3)} [FATHER OF BOT]({OWNER_LINK})"
+        )
+        return
+    
+    if attacking:
+        attacker.on = False
+        attacking = False
+        
+        # Send sticker first
+        sticker_id = get_random_sticker()
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        vid = rand_vid()
+        text = f"⛔ **{premium_text('ATTACK STOPPED', 5)}**\n\n📦 {attacker.pkts:,} {premium_text('packets', 1)}\n\n🔄 /attack IP PORT TIME"
+        await send_vid(msg.chat.id, text, None, vid)
+    else:
+        # Send sticker first
+        sticker_id = get_random_sticker()
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        await msg.reply_text(
+            f"💤 **{premium_text('NO ATTACK RUNNING', 5)}**\n\n"
+            f"✅ {premium_text('Everything is peaceful!', 1)}\n\n"
+            f"⚔️ {premium_text('Use /attack to start', 3)}"
+        )
+
+# ═══════════════ STATUS COMMAND ═══════════════
+@app.on_message(filters.command("status"))
+async def status_cmd(client, msg):
+    uid = msg.from_user.id
+    
+    if not check_access(uid)[0]:
+        sticker_id = get_random_sticker()
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        await msg.reply_text(
+            f"🔒 **{premium_text('ACCESS DENIED', 5)}**\n\n"
+            f"👑 {premium_text('Contact owner for access', 1)}"
+        )
+        return
+    
+    info = get_user_info(uid)
+    history = get_user_history(uid)
+    
+    sticker_id = get_random_sticker()
+    if sticker_id:
+        try:
+            sticker_msg = await msg.reply_sticker(sticker_id)
+            await asyncio.sleep(0.5)
+            await sticker_msg.delete()
+        except:
+            pass
+    
+    text = f"📊 **{premium_text('STATUS', 5)}**\n\n{LINE}\n"
+    text += f"👤 {msg.from_user.first_name}\n"
+    text += f"🆔 {uid}\n"
+    text += f"💳 {info['type']}\n"
+    if info.get("remaining"): text += f"⏳ {premium_text('Remaining:', 3)} {info['remaining']}\n"
+    if info.get("expiry"):
+        try:
+            exp = datetime.fromisoformat(info["expiry"])
+            text += f"📅 {premium_text('Expires:', 3)} {exp.strftime('%d %b %Y, %I:%M %p')}\n"
+        except: pass
+    text += f"{LINE}\n"
+    text += f"⚡ {premium_text('Threads:', 3)} {info['threads']}\n"
+    text += f"⏱️ {premium_text('Max Time:', 3)} {info['max_time']}s\n"
+    text += f"📹 {premium_text('Videos:', 3)} {len(get_vids())}\n"
+    text += f"{LINE}\n"
+    text += f"🟢 {premium_text('Attack:', 3)} {'🟢 ON' if attacking else '💤 OFF'}\n"
+    text += f"{LINE}\n"
+    text += f"📊 {premium_text('History:', 3)}\n"
+    if history:
+        for h in history[-5:]:
+            try:
+                t = datetime.fromisoformat(h['time']).strftime('%d %b %I:%M %p')
+                text += f"• {t} - {h['action']}\n  {h['details'][:40]}\n"
+            except: pass
+    else:
+        text += f"• {premium_text('No attacks yet!', 1)}\n"
+    
+    await msg.reply_text(text)
+
 # ═══════════════ ATTACK ═══════════════
 @app.on_message(filters.command("attack"))
 async def attack_cmd(client, msg):
@@ -1798,19 +1920,6 @@ async def execute_attack(client, msg, uid):
         await amsg.edit_text(done)
     except: 
         pass
-
-# ═══════════════ STOP ═══════════════
-@app.on_message(filters.command("stop"))
-async def stop_cmd(client, msg):
-    global attacking
-    if not check_access(msg.from_user.id)[0]: return
-    if attacking:
-        attacker.on = False; attacking = False
-        vid = rand_vid()
-        text = f"⛔ **{premium_text('STOPPED', 5)}**\n\n📦 {attacker.pkts:,} {premium_text('packets', 1)}\n\n🔄 /attack IP PORT TIME"
-        await send_vid(msg.chat.id, text, None, vid)
-    else:
-        await msg.reply_text(f"💤 {premium_text('No attack running!', 1)}")
 
 # ═══════════════ REDEEM ═══════════════
 @app.on_message(filters.command("redeem"))
@@ -2213,6 +2322,7 @@ print("""
 ║  ✅ STATUS BUTTON WORKING           ║
 ║  ✅ STOP BUTTON WORKING             ║
 ║  ✅ REDEEM POPUP WORKING            ║
+║  ✅ COMMANDS BUTTON WORKING         ║
 ║  ✅ BACK + MENU BUTTONS WORKING     ║
 ║  ✅ STICKER 5 SECOND                ║
 ║  ✅ VIDEO 3 SECOND                  ║
@@ -2224,3 +2334,4 @@ print("""
 
 if __name__ == "__main__":
     app.run()
+```
