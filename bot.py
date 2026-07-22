@@ -901,626 +901,6 @@ async def commands_menu_callback(client, cb: CallbackQuery):
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
     await cb.message.edit_text(formatted_text, reply_markup=kb)
 
-# ═══════════════ ATTACK ═══════════════
-@app.on_message(filters.command("attack"))
-async def attack_cmd(client, msg):
-    global attacking, ainfo, amsg, attack_user
-    uid = msg.from_user.id
-    
-    checking_msg = await msg.reply_text(
-        "🔍 **INITIATING SECURITY PROTOCOL...**\n\n"
-        "▫️ Connecting to secure server...\n"
-        "▫️ Validating credentials...\n"
-        "▫️ Checking subscription status..."
-    )
-    
-    await asyncio.sleep(0.5)
-    
-    if is_blocked(uid):
-        await checking_msg.edit_text(
-            "🚫 **ACCESS DENIED!**\n\n"
-            "╔═══════════════════════╗\n"
-            "║  ❌ USER BLOCKED      ║\n"
-            "║  🔒 Security Violation ║\n"
-            "╚═══════════════════════╝\n\n"
-            "Your access has been revoked.\n"
-            "Contact owner for appeal."
-        )
-        return
-    
-    await checking_msg.edit_text(
-        "🔍 **SCANNING USER DATABASE...**\n\n"
-        "▫️ User ID: `" + str(uid) + "`\n"
-        "▫️ Status: Analyzing...\n"
-        "▫️ Security Level: ⚡⚡⚡\n"
-        "▫️ 🔐 Authentication in progress..."
-    )
-    
-    await asyncio.sleep(0.5)
-    
-    if uid == OWNER_ID:
-        await checking_msg.edit_text(
-            "👑 **MASTER ACCESS GRANTED!**\n\n"
-            "╔══════════════════════════╗\n"
-            "║  ✅ OWNER VERIFIED       ║\n"
-            "║  🛡️ Unlimited Access     ║\n"
-            "║  🚀 Super Admin Rights   ║\n"
-            "╚══════════════════════════╝\n\n"
-            "Welcome back, Master! 🫡\n"
-            "Initiating attack sequence..."
-        )
-        await asyncio.sleep(0.5)
-        await checking_msg.delete()
-        await execute_attack(client, msg, uid)
-        return
-    
-    u = get_users()
-    if str(uid) in u.get("premium", []):
-        await checking_msg.edit_text(
-            "💎 **PREMIUM ACCESS GRANTED!**\n\n"
-            "╔══════════════════════════╗\n"
-            "║  ✅ SUBSCRIPTION ACTIVE  ║\n"
-            "║  💎 Premium User        ║\n"
-            "║  🚀 Full Power Access   ║\n"
-            "╚══════════════════════════╝\n\n"
-            "Access granted! Launching attack... 🚀"
-        )
-        await asyncio.sleep(0.5)
-        await checking_msg.delete()
-        await execute_attack(client, msg, uid)
-        return
-    
-    await checking_msg.edit_text(
-        "🔍 **CHECKING KEY DATABASE...**\n\n"
-        "▫️ Searching for active keys...\n"
-        "▫️ 🔑 Key validation in progress...\n"
-        "▫️ Decrypting access tokens..."
-    )
-    
-    await asyncio.sleep(0.5)
-    
-    uk = u.get("keys", {}).get(str(uid), {})
-    if uk:
-        try:
-            if datetime.now(IST) < datetime.fromisoformat(uk["expiry"]):
-                remaining, _ = get_remaining(uk["expiry"])
-                await checking_msg.edit_text(
-                    "🔑 **KEY ACCESS GRANTED!**\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║  ✅ KEY VERIFIED         ║\n"
-                    f"║  ⏱️ Remaining: {remaining} ║\n"
-                    "║  🚀 Access Granted      ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "Key accepted! Preparing attack... ⚡"
-                )
-                await asyncio.sleep(0.5)
-                await checking_msg.delete()
-                await execute_attack(client, msg, uid)
-                return
-            else:
-                del u["keys"][str(uid)]
-                jsave(USERS_DB, u)
-                await checking_msg.edit_text(
-                    "⛔ **ACCESS DENIED!**\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║  ❌ KEY EXPIRED          ║\n"
-                    "║  ⏰ Time's Up!           ║\n"
-                    "║  🔒 Access Revoked      ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "Your key has expired.\n"
-                    "Please purchase a new key!\n\n"
-                    f"📲 Contact: [FATHER OF BOT]({OWNER_LINK})"
-                )
-                return
-        except:
-            pass
-    
-    await checking_msg.edit_text(
-        "⛔ **ACCESS DENIED!**\n\n"
-        "╔══════════════════════════╗\n"
-        "║  ❌ NO ACTIVE PLAN       ║\n"
-        "║  🔒 Subscription Required ║\n"
-        "║  🚫 Access Blocked       ║\n"
-        "╚══════════════════════════╝\n\n"
-        "🔑 **You don't have any active plan!**\n\n"
-        "To get access:\n"
-        "• Buy a key from the owner\n"
-        "• Redeem your key using /redeem\n"
-        "• Get premium access\n\n"
-        f"👑 Contact: [FATHER OF BOT]({OWNER_LINK})\n"
-        "🛒 For Key Purchase: @FathersOfCreater"
-    )
-
-async def execute_attack(client, msg, uid):
-    global attacking, ainfo, amsg, attack_user
-    
-    parts = msg.text.split()
-    if len(parts) < 4:
-        await msg.reply_text("⚠️ /attack IP PORT TIME\n📋 /attack 1.2.3.4 8080 600")
-        return
-    
-    if attacking:
-        e = time.time() - ainfo['start']
-        await msg.reply_text(f"⚠️ Already attacking! {int(e)}s\n🛑 Use Stop button")
-        return
-    
-    ip = parts[1]
-    try: port = int(parts[2])
-    except: 
-        await msg.reply_text("❌ Invalid port!")
-        return
-    try: dur = int(parts[3])
-    except: 
-        await msg.reply_text("❌ Invalid time!")
-        return
-    
-    info = get_user_info(uid)
-    threads = info['threads']
-    max_t = info['max_time']
-    if dur > max_t: 
-        dur = max_t
-    
-    ainfo = {'ip': ip, 'port': port, 'time': dur, 'start': time.time()}
-    attacking = True
-    attack_user = uid
-    
-    vid = rand_vid()
-    text = (
-        "💀 **ATTACK LAUNCHED!**\n\n"
-        "╔══════════════════════════╗\n"
-        f"║ 🎯 Target: {ip}:{port}     ║\n"
-        f"║ ⏱️ Duration: {dur}s        ║\n"
-        f"║ 🧵 Threads: {threads}     ║\n"
-        f"║ 👤 User: {uid}         ║\n"
-        "╚══════════════════════════╝\n\n"
-        "⚡ System compromised!\n"
-        "🔴 Attack in progress..."
-    )
-    amsg = await send_vid(msg.chat.id, text, None, vid)
-    add_history(uid, "ATTACK START", f"{ip}:{port} | {dur}s")
-    
-    async def live():
-        t0 = time.time()
-        while attacking:
-            await asyncio.sleep(2)
-            try:
-                e = time.time() - t0
-                if e >= dur: break
-                pct = (e/dur)*100
-                bar = "█"*int(pct/5) + "░"*(20-int(pct/5))
-                mbps = (attacker.bytes_out*8)/(e*1e6) if e>0 else 0
-                await amsg.edit_text(
-                    f"💀 **ATTACKING!**\n\n"
-                    f"╔══════════════════════════╗\n"
-                    f"║ 🎯 {ip}:{port}              ║\n"
-                    f"║ ⏱️ {int(e)}s / {dur}s        ║\n"
-                    f"║ 📊 [{bar}] {pct:.0f}%      ║\n"
-                    f"║ 📦 {attacker.pkts:,} pkts  ║\n"
-                    f"║ 📶 {mbps:.1f} Mbps          ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "🛑 Press STOP to abort"
-                )
-            except: pass
-    
-    asyncio.create_task(live())
-    
-    loop = asyncio.get_event_loop()
-    stats = await loop.run_in_executor(None, attacker.start, ip, port, dur, threads)
-    attacking = False
-    attack_user = None
-    
-    add_history(uid, "ATTACK END", f"{ip}:{port} | {stats['pkts']:,} pkts")
-    
-    vid = rand_vid()
-    done = (
-        "✅ **ATTACK COMPLETED!**\n\n"
-        "╔══════════════════════════╗\n"
-        f"║ 🎯 {ip}:{port}              ║\n"
-        f"║ 📦 {stats['pkts']:,} pkts  ║\n"
-        f"║ 📶 {stats['mbps']:.1f} Mbps║\n"
-        f"║ ⏱️ {dur}s Completed      ║\n"
-        "╚══════════════════════════╝\n\n"
-        "🔄 /attack IP PORT TIME"
-    )
-    if vid and os.path.exists(vid["path"]):
-        await app.send_video(msg.chat.id, vid["path"], caption=done)
-    try: 
-        await amsg.edit_text(done)
-    except: 
-        pass
-
-async def send_vid(chat_id, text, kb=None, vid=None):
-    if vid is None: vid = rand_vid()
-    try:
-        if vid and os.path.exists(vid["path"]):
-            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
-        return await app.send_message(chat_id, text, reply_markup=kb)
-    except:
-        return await app.send_message(chat_id, text, reply_markup=kb)
-
-# ═══════════════ STOP ═══════════════
-@app.on_message(filters.command("stop"))
-async def stop_cmd(client, msg):
-    global attacking
-    if not check_access(msg.from_user.id)[0]: return
-    if attacking:
-        attacker.on = False; attacking = False
-        vid = rand_vid()
-        text = f"⛔ **ATTACK STOPPED!**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
-        await send_vid(msg.chat.id, text, None, vid)
-    else:
-        await msg.reply_text("💤 No attack running!")
-
-# ═══════════════ REDEEM ═══════════════
-@app.on_message(filters.command("redeem"))
-async def redeem_cmd(client, msg):
-    uid = msg.from_user.id
-    access, a_type = check_access(uid)
-    if access:
-        info = get_user_info(uid)
-        return await msg.reply_text(f"✅ ALREADY UNLOCKED!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /start for menu")
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
-    
-    key = parts[1].upper()
-    success, result = redeem_key_code(key, uid)
-    
-    if success:
-        vid = rand_vid()
-        text = f"🎉 KEY REDEEMED!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
-        await send_vid(msg.chat.id, text, None, vid)
-    else:
-        await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
-
-# ═══════════════ COMMANDS COMMAND ═══════════════
-@app.on_message(filters.command("commands"))
-async def commands_cmd(client, msg):
-    uid = msg.from_user.id
-    is_owner = (uid == OWNER_ID)
-    commands_text = get_commands_list(is_owner)
-    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
-    await msg.reply_text(formatted_text, reply_markup=kb)
-
-# ═══════════════ EMOJI COMMANDS ═══════════════
-@app.on_message(filters.command("addemoji"))
-async def add_emoji_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    if not msg.reply_to_message:
-        return await msg.reply_text(
-            "📤 **ADD EMOJI**\n\n"
-            "Reply to a **premium emoji** with:\n"
-            "`/addemoji`\n\n"
-            "The emoji will be added to welcome animation!"
-        )
-    
-    emoji_id = None
-    
-    if msg.reply_to_message.sticker:
-        emoji_id = msg.reply_to_message.sticker.file_id
-    elif hasattr(msg.reply_to_message, 'custom_emoji_id') and msg.reply_to_message.custom_emoji_id:
-        emoji_id = msg.reply_to_message.custom_emoji_id
-    
-    if emoji_id:
-        success, total = add_emoji(emoji_id)
-        if success:
-            await msg.reply_text(
-                f"✅ **EMOJI ADDED!** 🎉\n\n"
-                f"🔹 **Total Emojis:** {total}\n\n"
-                "✨ This emoji will appear randomly in welcome animation!"
-            )
-        else:
-            await msg.reply_text("❌ This emoji is already in the list!")
-    else:
-        await msg.reply_text(
-            "❌ **No emoji found!**\n\n"
-            "Please reply to a **premium emoji** or **sticker**."
-        )
-
-@app.on_message(filters.command("removeemoji"))
-async def remove_emoji_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(
-            "🗑️ **REMOVE EMOJI**\n\n"
-            "Use: `/removeemoji index`\n\n"
-            "Get index from `/listemojis` command."
-        )
-    
-    try:
-        index = int(parts[1]) - 1
-        success, removed, total = remove_emoji(index)
-        if success:
-            await msg.reply_text(
-                f"✅ **EMOJI REMOVED!**\n\n"
-                f"🔹 **Remaining Emojis:** {total}"
-            )
-        else:
-            await msg.reply_text(f"❌ Invalid index! Total emojis: {total}")
-    except ValueError:
-        await msg.reply_text("❌ Invalid index! Use a number.")
-
-@app.on_message(filters.command("listemojis"))
-async def list_emojis_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    emojis = get_all_emojis()
-    
-    if not emojis:
-        return await msg.reply_text("📭 **No emojis added yet!**\n\nAdd using `/addemoji`")
-    
-    text = "📋 **EMOJI LIST**\n\n"
-    for i, emoji_id in enumerate(emojis, 1):
-        text += f"**{i}.** `{emoji_id[:30]}...`\n"
-    
-    text += f"\n🔹 **Total:** {len(emojis)}"
-    await msg.reply_text(text)
-
-@app.on_message(filters.command("resetemojis"))
-async def reset_emojis_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    reset_emojis()
-    await msg.reply_text(
-        f"🔄 **EMOJIS RESET!**\n\n"
-        f"🔹 **Total Emojis:** 0\n\n"
-        "All emojis have been removed from the list."
-    )
-
-# ═══════════════ STICKER COMMANDS ═══════════════
-@app.on_message(filters.command("addsticker"))
-async def add_sticker_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    if not msg.reply_to_message:
-        return await msg.reply_text(
-            "🎨 **ADD STICKER**\n\n"
-            "Reply to a **sticker** with:\n"
-            "`/addsticker`\n\n"
-            "The sticker will appear randomly in welcome animation!\n\n"
-            f"⏱️ Default Sticker Time: {get_sticker_display_time()}s"
-        )
-    
-    if not msg.reply_to_message.sticker:
-        return await msg.reply_text("❌ Please reply to a sticker!")
-    
-    sticker_id = msg.reply_to_message.sticker.file_id
-    
-    duration = get_sticker_display_time()
-    try:
-        if hasattr(msg.reply_to_message.sticker, 'duration'):
-            duration = msg.reply_to_message.sticker.duration
-        elif hasattr(msg.reply_to_message.sticker, 'emoji'):
-            sticker_obj = msg.reply_to_message.sticker
-            if hasattr(sticker_obj, 'duration'):
-                duration = sticker_obj.duration
-    except:
-        duration = get_sticker_display_time()
-    
-    if duration < 2:
-        duration = get_sticker_display_time()
-    
-    success, total = add_sticker(sticker_id, duration)
-    
-    if success:
-        await msg.reply_text(
-            f"✅ **STICKER ADDED!** 🎉\n\n"
-            f"🔹 **Total Stickers:** {total}\n"
-            f"⏱️ **Duration:** {duration} seconds\n\n"
-            "✨ This sticker will appear randomly in welcome animation!\n"
-            f"📋 Current Settings:\n"
-            f"• Sticker Time: {get_sticker_display_time()}s\n"
-            f"• Video Delay: {get_video_delay_time()}s"
-        )
-    else:
-        await msg.reply_text("❌ This sticker is already in the list!")
-
-@app.on_message(filters.command("removesticker"))
-async def remove_sticker_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(
-            "🗑️ **REMOVE STICKER**\n\n"
-            "Use: `/removesticker index`\n\n"
-            "Get index from `/liststickers` command."
-        )
-    
-    try:
-        index = int(parts[1]) - 1
-        success, removed, total = remove_sticker(index)
-        if success:
-            await msg.reply_text(
-                f"✅ **STICKER REMOVED!**\n\n"
-                f"🔹 **Remaining Stickers:** {total}"
-            )
-        else:
-            await msg.reply_text(f"❌ Invalid index! Total stickers: {total}")
-    except ValueError:
-        await msg.reply_text("❌ Invalid index! Use a number.")
-
-@app.on_message(filters.command("liststickers"))
-async def list_stickers_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    stickers = get_all_stickers()
-    sticker_times = get_sticker_times()
-    
-    if not stickers:
-        return await msg.reply_text("📭 **No stickers added yet!**\n\nAdd using `/addsticker`")
-    
-    text = "📋 **STICKER LIST**\n\n"
-    for i, sticker_id in enumerate(stickers, 1):
-        time = sticker_times.get(sticker_id, get_sticker_display_time())
-        text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
-    
-    text += f"\n🔹 **Total:** {len(stickers)}"
-    text += f"\n\n📋 **Settings:** Sticker Time: {get_sticker_display_time()}s | Video Delay: {get_video_delay_time()}s"
-    await msg.reply_text(text)
-
-@app.on_message(filters.command("resetstickers"))
-async def reset_stickers_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    reset_stickers()
-    await msg.reply_text(
-        f"🔄 **STICKERS RESET!**\n\n"
-        f"🔹 **Total Stickers:** 0\n\n"
-        "All stickers have been removed from the list."
-    )
-
-# ═══════════════ VIDEO COMMANDS ═══════════════
-@app.on_message(filters.command("addvideo"))
-async def add_video_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    if msg.reply_to_message and msg.reply_to_message.video:
-        s = await msg.reply_text("📂 Adding Video 📸")
-        try:
-            path = await msg.reply_to_message.download()
-            vid = add_vid(path)
-            
-            duration = "Unknown"
-            if msg.reply_to_message.video.duration:
-                mins = msg.reply_to_message.video.duration // 60
-                secs = msg.reply_to_message.video.duration % 60
-                duration = f"{mins}m {secs}s"
-            
-            text = (
-                f"✅ **VIDEO ADDED SUCCESSFULLY!** ✅\n\n"
-                f"{LINE}\n"
-                f"🆔 **Video ID:** {vid}\n"
-                f"📁 **Name:** {os.path.basename(path)[:30]}\n"
-                f"📹 **Total Videos:** {len(get_vids())}\n"
-                f"⏱️ **Duration:** {duration}\n"
-                f"{LINE}\n\n"
-                "🎲 Video will play randomly on welcome!\n"
-                f"⏱️ Video Delay: {get_video_delay_time()}s"
-            )
-            await s.edit_text(text)
-        except Exception as e:
-            await s.edit_text(f"❌ Error: {e}")
-    else:
-        await msg.reply_text("❌ Reply to a video!")
-
-@app.on_message(filters.command("videos"))
-async def list_vids_cmd(client, msg):
-    if not check_access(msg.from_user.id)[0]: return
-    vids = get_vids()
-    if not vids: return await msg.reply_text("📹 No videos!")
-    text = f"📹 **Videos ({len(vids)}):**\n\n"
-    for v in vids[:15]:
-        text += f"#{v['id']} {v['name'][:30]}\n"
-    text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
-    await msg.reply_text(text)
-
-@app.on_message(filters.command("delvideo"))
-async def del_vid_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    parts = msg.text.split()
-    if len(parts) != 2: return await msg.reply_text("❌ /delvideo ID")
-    try:
-        if del_vid(int(parts[1])):
-            await msg.reply_text(f"✅ Video #{parts[1]} deleted!\n📹 Remaining: {len(get_vids())}")
-        else:
-            await msg.reply_text("❌ Not found!")
-    except:
-        await msg.reply_text("❌ Invalid ID!")
-
-@app.on_message(filters.command("clearvideos"))
-async def clear_vids_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID: return
-    n = clear_vids()
-    await msg.reply_text(f"🗑️ {n} videos cleared!")
-
-# ═══════════════ ADMIN COMMANDS ═══════════════
-@app.on_message(filters.command("genkey") & filters.private)
-async def genkey_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 3:
-        return await msg.reply_text(
-            "🔑 **GENKEY**\n\n"
-            "Use: `/genkey NAME TIME`\n\n"
-            "Examples:\n"
-            "/genkey Premium 7d\n"
-            "/genkey VIP 30m\n"
-            "/genkey Test 24h\n\n"
-            "⏱️ Units: m=min, h=hour, d=day, w=week, mo=month"
-        )
-    
-    name = parts[1]
-    time_str = parts[2]
-    
-    key_code, duration = create_key(name, time_str)
-    
-    if key_code:
-        await msg.reply_text(
-            f"🔑 **KEY GENERATED!**\n\n"
-            f"{LINE}\n"
-            f"🪪 Name: {name}\n"
-            f"⏱️ Duration: {duration}\n"
-            f"🔑 Key: `{key_code}`\n"
-            f"{LINE}\n\n"
-            f"📋 User: /redeem {key_code}"
-        )
-    else:
-        await msg.reply_text("❌ Invalid time format!\n\nUse: 30m, 1h, 7d, 2w, 1mo")
-
-@app.on_message(filters.command("admin_keys") & filters.private)
-async def admin_keys_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    keys = get_keys()
-    active = [k for k, v in keys.items() if v["active"]]
-    used = [k for k, v in keys.items() if not v["active"]]
-    await msg.reply_text(
-        f"🔑 **ALL KEYS**\n\n{LINE}\n"
-        f"🟢 Active: {len(active)}\n"
-        f"🔴 Used: {len(used)}\n"
-        f"📊 Total: {len(keys)}\n{LINE}"
-    )
-
-@app.on_message(filters.command("admin_stats") & filters.private)
-async def admin_stats_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    vids = get_vids()
-    users = get_users()
-    await msg.reply_text(
-        f"📊 **STATS**\n\n{LINE}\n"
-        f"📹 Videos: {len(vids)}\n"
-        f"💎 Premium: {len(users.get('premium', []))}\n"
-        f"🔑 Key Users: {len(users.get('keys', {}))}\n"
-        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n"
-        f"{LINE}\n"
-        f"⚙️ Settings:\n"
-        f"⏱️ Sticker Time: {get_sticker_display_time()}s\n"
-        f"⏱️ Video Delay: {get_video_delay_time()}s"
-    )
-
-@app.on_message(filters.command("admin_clear") & filters.private)
-async def admin_clear_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    removed = remove_expired()
-    await msg.reply_text(f"🔄 {removed} expired keys removed!")
-
 # ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
@@ -1559,32 +939,9 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "back":
         user = cb.from_user
         uid = user.id
-        access, a_type = check_access(uid)
-        
-        if not access:
-            vid = rand_vid()
-            text = (
-                "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
-                "━━━━━━━━━━━━━━━━━━━\n"
-                f"💌 {user.first_name}\n"
-                f"🍄 {uid}\n"
-                "━━━━━━━━━━━━━━━━━━━\n\n"
-                "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
-                "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
-                "🍰 /redeem 𝙆𝙚𝙮\n"
-                f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
-            )
-            kb = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
-                [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-                [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
-            ])
-            await cb.message.edit_text(text, reply_markup=kb)
-            return
-        
         info = get_user_info(uid)
-        vid = rand_vid()
         
+        # 🔥 ACCESS DENIED BILKUL HATAYA - SABKO SAME MESSAGE
         if uid == OWNER_ID:
             kb = owner_kb()
         else:
@@ -1603,7 +960,7 @@ async def callbacks(client, cb: CallbackQuery):
             f"{LINE}\n"
             f"👤 {user.first_name}\n"
             f"🆔 {uid}\n"
-            f"💳 {a_type}{expiry_text}\n"
+            f"💳 {info['type']}{expiry_text}\n"
             f"{LINE}\n"
             f"⚡ {info['threads']} Threads\n"
             f"⏱️ {info['max_time']}s Max Time\n"
@@ -2040,6 +1397,626 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.answer(f"🔄 {removed} expired removed!", show_alert=True)
         return
 
+async def send_vid(chat_id, text, kb=None, vid=None):
+    if vid is None: vid = rand_vid()
+    try:
+        if vid and os.path.exists(vid["path"]):
+            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
+        return await app.send_message(chat_id, text, reply_markup=kb)
+    except:
+        return await app.send_message(chat_id, text, reply_markup=kb)
+
+# ═══════════════ ATTACK ═══════════════
+@app.on_message(filters.command("attack"))
+async def attack_cmd(client, msg):
+    global attacking, ainfo, amsg, attack_user
+    uid = msg.from_user.id
+    
+    checking_msg = await msg.reply_text(
+        "🔍 **INITIATING SECURITY PROTOCOL...**\n\n"
+        "▫️ Connecting to secure server...\n"
+        "▫️ Validating credentials...\n"
+        "▫️ Checking subscription status..."
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    if is_blocked(uid):
+        await checking_msg.edit_text(
+            "🚫 **ACCESS DENIED!**\n\n"
+            "╔═══════════════════════╗\n"
+            "║  ❌ USER BLOCKED      ║\n"
+            "║  🔒 Security Violation ║\n"
+            "╚═══════════════════════╝\n\n"
+            "Your access has been revoked.\n"
+            "Contact owner for appeal."
+        )
+        return
+    
+    await checking_msg.edit_text(
+        "🔍 **SCANNING USER DATABASE...**\n\n"
+        "▫️ User ID: `" + str(uid) + "`\n"
+        "▫️ Status: Analyzing...\n"
+        "▫️ Security Level: ⚡⚡⚡\n"
+        "▫️ 🔐 Authentication in progress..."
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    if uid == OWNER_ID:
+        await checking_msg.edit_text(
+            "👑 **MASTER ACCESS GRANTED!**\n\n"
+            "╔══════════════════════════╗\n"
+            "║  ✅ OWNER VERIFIED       ║\n"
+            "║  🛡️ Unlimited Access     ║\n"
+            "║  🚀 Super Admin Rights   ║\n"
+            "╚══════════════════════════╝\n\n"
+            "Welcome back, Master! 🫡\n"
+            "Initiating attack sequence..."
+        )
+        await asyncio.sleep(0.5)
+        await checking_msg.delete()
+        await execute_attack(client, msg, uid)
+        return
+    
+    u = get_users()
+    if str(uid) in u.get("premium", []):
+        await checking_msg.edit_text(
+            "💎 **PREMIUM ACCESS GRANTED!**\n\n"
+            "╔══════════════════════════╗\n"
+            "║  ✅ SUBSCRIPTION ACTIVE  ║\n"
+            "║  💎 Premium User        ║\n"
+            "║  🚀 Full Power Access   ║\n"
+            "╚══════════════════════════╝\n\n"
+            "Access granted! Launching attack... 🚀"
+        )
+        await asyncio.sleep(0.5)
+        await checking_msg.delete()
+        await execute_attack(client, msg, uid)
+        return
+    
+    await checking_msg.edit_text(
+        "🔍 **CHECKING KEY DATABASE...**\n\n"
+        "▫️ Searching for active keys...\n"
+        "▫️ 🔑 Key validation in progress...\n"
+        "▫️ Decrypting access tokens..."
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    uk = u.get("keys", {}).get(str(uid), {})
+    if uk:
+        try:
+            if datetime.now(IST) < datetime.fromisoformat(uk["expiry"]):
+                remaining, _ = get_remaining(uk["expiry"])
+                await checking_msg.edit_text(
+                    "🔑 **KEY ACCESS GRANTED!**\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║  ✅ KEY VERIFIED         ║\n"
+                    f"║  ⏱️ Remaining: {remaining} ║\n"
+                    "║  🚀 Access Granted      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "Key accepted! Preparing attack... ⚡"
+                )
+                await asyncio.sleep(0.5)
+                await checking_msg.delete()
+                await execute_attack(client, msg, uid)
+                return
+            else:
+                del u["keys"][str(uid)]
+                jsave(USERS_DB, u)
+                await checking_msg.edit_text(
+                    "⛔ **ACCESS DENIED!**\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║  ❌ KEY EXPIRED          ║\n"
+                    "║  ⏰ Time's Up!           ║\n"
+                    "║  🔒 Access Revoked      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "Your key has expired.\n"
+                    "Please purchase a new key!\n\n"
+                    f"📲 Contact: [FATHER OF BOT]({OWNER_LINK})"
+                )
+                return
+        except:
+            pass
+    
+    await checking_msg.edit_text(
+        "⛔ **ACCESS DENIED!**\n\n"
+        "╔══════════════════════════╗\n"
+        "║  ❌ NO ACTIVE PLAN       ║\n"
+        "║  🔒 Subscription Required ║\n"
+        "║  🚫 Access Blocked       ║\n"
+        "╚══════════════════════════╝\n\n"
+        "🔑 **You don't have any active plan!**\n\n"
+        "To get access:\n"
+        "• Buy a key from the owner\n"
+        "• Redeem your key using /redeem\n"
+        "• Get premium access\n\n"
+        f"👑 Contact: [FATHER OF BOT]({OWNER_LINK})\n"
+        "🛒 For Key Purchase: @FathersOfCreater"
+    )
+
+async def execute_attack(client, msg, uid):
+    global attacking, ainfo, amsg, attack_user
+    
+    parts = msg.text.split()
+    if len(parts) < 4:
+        await msg.reply_text("⚠️ /attack IP PORT TIME\n📋 /attack 1.2.3.4 8080 600")
+        return
+    
+    if attacking:
+        e = time.time() - ainfo['start']
+        await msg.reply_text(f"⚠️ Already attacking! {int(e)}s\n🛑 Use Stop button")
+        return
+    
+    ip = parts[1]
+    try: port = int(parts[2])
+    except: 
+        await msg.reply_text("❌ Invalid port!")
+        return
+    try: dur = int(parts[3])
+    except: 
+        await msg.reply_text("❌ Invalid time!")
+        return
+    
+    info = get_user_info(uid)
+    threads = info['threads']
+    max_t = info['max_time']
+    if dur > max_t: 
+        dur = max_t
+    
+    ainfo = {'ip': ip, 'port': port, 'time': dur, 'start': time.time()}
+    attacking = True
+    attack_user = uid
+    
+    vid = rand_vid()
+    text = (
+        "💀 **ATTACK LAUNCHED!**\n\n"
+        "╔══════════════════════════╗\n"
+        f"║ 🎯 Target: {ip}:{port}     ║\n"
+        f"║ ⏱️ Duration: {dur}s        ║\n"
+        f"║ 🧵 Threads: {threads}     ║\n"
+        f"║ 👤 User: {uid}         ║\n"
+        "╚══════════════════════════╝\n\n"
+        "⚡ System compromised!\n"
+        "🔴 Attack in progress..."
+    )
+    amsg = await send_vid(msg.chat.id, text, None, vid)
+    add_history(uid, "ATTACK START", f"{ip}:{port} | {dur}s")
+    
+    async def live():
+        t0 = time.time()
+        while attacking:
+            await asyncio.sleep(2)
+            try:
+                e = time.time() - t0
+                if e >= dur: break
+                pct = (e/dur)*100
+                bar = "█"*int(pct/5) + "░"*(20-int(pct/5))
+                mbps = (attacker.bytes_out*8)/(e*1e6) if e>0 else 0
+                await amsg.edit_text(
+                    f"💀 **ATTACKING!**\n\n"
+                    f"╔══════════════════════════╗\n"
+                    f"║ 🎯 {ip}:{port}              ║\n"
+                    f"║ ⏱️ {int(e)}s / {dur}s        ║\n"
+                    f"║ 📊 [{bar}] {pct:.0f}%      ║\n"
+                    f"║ 📦 {attacker.pkts:,} pkts  ║\n"
+                    f"║ 📶 {mbps:.1f} Mbps          ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "🛑 Press STOP to abort"
+                )
+            except: pass
+    
+    asyncio.create_task(live())
+    
+    loop = asyncio.get_event_loop()
+    stats = await loop.run_in_executor(None, attacker.start, ip, port, dur, threads)
+    attacking = False
+    attack_user = None
+    
+    add_history(uid, "ATTACK END", f"{ip}:{port} | {stats['pkts']:,} pkts")
+    
+    vid = rand_vid()
+    done = (
+        "✅ **ATTACK COMPLETED!**\n\n"
+        "╔══════════════════════════╗\n"
+        f"║ 🎯 {ip}:{port}              ║\n"
+        f"║ 📦 {stats['pkts']:,} pkts  ║\n"
+        f"║ 📶 {stats['mbps']:.1f} Mbps║\n"
+        f"║ ⏱️ {dur}s Completed      ║\n"
+        "╚══════════════════════════╝\n\n"
+        "🔄 /attack IP PORT TIME"
+    )
+    if vid and os.path.exists(vid["path"]):
+        await app.send_video(msg.chat.id, vid["path"], caption=done)
+    try: 
+        await amsg.edit_text(done)
+    except: 
+        pass
+
+# ═══════════════ STOP ═══════════════
+@app.on_message(filters.command("stop"))
+async def stop_cmd(client, msg):
+    global attacking
+    if not check_access(msg.from_user.id)[0]: return
+    if attacking:
+        attacker.on = False; attacking = False
+        vid = rand_vid()
+        text = f"⛔ **ATTACK STOPPED!**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
+        await send_vid(msg.chat.id, text, None, vid)
+    else:
+        await msg.reply_text("💤 No attack running!")
+
+# ═══════════════ REDEEM ═══════════════
+@app.on_message(filters.command("redeem"))
+async def redeem_cmd(client, msg):
+    uid = msg.from_user.id
+    access, a_type = check_access(uid)
+    if access:
+        info = get_user_info(uid)
+        return await msg.reply_text(f"✅ ALREADY UNLOCKED!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /start for menu")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(f"🔑 REDEEM KEY\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+    
+    key = parts[1].upper()
+    success, result = redeem_key_code(key, uid)
+    
+    if success:
+        vid = rand_vid()
+        text = f"🎉 KEY REDEEMED!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
+        await send_vid(msg.chat.id, text, None, vid)
+    else:
+        await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+
+# ═══════════════ COMMANDS COMMAND ═══════════════
+@app.on_message(filters.command("commands"))
+async def commands_cmd(client, msg):
+    uid = msg.from_user.id
+    is_owner = (uid == OWNER_ID)
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 BACK", callback_data="back")]])
+    await msg.reply_text(formatted_text, reply_markup=kb)
+
+# ═══════════════ EMOJI COMMANDS ═══════════════
+@app.on_message(filters.command("addemoji"))
+async def add_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            "📤 **ADD EMOJI**\n\n"
+            "Reply to a **premium emoji** with:\n"
+            "`/addemoji`\n\n"
+            "The emoji will be added to welcome animation!"
+        )
+    
+    emoji_id = None
+    
+    if msg.reply_to_message.sticker:
+        emoji_id = msg.reply_to_message.sticker.file_id
+    elif hasattr(msg.reply_to_message, 'custom_emoji_id') and msg.reply_to_message.custom_emoji_id:
+        emoji_id = msg.reply_to_message.custom_emoji_id
+    
+    if emoji_id:
+        success, total = add_emoji(emoji_id)
+        if success:
+            await msg.reply_text(
+                f"✅ **EMOJI ADDED!** 🎉\n\n"
+                f"🔹 **Total Emojis:** {total}\n\n"
+                "✨ This emoji will appear randomly in welcome animation!"
+            )
+        else:
+            await msg.reply_text("❌ This emoji is already in the list!")
+    else:
+        await msg.reply_text(
+            "❌ **No emoji found!**\n\n"
+            "Please reply to a **premium emoji** or **sticker**."
+        )
+
+@app.on_message(filters.command("removeemoji"))
+async def remove_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "🗑️ **REMOVE EMOJI**\n\n"
+            "Use: `/removeemoji index`\n\n"
+            "Get index from `/listemojis` command."
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        success, removed, total = remove_emoji(index)
+        if success:
+            await msg.reply_text(
+                f"✅ **EMOJI REMOVED!**\n\n"
+                f"🔹 **Remaining Emojis:** {total}"
+            )
+        else:
+            await msg.reply_text(f"❌ Invalid index! Total emojis: {total}")
+    except ValueError:
+        await msg.reply_text("❌ Invalid index! Use a number.")
+
+@app.on_message(filters.command("listemojis"))
+async def list_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    emojis = get_all_emojis()
+    
+    if not emojis:
+        return await msg.reply_text("📭 **No emojis added yet!**\n\nAdd using `/addemoji`")
+    
+    text = "📋 **EMOJI LIST**\n\n"
+    for i, emoji_id in enumerate(emojis, 1):
+        text += f"**{i}.** `{emoji_id[:30]}...`\n"
+    
+    text += f"\n🔹 **Total:** {len(emojis)}"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("resetemojis"))
+async def reset_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    reset_emojis()
+    await msg.reply_text(
+        f"🔄 **EMOJIS RESET!**\n\n"
+        f"🔹 **Total Emojis:** 0\n\n"
+        "All emojis have been removed from the list."
+    )
+
+# ═══════════════ STICKER COMMANDS ═══════════════
+@app.on_message(filters.command("addsticker"))
+async def add_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            "🎨 **ADD STICKER**\n\n"
+            "Reply to a **sticker** with:\n"
+            "`/addsticker`\n\n"
+            "The sticker will appear randomly in welcome animation!\n\n"
+            f"⏱️ Default Sticker Time: {get_sticker_display_time()}s"
+        )
+    
+    if not msg.reply_to_message.sticker:
+        return await msg.reply_text("❌ Please reply to a sticker!")
+    
+    sticker_id = msg.reply_to_message.sticker.file_id
+    
+    duration = get_sticker_display_time()
+    try:
+        if hasattr(msg.reply_to_message.sticker, 'duration'):
+            duration = msg.reply_to_message.sticker.duration
+        elif hasattr(msg.reply_to_message.sticker, 'emoji'):
+            sticker_obj = msg.reply_to_message.sticker
+            if hasattr(sticker_obj, 'duration'):
+                duration = sticker_obj.duration
+    except:
+        duration = get_sticker_display_time()
+    
+    if duration < 2:
+        duration = get_sticker_display_time()
+    
+    success, total = add_sticker(sticker_id, duration)
+    
+    if success:
+        await msg.reply_text(
+            f"✅ **STICKER ADDED!** 🎉\n\n"
+            f"🔹 **Total Stickers:** {total}\n"
+            f"⏱️ **Duration:** {duration} seconds\n\n"
+            "✨ This sticker will appear randomly in welcome animation!\n"
+            f"📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
+        )
+    else:
+        await msg.reply_text("❌ This sticker is already in the list!")
+
+@app.on_message(filters.command("removesticker"))
+async def remove_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "🗑️ **REMOVE STICKER**\n\n"
+            "Use: `/removesticker index`\n\n"
+            "Get index from `/liststickers` command."
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        success, removed, total = remove_sticker(index)
+        if success:
+            await msg.reply_text(
+                f"✅ **STICKER REMOVED!**\n\n"
+                f"🔹 **Remaining Stickers:** {total}"
+            )
+        else:
+            await msg.reply_text(f"❌ Invalid index! Total stickers: {total}")
+    except ValueError:
+        await msg.reply_text("❌ Invalid index! Use a number.")
+
+@app.on_message(filters.command("liststickers"))
+async def list_stickers_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    stickers = get_all_stickers()
+    sticker_times = get_sticker_times()
+    
+    if not stickers:
+        return await msg.reply_text("📭 **No stickers added yet!**\n\nAdd using `/addsticker`")
+    
+    text = "📋 **STICKER LIST**\n\n"
+    for i, sticker_id in enumerate(stickers, 1):
+        time = sticker_times.get(sticker_id, get_sticker_display_time())
+        text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
+    
+    text += f"\n🔹 **Total:** {len(stickers)}"
+    text += f"\n\n📋 **Settings:** Sticker Time: {get_sticker_display_time()}s | Video Delay: {get_video_delay_time()}s"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("resetstickers"))
+async def reset_stickers_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    reset_stickers()
+    await msg.reply_text(
+        f"🔄 **STICKERS RESET!**\n\n"
+        f"🔹 **Total Stickers:** 0\n\n"
+        "All stickers have been removed from the list."
+    )
+
+# ═══════════════ VIDEO COMMANDS ═══════════════
+@app.on_message(filters.command("addvideo"))
+async def add_video_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    if msg.reply_to_message and msg.reply_to_message.video:
+        s = await msg.reply_text("📂 Adding Video 📸")
+        try:
+            path = await msg.reply_to_message.download()
+            vid = add_vid(path)
+            
+            duration = "Unknown"
+            if msg.reply_to_message.video.duration:
+                mins = msg.reply_to_message.video.duration // 60
+                secs = msg.reply_to_message.video.duration % 60
+                duration = f"{mins}m {secs}s"
+            
+            text = (
+                f"✅ **VIDEO ADDED SUCCESSFULLY!** ✅\n\n"
+                f"{LINE}\n"
+                f"🆔 **Video ID:** {vid}\n"
+                f"📁 **Name:** {os.path.basename(path)[:30]}\n"
+                f"📹 **Total Videos:** {len(get_vids())}\n"
+                f"⏱️ **Duration:** {duration}\n"
+                f"{LINE}\n\n"
+                "🎲 Video will play randomly on welcome!\n"
+                f"⏱️ Video Delay: {get_video_delay_time()}s"
+            )
+            await s.edit_text(text)
+        except Exception as e:
+            await s.edit_text(f"❌ Error: {e}")
+    else:
+        await msg.reply_text("❌ Reply to a video!")
+
+@app.on_message(filters.command("videos"))
+async def list_vids_cmd(client, msg):
+    if not check_access(msg.from_user.id)[0]: return
+    vids = get_vids()
+    if not vids: return await msg.reply_text("📹 No videos!")
+    text = f"📹 **Videos ({len(vids)}):**\n\n"
+    for v in vids[:15]:
+        text += f"#{v['id']} {v['name'][:30]}\n"
+    text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("delvideo"))
+async def del_vid_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    parts = msg.text.split()
+    if len(parts) != 2: return await msg.reply_text("❌ /delvideo ID")
+    try:
+        if del_vid(int(parts[1])):
+            await msg.reply_text(f"✅ Video #{parts[1]} deleted!\n📹 Remaining: {len(get_vids())}")
+        else:
+            await msg.reply_text("❌ Not found!")
+    except:
+        await msg.reply_text("❌ Invalid ID!")
+
+@app.on_message(filters.command("clearvideos"))
+async def clear_vids_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    n = clear_vids()
+    await msg.reply_text(f"🗑️ {n} videos cleared!")
+
+# ═══════════════ ADMIN COMMANDS ═══════════════
+@app.on_message(filters.command("genkey") & filters.private)
+async def genkey_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 3:
+        return await msg.reply_text(
+            "🔑 **GENKEY**\n\n"
+            "Use: `/genkey NAME TIME`\n\n"
+            "Examples:\n"
+            "/genkey Premium 7d\n"
+            "/genkey VIP 30m\n"
+            "/genkey Test 24h\n\n"
+            "⏱️ Units: m=min, h=hour, d=day, w=week, mo=month"
+        )
+    
+    name = parts[1]
+    time_str = parts[2]
+    
+    key_code, duration = create_key(name, time_str)
+    
+    if key_code:
+        await msg.reply_text(
+            f"🔑 **KEY GENERATED!**\n\n"
+            f"{LINE}\n"
+            f"🪪 Name: {name}\n"
+            f"⏱️ Duration: {duration}\n"
+            f"🔑 Key: `{key_code}`\n"
+            f"{LINE}\n\n"
+            f"📋 User: /redeem {key_code}"
+        )
+    else:
+        await msg.reply_text("❌ Invalid time format!\n\nUse: 30m, 1h, 7d, 2w, 1mo")
+
+@app.on_message(filters.command("admin_keys") & filters.private)
+async def admin_keys_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    keys = get_keys()
+    active = [k for k, v in keys.items() if v["active"]]
+    used = [k for k, v in keys.items() if not v["active"]]
+    await msg.reply_text(
+        f"🔑 **ALL KEYS**\n\n{LINE}\n"
+        f"🟢 Active: {len(active)}\n"
+        f"🔴 Used: {len(used)}\n"
+        f"📊 Total: {len(keys)}\n{LINE}"
+    )
+
+@app.on_message(filters.command("admin_stats") & filters.private)
+async def admin_stats_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    vids = get_vids()
+    users = get_users()
+    await msg.reply_text(
+        f"📊 **STATS**\n\n{LINE}\n"
+        f"📹 Videos: {len(vids)}\n"
+        f"💎 Premium: {len(users.get('premium', []))}\n"
+        f"🔑 Key Users: {len(users.get('keys', {}))}\n"
+        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n"
+        f"{LINE}\n"
+        f"⚙️ Settings:\n"
+        f"⏱️ Sticker Time: {get_sticker_display_time()}s\n"
+        f"⏱️ Video Delay: {get_video_delay_time()}s"
+    )
+
+@app.on_message(filters.command("admin_clear") & filters.private)
+async def admin_clear_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    removed = remove_expired()
+    await msg.reply_text(f"🔄 {removed} expired keys removed!")
+
 # ═══════════════ AUTO EXPIRE ═══════════════
 async def auto_expire():
     while True:
@@ -2067,7 +2044,8 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  ✅ ACCESS DENIED COMPLETELY REMOVED║
+║  ✅ ACCESS DENIED BILKUL HATAYA     ║
+║  ✅ SABKO WELCOME ANIMATION         ║
 ║  ✅ 13 EMOJIS - 13 WORDS            ║
 ║  ✅ HAR WORD PAR EMOJI CHANGE       ║
 ║  ✅ SET ALL STICKER TIME            ║
