@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-💎 BGMI ATTACK BOT - COMMANDS BUTTON FIXED
+💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
+SERVER FREEZE BOT | STORE BOT STYLE
+ALL BUTTONS WORKING | NO CONFLICTS
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -10,6 +12,7 @@ from pyrogram import Client, filters
 from pyrogram.types import (
     Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
 
 # ═══════════════ LOGGING ═══════════════
@@ -46,6 +49,9 @@ PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
 DEFAULT_STICKER_TIME = 5
 DEFAULT_VIDEO_DELAY = 3
+
+# ═══════════════ BANNED USERS ═══════════════
+BANNED_USERS = set()
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -251,7 +257,7 @@ def clear_vids():
 # ═══════════════ USER FUNCTIONS ═══════════════
 def get_users(): return jload(USERS_DB, {"premium": [], "keys": {}})
 def get_blocked(): return jload(BLOCKED_DB, [])
-def is_blocked(uid): return str(uid) in get_blocked()
+def is_blocked(uid): return str(uid) in get_blocked() or int(uid) in BANNED_USERS
 
 def check_access(uid):
     if is_blocked(uid): return False, "BLOCKED"
@@ -370,7 +376,7 @@ app = Client("bgmi_bot_final", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_T
 def premium_text(text, style_num=1):
     return f"✦{text}✦"
 
-# ═══════════════ BUTTONS ═══════════════
+# ═══════════════ BUTTONS - STORE BOT STYLE ═══════════════
 def main_menu_kb(is_owner=False):
     buttons = [
         [InlineKeyboardButton("⚔ ATTACK", callback_data="attack_menu"),
@@ -378,7 +384,7 @@ def main_menu_kb(is_owner=False):
         [InlineKeyboardButton("▓ STATUS", callback_data="status_btn"),
          InlineKeyboardButton("ⓘ INFO", callback_data="info_menu")],
         [InlineKeyboardButton("⚿ REDEEM KEY", callback_data="redeem_menu")],
-        [InlineKeyboardButton("⌨ COMMANDS", callback_data="commands_menu")]  # ✅ YAHI SE CALLBACK AATA HAI
+        [InlineKeyboardButton("⌨ COMMANDS", callback_data="commands_menu")]
     ]
     if is_owner:
         buttons.append([InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")])
@@ -550,9 +556,21 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
         return user_commands + owner_commands
     return user_commands
 
+# ═══════════════ CHECK BANNED ═══════════════
+async def check_banned(update):
+    if not hasattr(update, 'from_user'):
+        return False
+    user_id = update.from_user.id
+    if user_id in BANNED_USERS or str(user_id) in get_blocked():
+        return True
+    return False
+
 # ═══════════════ START COMMAND ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
+    if await check_banned(msg):
+        return await msg.reply_text("🚫 You are banned!")
+    
     user = msg.from_user
     user_id = user.id
     is_owner = (user_id == OWNER_ID)
@@ -564,8 +582,8 @@ async def start_cmd(client, msg):
         except:
             pass
     
-    text = f"""
-👋 Hello [{user.first_name}](tg://user?id={user_id})!
+    text = """
+👋 Welcome Buddy!
 
 💀 **BGMI ATTACK BOT** 💀
 
@@ -589,6 +607,8 @@ async def start_cmd(client, msg):
 # ═══════════════ COMMANDS COMMAND ═══════════════
 @app.on_message(filters.command("commands") & filters.private)
 async def commands_cmd(client, msg):
+    if await check_banned(msg):
+        return
     uid = msg.from_user.id
     is_owner = (uid == OWNER_ID)
     text = get_commands_list(is_owner)
@@ -597,6 +617,8 @@ async def commands_cmd(client, msg):
 # ═══════════════ STOP COMMAND ═══════════════
 @app.on_message(filters.command("stop") & filters.private)
 async def stop_cmd(client, msg):
+    if await check_banned(msg):
+        return
     global attacking
     uid = msg.from_user.id
     
@@ -626,6 +648,8 @@ async def stop_cmd(client, msg):
 # ═══════════════ STATUS COMMAND ═══════════════
 @app.on_message(filters.command("status") & filters.private)
 async def status_cmd(client, msg):
+    if await check_banned(msg):
+        return
     uid = msg.from_user.id
     
     if not check_access(uid)[0]:
@@ -658,6 +682,8 @@ async def status_cmd(client, msg):
 # ═══════════════ REDEEM COMMAND ═══════════════
 @app.on_message(filters.command("redeem") & filters.private)
 async def redeem_cmd(client, msg):
+    if await check_banned(msg):
+        return
     uid = msg.from_user.id
     access, a_type = check_access(uid)
     
@@ -683,6 +709,8 @@ async def redeem_cmd(client, msg):
 # ═══════════════ ATTACK COMMAND ═══════════════
 @app.on_message(filters.command("attack") & filters.private)
 async def attack_cmd(client, msg):
+    if await check_banned(msg):
+        return
     global attacking, ainfo, amsg, attack_user
     uid = msg.from_user.id
     
@@ -801,6 +829,8 @@ async def attack_cmd(client, msg):
 # ═══════════════ ADD STOP STICKER ═══════════════
 @app.on_message(filters.command("addstop") & filters.private)
 async def add_stop_sticker_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -808,24 +838,35 @@ async def add_stop_sticker_cmd(client, msg):
         return await msg.reply_text(
             "⛔ ADD STOP STICKER\n\n"
             "Reply to a sticker with:\n"
-            "`/addstop`"
+            "`/addstop`",
+            reply_markup=back_to_menu_kb(True)
         )
     
     sticker_id = msg.reply_to_message.sticker.file_id
     set_stop_sticker(sticker_id)
-    await msg.reply_text("✅ STOP STICKER ADDED!\n\nNow /stop will use this sticker.")
+    await msg.reply_text(
+        "✅ STOP STICKER ADDED!\n\nNow /stop will use this sticker.",
+        reply_markup=back_to_menu_kb(True)
+    )
 
 @app.on_message(filters.command("removestop") & filters.private)
 async def remove_stop_sticker_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     clear_stop_sticker()
-    await msg.reply_text("✅ STOP STICKER REMOVED!")
+    await msg.reply_text(
+        "✅ STOP STICKER REMOVED!",
+        reply_markup=back_to_menu_kb(True)
+    )
 
 # ═══════════════ ADD STICKER ═══════════════
 @app.on_message(filters.command("addsticker") & filters.private)
 async def add_sticker_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -833,7 +874,8 @@ async def add_sticker_cmd(client, msg):
         return await msg.reply_text(
             "⎘ ADD STICKER\n\n"
             "Reply to a sticker with:\n"
-            "`/addsticker`"
+            "`/addsticker`",
+            reply_markup=back_to_menu_kb(True)
         )
     
     sticker_id = msg.reply_to_message.sticker.file_id
@@ -841,36 +883,54 @@ async def add_sticker_cmd(client, msg):
     success, total = add_sticker(sticker_id, duration)
     
     if success:
-        await msg.reply_text(f"✅ STICKER ADDED!\n\nTotal Stickers: {total}\n⏱️ Duration: {duration}s")
+        await msg.reply_text(
+            f"✅ STICKER ADDED!\n\nTotal Stickers: {total}\n⏱️ Duration: {duration}s",
+            reply_markup=back_to_menu_kb(True)
+        )
     else:
-        await msg.reply_text("❌ Sticker already exists!")
+        await msg.reply_text(
+            "❌ Sticker already exists!",
+            reply_markup=back_to_menu_kb(True)
+        )
 
 @app.on_message(filters.command("liststickers") & filters.private)
 async def list_stickers_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     stickers = get_all_stickers()
     if not stickers:
-        return await msg.reply_text("📭 No stickers added yet!")
+        return await msg.reply_text(
+            "📭 No stickers added yet!",
+            reply_markup=back_to_menu_kb(True)
+        )
     
     text = f"⌘ STICKER LIST ({len(stickers)})\n\n"
     for i, sid in enumerate(stickers, 1):
         text += f"{i}. `{sid[:20]}...`\n"
     
-    await msg.reply_text(text)
+    await msg.reply_text(text, reply_markup=back_to_menu_kb(True))
 
 @app.on_message(filters.command("resetstickers") & filters.private)
 async def reset_stickers_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     reset_stickers()
-    await msg.reply_text("↺ ALL STICKERS RESET!")
+    await msg.reply_text(
+        "↺ ALL STICKERS RESET!",
+        reply_markup=back_to_menu_kb(True)
+    )
 
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji") & filters.private)
 async def add_emoji_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -878,43 +938,62 @@ async def add_emoji_cmd(client, msg):
         return await msg.reply_text(
             "⎘ ADD EMOJI\n\n"
             "Reply to a sticker with:\n"
-            "`/addemoji`"
+            "`/addemoji`",
+            reply_markup=back_to_menu_kb(True)
         )
     
     emoji_id = msg.reply_to_message.sticker.file_id
     success, total = add_emoji(emoji_id)
     
     if success:
-        await msg.reply_text(f"✅ EMOJI ADDED!\n\nTotal Emojis: {total}")
+        await msg.reply_text(
+            f"✅ EMOJI ADDED!\n\nTotal Emojis: {total}",
+            reply_markup=back_to_menu_kb(True)
+        )
     else:
-        await msg.reply_text("❌ Emoji already exists!")
+        await msg.reply_text(
+            "❌ Emoji already exists!",
+            reply_markup=back_to_menu_kb(True)
+        )
 
 @app.on_message(filters.command("listemojis") & filters.private)
 async def list_emojis_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     emojis = get_all_emojis()
     if not emojis:
-        return await msg.reply_text("📭 No emojis added yet!")
+        return await msg.reply_text(
+            "📭 No emojis added yet!",
+            reply_markup=back_to_menu_kb(True)
+        )
     
     text = f"⌘ EMOJI LIST ({len(emojis)})\n\n"
     for i, eid in enumerate(emojis, 1):
         text += f"{i}. `{eid[:20]}...`\n"
     
-    await msg.reply_text(text)
+    await msg.reply_text(text, reply_markup=back_to_menu_kb(True))
 
 @app.on_message(filters.command("resetemojis") & filters.private)
 async def reset_emojis_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     reset_emojis()
-    await msg.reply_text("↺ ALL EMOJIS RESET!")
+    await msg.reply_text(
+        "↺ ALL EMOJIS RESET!",
+        reply_markup=back_to_menu_kb(True)
+    )
 
 # ═══════════════ VIDEO COMMANDS ═══════════════
 @app.on_message(filters.command("addvideo") & filters.private)
 async def add_video_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -922,39 +1001,58 @@ async def add_video_cmd(client, msg):
         return await msg.reply_text(
             "⎘ ADD VIDEO\n\n"
             "Reply to a video with:\n"
-            "`/addvideo`"
+            "`/addvideo`",
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
         path = await msg.reply_to_message.download()
         vid = add_vid(path)
-        await msg.reply_text(f"✅ VIDEO ADDED!\n\n🆔 ID: {vid}\n📹 Total: {len(get_vids())}")
+        await msg.reply_text(
+            f"✅ VIDEO ADDED!\n\n🆔 ID: {vid}\n📹 Total: {len(get_vids())}",
+            reply_markup=back_to_menu_kb(True)
+        )
     except Exception as e:
-        await msg.reply_text(f"❌ Error: {e}")
+        await msg.reply_text(
+            f"❌ Error: {e}",
+            reply_markup=back_to_menu_kb(True)
+        )
 
 @app.on_message(filters.command("videos") & filters.private)
 async def list_videos_cmd(client, msg):
+    if await check_banned(msg):
+        return
     vids = get_vids()
     if not vids:
-        return await msg.reply_text("📭 No videos added yet!")
+        return await msg.reply_text(
+            "📭 No videos added yet!",
+            reply_markup=back_to_menu_kb(msg.from_user.id == OWNER_ID)
+        )
     
     text = f"📹 VIDEOS ({len(vids)})\n\n"
     for v in vids[:10]:
         text += f"#{v['id']} {v['name'][:30]}\n"
     
-    await msg.reply_text(text)
+    await msg.reply_text(text, reply_markup=back_to_menu_kb(msg.from_user.id == OWNER_ID))
 
 @app.on_message(filters.command("clearvideos") & filters.private)
 async def clear_videos_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     n = clear_vids()
-    await msg.reply_text(f"🗑️ {n} videos cleared!")
+    await msg.reply_text(
+        f"🗑️ {n} videos cleared!",
+        reply_markup=back_to_menu_kb(True)
+    )
 
 # ═══════════════ KEY COMMANDS ═══════════════
 @app.on_message(filters.command("genkey") & filters.private)
 async def genkey_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -966,7 +1064,8 @@ async def genkey_cmd(client, msg):
             "Examples:\n"
             "/genkey Premium 7d\n"
             "/genkey VIP 30m\n"
-            "Units: m=min, h=hour, d=day, w=week, mo=month"
+            "Units: m=min, h=hour, d=day, w=week, mo=month",
+            reply_markup=back_to_menu_kb(True)
         )
     
     name = parts[1]
@@ -979,13 +1078,19 @@ async def genkey_cmd(client, msg):
             f"🪪 Name: {name}\n"
             f"⏱️ Duration: {duration}\n"
             f"🔑 Key: `{key_code}`\n\n"
-            f"📋 /redeem {key_code}"
+            f"📋 /redeem {key_code}",
+            reply_markup=back_to_menu_kb(True)
         )
     else:
-        await msg.reply_text("❌ Invalid time format!")
+        await msg.reply_text(
+            "❌ Invalid time format!",
+            reply_markup=back_to_menu_kb(True)
+        )
 
 @app.on_message(filters.command("admin_keys") & filters.private)
 async def admin_keys_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -997,11 +1102,14 @@ async def admin_keys_cmd(client, msg):
         f"⌘ ALL KEYS\n\n"
         f"🟢 Active: {len(active)}\n"
         f"🔴 Used: {len(used)}\n"
-        f"📊 Total: {len(keys)}"
+        f"📊 Total: {len(keys)}",
+        reply_markup=back_to_menu_kb(True)
     )
 
 @app.on_message(filters.command("admin_stats") & filters.private)
 async def admin_stats_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -1013,23 +1121,166 @@ async def admin_stats_cmd(client, msg):
         f"📹 Videos: {len(vids)}\n"
         f"💎 Premium: {len(users.get('premium', []))}\n"
         f"🔑 Key Users: {len(users.get('keys', {}))}\n"
-        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}"
+        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}",
+        reply_markup=back_to_menu_kb(True)
     )
 
 @app.on_message(filters.command("admin_clear") & filters.private)
 async def admin_clear_cmd(client, msg):
+    if await check_banned(msg):
+        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
     removed = remove_expired()
-    await msg.reply_text(f"↺ {removed} expired keys removed!")
+    await msg.reply_text(
+        f"↺ {removed} expired keys removed!",
+        reply_markup=back_to_menu_kb(True)
+    )
 
-# ═══════════════ SINGLE CALLBACK HANDLER - YAHI SE SAB BUTTONS CONTROL HOTE HAIN ═══════════════
+# ═══════════════ SETTINGS COMMANDS ═══════════════
+@app.on_message(filters.command("setallstickertime") & filters.private)
+async def set_all_sticker_time_cmd(client, msg):
+    if await check_banned(msg):
+        return
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "Use: /setallstickertime seconds",
+            reply_markup=back_to_menu_kb(True)
+        )
+    
+    try:
+        duration = int(parts[1])
+        if duration < 1:
+            return await msg.reply_text(
+                "❌ Minimum 1 second!",
+                reply_markup=back_to_menu_kb(True)
+            )
+        
+        save_settings(sticker_time=duration)
+        await msg.reply_text(
+            f"✅ ALL STICKERS TIME SET TO {duration}s",
+            reply_markup=back_to_menu_kb(True)
+        )
+    except:
+        await msg.reply_text(
+            "❌ Invalid input! Use a number.",
+            reply_markup=back_to_menu_kb(True)
+        )
+
+@app.on_message(filters.command("setvideodelay") & filters.private)
+async def set_video_delay_cmd(client, msg):
+    if await check_banned(msg):
+        return
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "Use: /setvideodelay seconds",
+            reply_markup=back_to_menu_kb(True)
+        )
+    
+    try:
+        delay = int(parts[1])
+        if delay < 1:
+            return await msg.reply_text(
+                "❌ Minimum 1 second!",
+                reply_markup=back_to_menu_kb(True)
+            )
+        
+        save_settings(video_delay=delay)
+        await msg.reply_text(
+            f"✅ VIDEO DELAY SET TO {delay}s",
+            reply_markup=back_to_menu_kb(True)
+        )
+    except:
+        await msg.reply_text(
+            "❌ Invalid input! Use a number.",
+            reply_markup=back_to_menu_kb(True)
+        )
+
+# ═══════════════ BAN/UNBAN COMMANDS ═══════════════
+@app.on_message(filters.command("ban") & filters.private)
+async def ban_command(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text("Usage: /ban USER_ID")
+    
+    try:
+        user_id = int(parts[1])
+        BANNED_USERS.add(user_id)
+        
+        # Add to blocked database
+        blocked = get_blocked()
+        if str(user_id) not in blocked:
+            blocked.append(str(user_id))
+            jsave(BLOCKED_DB, blocked)
+        
+        await msg.reply_text(f"✅ User {user_id} banned successfully!")
+        
+        # Try to notify user
+        try:
+            await client.send_message(
+                user_id,
+                "🚫 You have been banned from using this bot!"
+            )
+        except:
+            pass
+    except:
+        await msg.reply_text("❌ Invalid user ID!")
+
+@app.on_message(filters.command("unban") & filters.private)
+async def unban_command(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text("Usage: /unban USER_ID")
+    
+    try:
+        user_id = int(parts[1])
+        BANNED_USERS.discard(user_id)
+        
+        # Remove from blocked database
+        blocked = get_blocked()
+        if str(user_id) in blocked:
+            blocked.remove(str(user_id))
+            jsave(BLOCKED_DB, blocked)
+        
+        await msg.reply_text(f"✅ User {user_id} unbanned successfully!")
+        
+        # Try to notify user
+        try:
+            await client.send_message(
+                user_id,
+                "✅ You have been unbanned! You can use the bot again."
+            )
+        except:
+            pass
+    except:
+        await msg.reply_text("❌ Invalid user ID!")
+
+# ═══════════════ SINGLE CALLBACK HANDLER ═══════════════
 @app.on_callback_query()
 async def callback_handler(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     is_owner = (uid == OWNER_ID)
+    
+    # Check if user is banned
+    if is_blocked(uid):
+        await cb.answer("🚫 You are banned!", show_alert=True)
+        return
     
     # ═══════ SEPARATOR ═══════
     if data == "sep":
@@ -1085,7 +1336,8 @@ async def callback_handler(client, cb: CallbackQuery):
                 f"║  🚫 Access Blocked\n"
                 f"╚══════════════════════════╝\n\n"
                 f"🔑 You don't have any active plan!\n\n"
-                f"👑 Contact: @{OWNER_USERNAME}"
+                f"👑 Contact: @{OWNER_USERNAME}",
+                reply_markup=back_to_menu_kb(is_owner)
             )
             return
         
@@ -1106,6 +1358,27 @@ async def callback_handler(client, cb: CallbackQuery):
 """
         await cb.message.edit_text(text, reply_markup=back_to_menu_kb(is_owner))
         await cb.answer("⚔ Attack Menu")
+        return
+    
+    # ═══════ STATUS BUTTON ═══════
+    if data == "status_btn":
+        if attacking:
+            e = time.time() - ainfo['start']
+            await cb.answer(
+                f"🟢 ATTACKING\n"
+                f"⏱️ {int(e)}s\n"
+                f"📦 {attacker.pkts:,} pkts",
+                show_alert=True
+            )
+        else:
+            info = get_user_info(uid)
+            await cb.answer(
+                f"💤 IDLE\n\n"
+                f"👤 {cb.from_user.first_name}\n"
+                f"💳 {info['type']}\n"
+                f"⚡ {info['threads']} Threads",
+                show_alert=True
+            )
         return
     
     # ═══════ INFO MENU ═══════
@@ -1176,25 +1449,11 @@ async def callback_handler(client, cb: CallbackQuery):
         )
         return
     
-    # ═══════ ★★★ COMMANDS MENU - YAHI SE COMMANDS BUTTON WORK KAREGA ★★★ ═══════
+    # ═══════ COMMANDS MENU ═══════
     if data == "commands_menu":
         text = get_commands_list(is_owner)
         await cb.message.edit_text(text, reply_markup=back_to_menu_kb(is_owner))
         await cb.answer("📝 Commands List")
-        return
-    
-    # ═══════ STATUS BUTTON ═══════
-    if data == "status_btn":
-        if attacking:
-            e = time.time() - ainfo['start']
-            await cb.answer(
-                f"🟢 ATTACKING\n"
-                f"⏱️ {int(e)}s\n"
-                f"📦 {attacker.pkts:,} pkts",
-                show_alert=True
-            )
-        else:
-            await cb.answer("💤 IDLE\n\n✅ No attack running", show_alert=True)
         return
     
     # ═══════ STOP ATTACK ═══════
@@ -1604,6 +1863,9 @@ async def callback_handler(client, cb: CallbackQuery):
         else:
             await cb.answer("❌ Failed!", show_alert=True)
         return
+    
+    # ═══════ DEFAULT ═══════
+    await cb.answer("🔧 Processing...")
 
 # ═══════════════ AUTO EXPIRE ═══════════════
 async def auto_expire():
@@ -1631,11 +1893,15 @@ asyncio.get_event_loop().create_task(auto_expire())
 
 print("""
 ╔══════════════════════════════════════╗
-║  💀 BGMI ATTACK BOT - COMMANDS FIX  ║
-║  ✅ COMMANDS BUTTON WORKING          ║
-║  ✅ ALL BUTTONS WORKING              ║
-║  ✅ SINGLE CALLBACK HANDLER          ║
-║  ✅ NO CONFLICTS                     ║
+║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
+║  ✅ STORE BOT STYLE                 ║
+║  ✅ ALL BUTTONS WORKING             ║
+║  ✅ SINGLE CALLBACK HANDLER         ║
+║  ✅ NO CONFLICTS                    ║
+║  ✅ BACK BUTTON GOES BACK           ║
+║  ✅ MAIN MENU WORKS                 ║
+║  ✅ BAN/UNBAN SYSTEM ADDED          ║
+║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
