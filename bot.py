@@ -403,121 +403,124 @@ attack_user = None
 # ═══════════════ BOT ═══════════════
 app = Client("final_bgmi_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ═══════════════ STYLISH INLINE KEYBOARDS ═══════════════
+# ═══════════════ MENU + BACK BUTTONS ═══════════════
+def menu_back_kb():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back")],
+    ])
+
+# ═══════════════ STYLISH PREMIUM BUTTONS ═══════════════
 def user_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚔️ ᴀᴛᴛᴀᴄᴋ", callback_data="attack_menu"),
-         InlineKeyboardButton("🛑 sᴛᴏᴘ", callback_data="stop_attack")],
-        [InlineKeyboardButton("📊 sᴛᴀᴛᴜs", callback_data="status_btn"),
-         InlineKeyboardButton("ℹ️ ɪɴғᴏ", callback_data="info_menu")],
-        [InlineKeyboardButton("🔑 ʀᴇᴅᴇᴇᴍ ᴋᴇʏ", callback_data="redeem_menu")],
-        [InlineKeyboardButton("📝 ᴄᴏᴍᴍᴀɴᴅs", callback_data="commands_menu")],
+        [InlineKeyboardButton("⚔ ˹Δᴛᴛᴀᴄᴋ˼", callback_data="attack_menu"),
+         InlineKeyboardButton("⛔ ˹ꜱᴛᴏᴘ˼", callback_data="stop_attack")],
+        [InlineKeyboardButton("▓ ˹ꜱᴛᴀᴛᴜꜱ˼", callback_data="status_btn"),
+         InlineKeyboardButton("ⓘ ˹ɪɴꜰᴏ˼", callback_data="info_menu")],
+        [InlineKeyboardButton("⚿ ˹ʀᴇᴅᴇᴇᴍ ᴋᴇʏ˼", callback_data="redeem_menu")],
+        [InlineKeyboardButton("⌨ ˹ᴄᴏᴍᴍᴀɴᴅꜱ˼", callback_data="commands_menu")],
     ])
 
 def owner_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚔️ ᴀᴛᴛᴀᴄᴋ", callback_data="attack_menu"),
-         InlineKeyboardButton("🛑 sᴛᴏᴘ", callback_data="stop_attack")],
-        [InlineKeyboardButton("📊 sᴛᴀᴛᴜs", callback_data="status_btn"),
-         InlineKeyboardButton("ℹ️ ɪɴғᴏ", callback_data="info_menu")],
-        [InlineKeyboardButton("🔑 ʀᴇᴅᴇᴇᴍ ᴋᴇʏ", callback_data="redeem_menu")],
-        [InlineKeyboardButton("📝 ᴄᴏᴍᴍᴀɴᴅs", callback_data="commands_menu")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🎬 ᴠɪᴅᴇᴏ ᴍᴀɴᴀɢᴇʀ", callback_data="video_menu")],
-        [InlineKeyboardButton("🎯 ᴇᴍᴏᴊɪ ᴍᴀɴᴀɢᴇʀ", callback_data="emoji_menu")],
-        [InlineKeyboardButton("🎨 sᴛɪᴄᴋᴇʀ ᴍᴀɴᴀɢᴇʀ", callback_data="sticker_menu")],
-        [InlineKeyboardButton("👑 ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ", callback_data="admin_menu")],
+        [InlineKeyboardButton("⚔ ˹Δᴛᴛᴀᴄᴋ˼", callback_data="attack_menu"),
+         InlineKeyboardButton("⛔ ˹ꜱᴛᴏᴘ˼", callback_data="stop_attack")],
+        [InlineKeyboardButton("▓ ˹ꜱᴛᴀᴛᴜꜱ˼", callback_data="status_btn"),
+         InlineKeyboardButton("ⓘ ˹ɪɴꜰᴏ˼", callback_data="info_menu")],
+        [InlineKeyboardButton("⚿ ˹ʀᴇᴅᴇᴇᴍ ᴋᴇʏ˼", callback_data="redeem_menu")],
+        [InlineKeyboardButton("⌨ ˹ᴄᴏᴍᴍᴀɴᴅꜱ˼", callback_data="commands_menu")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("▶ ˹ᴠɪᴅᴇᴏ ᴍᴀɴᴀɢᴇʀ˼", callback_data="video_menu")],
+        [InlineKeyboardButton("★ ˹ᴇᴍᴏᴊɪ ᴍᴀɴᴀɢᴇʀ˼", callback_data="emoji_menu")],
+        [InlineKeyboardButton("❄ ˹ꜱᴛɪᴄᴋᴇʀ ᴍᴀɴᴀɢᴇʀ˼", callback_data="sticker_menu")],
+        [InlineKeyboardButton("⚜ ˹ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ˼", callback_data="admin_menu")],
     ])
 
 def auto_key_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔑 20 ᴍɪɴᴜᴛᴇ 🔓", callback_data="ak_20m"),
-         InlineKeyboardButton("🔑 40 ᴍɪɴᴜᴛᴇ 🔓", callback_data="ak_40m"),
-         InlineKeyboardButton("🔑 60 ᴍɪɴᴜᴛᴇ 🔓", callback_data="ak_60m")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🗝️ 1 ᴅᴀʏ 🔐", callback_data="ak_1d"),
-         InlineKeyboardButton("🗝️ 3 ᴅᴀʏ 🔐", callback_data="ak_3d"),
-         InlineKeyboardButton("🗝️ 7 ᴅᴀʏ 🔐", callback_data="ak_7d")],
-        [InlineKeyboardButton("🗝️ 15 ᴅᴀʏ 🔐", callback_data="ak_15d"),
-         InlineKeyboardButton("🗝️ 23 ᴅᴀʏ 🔐", callback_data="ak_23d"),
-         InlineKeyboardButton("🗝️ 30 ᴅᴀʏ 🔐", callback_data="ak_30d")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🪪 1 ᴍᴏɴᴛʜ 🫆", callback_data="ak_1mo"),
-         InlineKeyboardButton("🪪 2 ᴍᴏɴᴛʜ 🫆", callback_data="ak_2mo"),
-         InlineKeyboardButton("🪪 3 ᴍᴏɴᴛʜ 🫆", callback_data="ak_3mo")],
-        [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back_admin")],
+        [InlineKeyboardButton("⏱ ˹20 ᴍɪɴᴜᴛᴇ˼", callback_data="ak_20m"),
+         InlineKeyboardButton("⏱ ˹40 ᴍɪɴᴜᴛᴇ˼", callback_data="ak_40m"),
+         InlineKeyboardButton("⏱ ˹60 ᴍɪɴᴜᴛᴇ˼", callback_data="ak_60m")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌚ ˹1 ᴅᴀʏ˼", callback_data="ak_1d"),
+         InlineKeyboardButton("⌚ ˹3 ᴅᴀʏ˼", callback_data="ak_3d"),
+         InlineKeyboardButton("⌚ ˹7 ᴅᴀʏ˼", callback_data="ak_7d")],
+        [InlineKeyboardButton("⌚ ˹15 ᴅᴀʏ˼", callback_data="ak_15d"),
+         InlineKeyboardButton("⌚ ˹23 ᴅᴀʏ˼", callback_data="ak_23d"),
+         InlineKeyboardButton("⌚ ˹30 ᴅᴀʏ˼", callback_data="ak_30d")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⎚ ˹1 ᴍᴏɴᴛʜ˼", callback_data="ak_1mo"),
+         InlineKeyboardButton("⎚ ˹2 ᴍᴏɴᴛʜ˼", callback_data="ak_2mo"),
+         InlineKeyboardButton("⎚ ˹3 ᴍᴏɴᴛʜ˼", callback_data="ak_3mo")],
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back_admin")],
     ])
 
 def video_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📤 ᴀᴅᴅ ᴠɪᴅᴇᴏ", callback_data="v_add")],
-        [InlineKeyboardButton("🗑️ ᴅᴇʟᴇᴛᴇ ᴠɪᴅᴇᴏ", callback_data="v_del")],
-        [InlineKeyboardButton("🧹 ᴄʟᴇᴀʀ ᴀʟʟ", callback_data="v_clear")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ʟɪsᴛ ᴠɪᴅᴇᴏs", callback_data="v_list")],
-        [InlineKeyboardButton("ℹ️ ʜᴇʟᴘ", callback_data="v_help")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back_admin")],
+        [InlineKeyboardButton("⎘ ˹ᴀᴅᴅ ᴠɪᴅᴇᴏ˼", callback_data="v_add")],
+        [InlineKeyboardButton("⌫ ˹ᴅᴇʟᴇᴛᴇ ᴠɪᴅᴇᴏ˼", callback_data="v_del")],
+        [InlineKeyboardButton("⎚ ˹ᴄʟᴇᴀʀ ᴀʟʟ˼", callback_data="v_clear")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌘ ˹ʟɪꜱᴛ ᴠɪᴅᴇᴏꜱ˼", callback_data="v_list")],
+        [InlineKeyboardButton("❓ ˹ʜᴇʟᴘ˼", callback_data="v_help")],
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back_admin")],
     ])
 
 def emoji_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📤 ᴀᴅᴅ ᴇᴍᴏᴊɪ", callback_data="e_add")],
-        [InlineKeyboardButton("🗑️ ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ", callback_data="e_remove")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ʟɪsᴛ ᴇᴍᴏᴊɪs", callback_data="e_list")],
-        [InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ᴀʟʟ", callback_data="e_reset")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back_admin")],
+        [InlineKeyboardButton("⎘ ˹ᴀᴅᴅ ᴇᴍᴏᴊɪ˼", callback_data="e_add")],
+        [InlineKeyboardButton("⌫ ˹ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ˼", callback_data="e_remove")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌘ ˹ʟɪꜱᴛ ᴇᴍᴏᴊɪꜱ˼", callback_data="e_list")],
+        [InlineKeyboardButton("↺ ˹ʀᴇꜱᴇᴛ ᴀʟʟ˼", callback_data="e_reset")],
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back_admin")],
     ])
 
 def sticker_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📤 ᴀᴅᴅ sᴛɪᴄᴋᴇʀ", callback_data="s_add")],
-        [InlineKeyboardButton("🗑️ ʀᴇᴍᴏᴠᴇ sᴛɪᴄᴋᴇʀ", callback_data="s_remove")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ʟɪsᴛ sᴛɪᴄᴋᴇʀs", callback_data="s_list")],
-        [InlineKeyboardButton("🔄 ʀᴇsᴇᴛ ᴀʟʟ", callback_data="s_reset")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back_admin")],
+        [InlineKeyboardButton("⎘ ˹ᴀᴅᴅ ꜱᴛɪᴄᴋᴇʀ˼", callback_data="s_add")],
+        [InlineKeyboardButton("⌫ ˹ʀᴇᴍᴏᴠᴇ ꜱᴛɪᴄᴋᴇʀ˼", callback_data="s_remove")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌘ ˹ʟɪꜱᴛ ꜱᴛɪᴄᴋᴇʀꜱ˼", callback_data="s_list")],
+        [InlineKeyboardButton("↺ ˹ʀᴇꜱᴇᴛ ᴀʟʟ˼", callback_data="s_reset")],
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back_admin")],
     ])
 
 def admin_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🪪 ᴀᴅᴅ ᴋᴇʏ", callback_data="admin_addkey")],
-        [InlineKeyboardButton("🤖 ᴀᴜᴛᴏ ɢᴇɴ ᴋᴇʏ", callback_data="admin_auto")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("📋 ᴀʟʟ ᴋᴇʏs", callback_data="admin_keys")],
-        [InlineKeyboardButton("📊 sᴛᴀᴛs", callback_data="admin_stats")],
-        [InlineKeyboardButton("🔄 ᴄʟᴇᴀʀ ᴇxᴘɪʀᴇᴅ", callback_data="admin_clear")],
-        [InlineKeyboardButton("━━━━━━━━━━━━━━━━━━", callback_data="sep")],
-        [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")],
+        [InlineKeyboardButton("⚿ ˹ᴀᴅᴅ ᴋᴇʏ˼", callback_data="admin_addkey")],
+        [InlineKeyboardButton("⚜ ˹ᴀᴜᴛᴏ ɢᴇɴ ᴋᴇʏ˼", callback_data="admin_auto")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌘ ˹ᴀʟʟ ᴋᴇʏꜱ˼", callback_data="admin_keys")],
+        [InlineKeyboardButton("⎙ ˹ꜱᴛᴀᴛꜱ˼", callback_data="admin_stats")],
+        [InlineKeyboardButton("↺ ˹ᴄʟᴇᴀʀ ᴇxᴘɪʀᴇᴅ˼", callback_data="admin_clear")],
+        [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
+        [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+         InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back")],
     ])
-
-def back_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")]])
-
-def back_admin_kb():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back_admin")]])
 
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
     user_commands = """
 ╔══════════════════════════════════════╗
-║         📝 ᴄᴏᴍᴍᴀɴᴅs ʟɪsᴛ            ║
+║         ⌨ ˹ᴄᴏᴍᴍᴀɴᴅꜱ ʟɪꜱᴛ˼          ║
 ╚══════════════════════════════════════╝
 
 ╔══════════════════════════════════════╗
-║      👤 ᴜsᴇʀ ᴄᴏᴍᴍᴀɴᴅs              ║
+║      👤 ˹ᴜꜱᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ˼            ║
 ╚══════════════════════════════════════╝
 
-/start - ✨ Bot Start Karein
-/attack - ⚔️ Attack Start Karein  
-/stop - 🛑 Attack Stop Karein
-/redeem - 🔑 Key Redeem Karein
+/start - ✨ ˹ʙᴏᴛ ꜱᴛᴀʀᴛ ᴋᴀʀᴇɪɴ˼
+/attack - ⚔ ˹ᴀᴛᴛᴀᴄᴋ ꜱᴛᴀʀᴛ ᴋᴀʀᴇɪɴ˼  
+/stop - ⛔ ˹ᴀᴛᴛᴀᴄᴋ ꜱᴛᴏᴘ ᴋᴀʀᴇɪɴ˼
+/redeem - ⚿ ˹ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴇɪɴ˼
 
 ╔══════════════════════════════════════╗
-║      🎯 ᴀᴛᴛᴀᴄᴋ ʜᴇʟᴘ                 ║
+║      🎯 ˹ᴀᴛᴛᴀᴄᴋ ʜᴇʟᴘ˼              ║
 ╚══════════════════════════════════════╝
 
 Format: /attack IP PORT TIME
@@ -526,14 +529,14 @@ BGMI Ports: 7000 - 15000
 Max Time: 600 Seconds (10 Minutes)
 
 ╔══════════════════════════════════════╗
-║      🔑 ʀᴇᴅᴇᴇᴍ ʜᴇʟᴘ                 ║
+║      🔑 ˹ʀᴇᴅᴇᴇᴍ ʜᴇʟᴘ˼              ║
 ╚══════════════════════════════════════╝
 
 Format: /redeem KEY_CODE
 Example: /redeem BGMI-XXXX-XXXX-XXXX
 
 ╔══════════════════════════════════════╗
-║      ⏱️ ᴅᴜʀᴀᴛɪᴏɴs                   ║
+║      ⏱ ˹ᴅᴜʀᴀᴛɪᴏɴꜱ˼                 ║
 ╚══════════════════════════════════════╝
 
 30m - 30 Minutes
@@ -548,41 +551,41 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
     
     owner_commands = """
 ╔══════════════════════════════════════╗
-║      👑 ᴏᴡɴᴇʀ ᴄᴏᴍᴍᴀɴᴅs              ║
+║      ⚜ ˹ᴏᴡɴᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ˼            ║
 ╚══════════════════════════════════════╝
 
-🎨 sᴛɪᴄᴋᴇʀ ᴄᴏᴍᴍᴀɴᴅs
-/addsticker - 📤 Sticker Add Karein
-/removesticker - 🗑️ Sticker Remove Karein
-/liststickers - 📋 Stickers Dekhein
-/resetstickers - 🔄 Stickers Reset Karein
-/setstickertime - ⏱️ Single Sticker Time Set
-/setallstickertime - ⏱️ ALL Stickers Time Set
+🎨 ˹ꜱᴛɪᴄᴋᴇʀ ᴄᴏᴍᴍᴀɴᴅꜱ˼
+/addsticker - ⎘ ˹ꜱᴛɪᴄᴋᴇʀ ᴀᴅᴅ ᴋᴀʀᴇɪɴ˼
+/removesticker - ⌫ ˹ꜱᴛɪᴄᴋᴇʀ ʀᴇᴍᴏᴠᴇ ᴋᴀʀᴇɪɴ˼
+/liststickers - ⌘ ˹ꜱᴛɪᴄᴋᴇʀꜱ ᴅᴇᴋʜᴇɪɴ˼
+/resetstickers - ↺ ˹ꜱᴛɪᴄᴋᴇʀꜱ ʀᴇꜱᴇᴛ ᴋᴀʀᴇɪɴ˼
+/setstickertime - ⏱ ˹ꜱɪɴɢʟᴇ ꜱᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ ꜱᴇᴛ˼
+/setallstickertime - ⏱ ˹ᴀʟʟ ꜱᴛɪᴄᴋᴇʀꜱ ᴛɪᴍᴇ ꜱᴇᴛ˼
 
-🎯 ᴇᴍᴏᴊɪ ᴄᴏᴍᴍᴀɴᴅs
-/addemoji - 📤 Emoji Add Karein
-/removeemoji - 🗑️ Emoji Remove Karein
-/listemojis - 📋 Emojis Dekhein
-/resetemojis - 🔄 Emojis Reset Karein
+🎯 ˹ᴇᴍᴏᴊɪ ᴄᴏᴍᴍᴀɴᴅꜱ˼
+/addemoji - ⎘ ˹ᴇᴍᴏᴊɪ ᴀᴅᴅ ᴋᴀʀᴇɪɴ˼
+/removeemoji - ⌫ ˹ᴇᴍᴏᴊɪ ʀᴇᴍᴏᴠᴇ ᴋᴀʀᴇɪɴ˼
+/listemojis - ⌘ ˹ᴇᴍᴏᴊɪꜱ ᴅᴇᴋʜᴇɪɴ˼
+/resetemojis - ↺ ˹ᴇᴍᴏᴊɪꜱ ʀᴇꜱᴇᴛ ᴋᴀʀᴇɪɴ˼
 
-🎬 ᴠɪᴅᴇᴏ ᴄᴏᴍᴍᴀɴᴅs
-/addvideo - 📤 Video Add Karein
-/delvideo - 🗑️ Video Delete Karein
-/videos - 📋 Videos Dekhein
-/clearvideos - 🧹 Videos Clear Karein
-/setvideodelay - ⏱️ Video Delay Set Karein
+🎬 ˹ᴠɪᴅᴇᴏ ᴄᴏᴍᴍᴀɴᴅꜱ˼
+/addvideo - ⎘ ˹ᴠɪᴅᴇᴏ ᴀᴅᴅ ᴋᴀʀᴇɪɴ˼
+/delvideo - ⌫ ˹ᴠɪᴅᴇᴏ ᴅᴇʟᴇᴛᴇ ᴋᴀʀᴇɪɴ˼
+/videos - ⌘ ˹ᴠɪᴅᴇᴏꜱ ᴅᴇᴋʜᴇɪɴ˼
+/clearvideos - ⎚ ˹ᴠɪᴅᴇᴏꜱ ᴄʟᴇᴀʀ ᴋᴀʀᴇɪɴ˼
+/setvideodelay - ⏱ ˹ᴠɪᴅᴇᴏ ᴅᴇʟᴀʏ ꜱᴇᴛ ᴋᴀʀᴇɪɴ˼
 
-🔑 ᴋᴇʏ ᴄᴏᴍᴍᴀɴᴅs
-/genkey - 🪪 Key Generate Karein
-/admin_keys - 📋 All Keys Dekhein
-/admin_stats - 📊 Statistics Dekhein
-/admin_clear - 🔄 Expired Clear Karein
+🔑 ˹ᴋᴇʏ ᴄᴏᴍᴍᴀɴᴅꜱ˼
+/genkey - ⚿ ˹ᴋᴇʏ ɢᴇɴᴇʀᴀᴛᴇ ᴋᴀʀᴇɪɴ˼
+/admin_keys - ⌘ ˹ᴀʟʟ ᴋᴇʏꜱ ᴅᴇᴋʜᴇɪɴ˼
+/admin_stats - ⎙ ˹ꜱᴛᴀᴛɪꜱᴛɪᴄꜱ ᴅᴇᴋʜᴇɪɴ˼
+/admin_clear - ↺ ˹ᴇxᴘɪʀᴇᴅ ᴄʟᴇᴀʀ ᴋᴀʀᴇɪɴ˼
 
 ╔══════════════════════════════════════╗
-║      📲 ᴄᴏɴᴛᴀᴄᴛ                     ║
+║      📲 ˹ᴄᴏɴᴛᴀᴄᴛ˼                   ║
 ╚══════════════════════════════════════╝
 
-👑 Owner: FATHER OF BOT
+⚜ Owner: FATHER OF BOT
 🤖 Bot: @BeStChEaT_BGMIDdos_Bot
 
 """
@@ -639,7 +642,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.3)
         
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
@@ -648,7 +651,7 @@ async def welcome_animation(client, msg):
         )
         
         for emoji in welcome_emojis:
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(0.3)
             try:
                 await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
             except:
@@ -660,7 +663,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
         
         starting_emojis = [
             "🚀", "🌠", "🪶", "🍓", "🤖", "🥡", 
@@ -669,7 +672,7 @@ async def welcome_animation(client, msg):
         words = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         
         await welcome_msg.edit_text(f"**{starting_emojis[0]}**")
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.15)
         
         for i in range(len(words)):
             current_text = "".join(words[:i+1])
@@ -678,16 +681,16 @@ async def welcome_animation(client, msg):
                 await welcome_msg.edit_text(f"**{emoji} " + current_text + "**")
             except:
                 pass
-            await asyncio.sleep(0.15)
+            await asyncio.sleep(0.12)
         
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
         
         try:
             await welcome_msg.delete()
         except:
             pass
         
-        await asyncio.sleep(0.3)
+        await asyncio.sleep(0.2)
         
         sticker_msg = None
         if sticker_id:
@@ -696,7 +699,10 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(video_delay_time)
+        if sticker_msg:
+            await asyncio.sleep(video_delay_time)
+        else:
+            await asyncio.sleep(video_delay_time)
         
         final_msg = None
         if video_data and os.path.exists(video_data["path"]):
@@ -713,11 +719,11 @@ async def welcome_animation(client, msg):
                 reply_markup=kb
             )
         
-        remaining_sticker_time = sticker_display_time - video_delay_time
-        if remaining_sticker_time > 0:
-            await asyncio.sleep(remaining_sticker_time)
-        
         if sticker_msg:
+            remaining_time = sticker_display_time - video_delay_time
+            if remaining_time > 0:
+                await asyncio.sleep(remaining_time)
+            
             try:
                 await sticker_msg.delete()
             except:
@@ -727,6 +733,43 @@ async def welcome_animation(client, msg):
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
+        await start_simple(client, msg)
+
+async def start_simple(client, msg):
+    try:
+        user = msg.from_user
+        user_id = user.id
+        first_name = user.first_name or "User"
+        
+        if user_id == OWNER_ID:
+            kb = owner_kb()
+        else:
+            kb = user_kb()
+        
+        text = f"""
+ʜᴇʏ, [{first_name}](tg://user?id={user_id}) 
+ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
+
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs.
+┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ.
+┗━━━━━━━━━━━━━━━━━⧫
+┏━━━━━━━━━━━━━━━━━⧫
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ.
+┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ.
+┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 𝟷𝟶 ᴍɪɴᴜᴛᴇꜱ.
+┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ 
+┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ...
+┗━━━━━━━━━━━━━━━━━⧫
+๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs.
+
+🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
+"""
+        await client.send_message(msg.chat.id, text, reply_markup=kb)
+    except Exception as e:
+        logger.error(f"Simple start error: {e}")
+        await msg.reply_text("👋 Welcome! Use /attack to start attacking.")
 
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
@@ -742,7 +785,7 @@ async def set_all_sticker_time_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 2:
         return await msg.reply_text(
-            "⏱️ **sᴇᴛ ᴀʟʟ sᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ**\n\n"
+            "⏱️ **˹ꜱᴇᴛ ᴀʟʟ ꜱᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ˼**\n\n"
             "Use: `/setallstickertime seconds`\n\n"
             "Example: `/setallstickertime 10`\n"
             "This sets ALL stickers to display for 10 seconds\n\n"
@@ -761,7 +804,7 @@ async def set_all_sticker_time_cmd(client, msg):
         
         if success:
             await msg.reply_text(
-                f"✅ **ᴀʟʟ sᴛɪᴄᴋᴇʀs ᴜᴘᴅᴀᴛᴇᴅ!** 🎉\n\n"
+                f"✅ **˹ᴀʟʟ ꜱᴛɪᴄᴋᴇʀꜱ ᴜᴘᴅᴀᴛᴇᴅ˼** 🎉\n\n"
                 f"⏱️ New Duration: {duration} seconds\n"
                 f"📊 Total Stickers Updated: {count}\n\n"
                 f"🔄 All stickers will now display for {duration} seconds!\n"
@@ -786,7 +829,7 @@ async def set_video_delay_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 2:
         return await msg.reply_text(
-            "⏱️ **sᴇᴛ ᴠɪᴅᴇᴏ ᴅᴇʟᴀʏ**\n\n"
+            "⏱️ **˹ꜱᴇᴛ ᴠɪᴅᴇᴏ ᴅᴇʟᴀʏ˼**\n\n"
             "Use: `/setvideodelay seconds`\n\n"
             "Example: `/setvideodelay 4`\n"
             "Video will appear after 4 seconds\n\n"
@@ -813,7 +856,7 @@ async def set_video_delay_cmd(client, msg):
         save_settings(video_delay=delay)
         
         await msg.reply_text(
-            f"✅ **ᴠɪᴅᴇᴏ ᴅᴇʟᴀʏ ᴜᴘᴅᴀᴛᴇᴅ!** 🎉\n\n"
+            f"✅ **˹ᴠɪᴅᴇᴏ ᴅᴇʟᴀʏ ᴜᴘᴅᴀᴛᴇᴅ˼** 🎉\n\n"
             f"⏱️ New Video Delay: {delay} seconds\n"
             f"📋 Current Settings:\n"
             f"• Sticker Time: {get_sticker_display_time()}s\n"
@@ -833,7 +876,7 @@ async def set_sticker_time_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 3:
         return await msg.reply_text(
-            "⏱️ **sᴇᴛ sᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ**\n\n"
+            "⏱️ **˹ꜱᴇᴛ ꜱᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ˼**\n\n"
             "Use: `/setstickertime index seconds`\n\n"
             "Example: `/setstickertime 1 10`\n"
             "This sets sticker #1 to display for 10 seconds\n\n"
@@ -858,7 +901,7 @@ async def set_sticker_time_cmd(client, msg):
         save_sticker_time(sticker_id, duration)
         
         await msg.reply_text(
-            f"✅ **sᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ!**\n\n"
+            f"✅ **˹ꜱᴛɪᴄᴋᴇʀ ᴛɪᴍᴇ ᴜᴘᴅᴀᴛᴇᴅ˼**\n\n"
             f"🆔 Sticker #{index+1}\n"
             f"⏱️ New Duration: {duration} seconds\n\n"
             f"📋 Current Settings:\n"
@@ -878,7 +921,7 @@ async def settings_cmd(client, msg):
     video_delay = get_video_delay_time()
     
     await msg.reply_text(
-        f"⚙️ **ᴄᴜʀʀᴇɴᴛ sᴇᴛᴛɪɴɢs**\n\n"
+        f"⚙️ **˹ᴄᴜʀʀᴇɴᴛ ꜱᴇᴛᴛɪɴɢꜱ˼**\n\n"
         f"{LINE}\n"
         f"⏱️ Sticker Display Time: {sticker_time}s\n"
         f"⏱️ Video Delay: {video_delay}s\n"
@@ -898,8 +941,7 @@ async def commands_menu_callback(client, cb: CallbackQuery):
     is_owner = (uid == OWNER_ID)
     commands_text = get_commands_list(is_owner)
     formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")]])
-    await cb.message.edit_text(formatted_text, reply_markup=kb)
+    await cb.message.edit_text(formatted_text, reply_markup=menu_back_kb())
 
 # ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
@@ -909,6 +951,45 @@ async def callbacks(client, cb: CallbackQuery):
     
     if data == "sep":
         await cb.answer()
+        return
+    
+    if data == "menu":
+        await cb.answer("⌂ ˹ɢᴏɪɴɢ ᴛᴏ ᴍᴇɴᴜ˼...")
+        user = cb.from_user
+        uid = user.id
+        info = get_user_info(uid)
+        
+        if uid == OWNER_ID:
+            kb = owner_kb()
+        else:
+            kb = user_kb()
+        
+        expiry_text = ""
+        if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
+        if info.get("expiry"):
+            try:
+                exp = datetime.fromisoformat(info["expiry"])
+                expiry_text += f"\n📅 Expires: {exp.strftime('%d %b %Y, %I:%M %p')}"
+            except: pass
+        
+        text = (
+            "💀 ˹ʙɢᴍɪ ᴀᴛᴛᴀᴄᴋ ʙᴏᴛ˼ 💀\n\n"
+            f"{LINE}\n"
+            f"👤 {user.first_name}\n"
+            f"🆔 {uid}\n"
+            f"💳 {info['type']}{expiry_text}\n"
+            f"{LINE}\n"
+            f"⚡ {info['threads']} Threads\n"
+            f"⏱️ {info['max_time']}s Max Time\n"
+            f"📹 {len(get_vids())} Videos\n"
+            f"{LINE}\n"
+            "⚔️ /attack IP PORT TIME\n"
+            "📋 /attack 1.2.3.4 8080 600\n"
+            "🎮 BGMI Ports: 7000-15000\n"
+            f"{LINE}\n"
+            "🔽 ˹ꜱᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴ˼:"
+        )
+        await cb.message.edit_text(text, reply_markup=kb)
         return
     
     if data == "redeem_popup":
@@ -932,8 +1013,7 @@ async def callbacks(client, cb: CallbackQuery):
         is_owner = (uid == OWNER_ID)
         commands_text = get_commands_list(is_owner)
         formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-        kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")]])
-        await cb.message.edit_text(formatted_text, reply_markup=kb)
+        await cb.message.edit_text(formatted_text, reply_markup=menu_back_kb())
         return
     
     if data == "back":
@@ -955,7 +1035,7 @@ async def callbacks(client, cb: CallbackQuery):
             except: pass
         
         text = (
-            "💀 𝐁𝐆𝐌𝐈 𝐀𝐓𝐓𝐀𝐂𝐊 𝐁𝐎𝐓 💀\n\n"
+            "💀 ˹ʙɢᴍɪ ᴀᴛᴛᴀᴄᴋ ʙᴏᴛ˼ 💀\n\n"
             f"{LINE}\n"
             f"👤 {user.first_name}\n"
             f"🆔 {uid}\n"
@@ -969,17 +1049,16 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 /attack 1.2.3.4 8080 600\n"
             "🎮 BGMI Ports: 7000-15000\n"
             f"{LINE}\n"
-            "🔽 sᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴ:"
+            "🔽 ˹ꜱᴇʟᴇᴄᴛ ᴏᴘᴛɪᴏɴ˼:"
         )
         await cb.message.edit_text(text, reply_markup=kb)
         return
     
     await cb.answer()
     
-    # ═══════════════ REST OF CALLBACKS ═══════════════
     if data == "back_admin":
         if uid != OWNER_ID: return
-        await cb.message.edit_text("👑 **ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ**\n\n🔽 Select:", reply_markup=admin_kb())
+        await cb.message.edit_text("⚜ **˹ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ˼**\n\n🔽 Select:", reply_markup=admin_kb())
         return
     
     if data == "emoji_menu":
@@ -988,7 +1067,7 @@ async def callbacks(client, cb: CallbackQuery):
             return
         emojis = get_all_emojis()
         await cb.message.edit_text(
-            f"🎯 **ᴇᴍᴏᴊɪ ᴍᴀɴᴀɢᴇʀ**\n\n"
+            f"★ **˹ᴇᴍᴏᴊɪ ᴍᴀɴᴀɢᴇʀ˼**\n\n"
             f"🔹 **Total Emojis:** {len(emojis)}\n"
             f"🔹 **Commands:**\n"
             f"• `/addemoji` - Reply to premium emoji\n"
@@ -1005,11 +1084,11 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("Owner only!", show_alert=True)
             return
         await cb.message.edit_text(
-            "📤 **ᴀᴅᴅ ᴇᴍᴏᴊɪ**\n\n"
+            "⎘ **˹ᴀᴅᴅ ᴇᴍᴏᴊɪ˼**\n\n"
             "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
             "✨ The emoji will be added to welcome animation!",
-            reply_markup=back_admin_kb()
+            reply_markup=emoji_kb()
         )
         return
     
@@ -1022,10 +1101,10 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("No emojis to remove!", show_alert=True)
             return
         await cb.message.edit_text(
-            "🗑️ **ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ**\n\n"
+            "⌫ **˹ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ˼**\n\n"
             "Use: `/removeemoji index`\n\n"
             "Get index from `/listemojis` command.",
-            reply_markup=back_admin_kb()
+            reply_markup=emoji_kb()
         )
         return
     
@@ -1037,11 +1116,11 @@ async def callbacks(client, cb: CallbackQuery):
         if not emojis:
             await cb.answer("No emojis added yet!", show_alert=True)
             return
-        text = "📋 **ᴇᴍᴏᴊɪ ʟɪsᴛ**\n\n"
+        text = "⌘ **˹ᴇᴍᴏᴊɪ ʟɪꜱᴛ˼**\n\n"
         for i, emoji_id in enumerate(emojis, 1):
             text += f"**{i}.** `{emoji_id[:30]}...`\n"
         text += f"\n🔹 **Total:** {len(emojis)}"
-        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        await cb.message.edit_text(text, reply_markup=emoji_kb())
         return
     
     if data == "e_reset":
@@ -1051,7 +1130,7 @@ async def callbacks(client, cb: CallbackQuery):
         reset_emojis()
         await cb.answer("🔄 All emojis reset!", show_alert=True)
         await cb.message.edit_text(
-            f"🔄 **ᴇᴍᴏᴊɪs ʀᴇsᴇᴛ!**\n\n"
+            f"↺ **˹ᴇᴍᴏᴊɪꜱ ʀᴇꜱᴇᴛ˼**\n\n"
             f"🔹 **Total Emojis:** 0\n\n"
             "All emojis removed from the list.",
             reply_markup=emoji_kb()
@@ -1064,7 +1143,7 @@ async def callbacks(client, cb: CallbackQuery):
             return
         stickers = get_all_stickers()
         sticker_times = get_sticker_times()
-        text = f"🎨 **sᴛɪᴄᴋᴇʀ ᴍᴀɴᴀɢᴇʀ**\n\n"
+        text = f"❄ **˹ꜱᴛɪᴄᴋᴇʀ ᴍᴀɴᴀɢᴇʀ˼**\n\n"
         text += f"🔹 **Total Stickers:** {len(stickers)}\n"
         if stickers:
             text += "🔹 **Sticker Times:**\n"
@@ -1081,7 +1160,8 @@ async def callbacks(client, cb: CallbackQuery):
         text += f"⏱️ **Default Time:** {get_sticker_display_time()}s\n"
         text += f"⏱️ **Video Delay:** {get_video_delay_time()}s\n"
         text += f"✨ Stickers appear randomly in welcome animation!",
-        await cb.message.edit_text(text, reply_markup=sticker_kb())
+        reply_markup=sticker_kb()
+        )
         return
     
     if data == "s_add":
@@ -1089,12 +1169,12 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("Owner only!", show_alert=True)
             return
         await cb.message.edit_text(
-            "🎨 **ᴀᴅᴅ sᴛɪᴄᴋᴇʀ**\n\n"
+            "⎘ **˹ᴀᴅᴅ ꜱᴛɪᴄᴋᴇʀ˼**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
             "⏱️ **Auto-Detect:** Duration will be detected automatically!\n"
             "✨ The sticker will be added to welcome animation!",
-            reply_markup=back_admin_kb()
+            reply_markup=sticker_kb()
         )
         return
     
@@ -1107,10 +1187,10 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("No stickers to remove!", show_alert=True)
             return
         await cb.message.edit_text(
-            "🗑️ **ʀᴇᴍᴏᴠᴇ sᴛɪᴄᴋᴇʀ**\n\n"
+            "⌫ **˹ʀᴇᴍᴏᴠᴇ ꜱᴛɪᴄᴋᴇʀ˼**\n\n"
             "Use: `/removesticker index`\n\n"
             "Get index from `/liststickers` command.",
-            reply_markup=back_admin_kb()
+            reply_markup=sticker_kb()
         )
         return
     
@@ -1123,13 +1203,13 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("No stickers added yet!", show_alert=True)
             return
         sticker_times = get_sticker_times()
-        text = "📋 **sᴛɪᴄᴋᴇʀ ʟɪsᴛ**\n\n"
+        text = "⌘ **˹ꜱᴛɪᴄᴋᴇʀ ʟɪꜱᴛ˼**\n\n"
         for i, sticker_id in enumerate(stickers, 1):
             time = sticker_times.get(sticker_id, get_sticker_display_time())
             text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
         text += f"\n🔹 **Total:** {len(stickers)}"
         text += f"\n\n📋 **Settings:** Sticker Time: {get_sticker_display_time()}s | Video Delay: {get_video_delay_time()}s"
-        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
     if data == "s_reset":
@@ -1139,7 +1219,7 @@ async def callbacks(client, cb: CallbackQuery):
         reset_stickers()
         await cb.answer("🔄 All stickers reset!", show_alert=True)
         await cb.message.edit_text(
-            f"🔄 **sᴛɪᴄᴋᴇʀs ʀᴇsᴇᴛ!**\n\n"
+            f"↺ **˹ꜱᴛɪᴄᴋᴇʀꜱ ʀᴇꜱᴇᴛ˼**\n\n"
             f"🔹 **Total Stickers:** 0\n\n"
             "All stickers removed from the list.",
             reply_markup=sticker_kb()
@@ -1150,7 +1230,7 @@ async def callbacks(client, cb: CallbackQuery):
         if uid != OWNER_ID: await cb.answer("Owner only!"); return
         vids = get_vids()
         await cb.message.edit_text(
-            f"🎬 **ᴠɪᴅᴇᴏ ᴍᴀɴᴀɢᴇʀ**\n\n"
+            f"▶ **˹ᴠɪᴅᴇᴏ ᴍᴀɴᴀɢᴇʀ˼**\n\n"
             f"🔹 **Total Videos:** {len(vids)}\n"
             f"🔹 **Commands:**\n"
             f"• `/addvideo` - Reply to video\n"
@@ -1167,11 +1247,11 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "v_add":
         if uid != OWNER_ID: await cb.answer("Owner only!", show_alert=True); return
         await cb.message.edit_text(
-            "📤 **ᴀᴅᴅ ᴠɪᴅᴇᴏ**\n\n"
+            "⎘ **˹ᴀᴅᴅ ᴠɪᴅᴇᴏ˼**\n\n"
             "Reply to a **video** with:\n"
             "`/addvideo`\n\n"
             "✨ The video will be added to welcome animation!",
-            reply_markup=back_admin_kb()
+            reply_markup=video_kb()
         )
         return
     
@@ -1182,10 +1262,10 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("No videos to delete!", show_alert=True)
             return
         await cb.message.edit_text(
-            "🗑️ **ᴅᴇʟᴇᴛᴇ ᴠɪᴅᴇᴏ**\n\n"
+            "⌫ **˹ᴅᴇʟᴇᴛᴇ ᴠɪᴅᴇᴏ˼**\n\n"
             "Use: `/delvideo ID`\n\n"
             "Get ID from `/videos` command.",
-            reply_markup=back_admin_kb()
+            reply_markup=video_kb()
         )
         return
     
@@ -1195,12 +1275,12 @@ async def callbacks(client, cb: CallbackQuery):
         if not vids:
             await cb.answer("No videos added yet!", show_alert=True)
             return
-        text = "📋 **ᴠɪᴅᴇᴏ ʟɪsᴛ**\n\n"
+        text = "⌘ **˹ᴠɪᴅᴇᴏ ʟɪꜱᴛ˼**\n\n"
         for v in vids[:15]:
             text += f"#{v['id']} {v['name'][:30]}\n"
         text += f"\n🔹 **Total:** {len(vids)}"
         text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
-        await cb.message.edit_text(text, reply_markup=back_admin_kb())
+        await cb.message.edit_text(text, reply_markup=video_kb())
         return
     
     if data == "v_clear":
@@ -1208,7 +1288,7 @@ async def callbacks(client, cb: CallbackQuery):
         n = clear_vids()
         await cb.answer(f"🗑️ {n} videos cleared!", show_alert=True)
         await cb.message.edit_text(
-            f"🗑️ **{n} ᴠɪᴅᴇᴏs ᴄʟᴇᴀʀᴇᴅ!**\n\n"
+            f"⎚ **˹{n} ᴠɪᴅᴇᴏꜱ ᴄʟᴇᴀʀᴇᴅ˼**\n\n"
             f"🔹 **Total Videos:** 0",
             reply_markup=video_kb()
         )
@@ -1216,7 +1296,7 @@ async def callbacks(client, cb: CallbackQuery):
     
     if data == "v_help":
         await cb.message.edit_text(
-            f"ℹ️ **ᴠɪᴅᴇᴏ ʜᴇʟᴘ**\n\n"
+            f"❓ **˹ᴠɪᴅᴇᴏ ʜᴇʟᴘ˼**\n\n"
             f"{LINE}\n"
             "📤 Add: Reply + /addvideo\n"
             "📋 List: /videos\n"
@@ -1224,7 +1304,7 @@ async def callbacks(client, cb: CallbackQuery):
             "🧹 Clear: /clearvideos\n"
             "⏱️ Set Delay: /setvideodelay seconds\n"
             f"{LINE}",
-            reply_markup=back_admin_kb()
+            reply_markup=video_kb()
         )
         return
     
@@ -1233,7 +1313,7 @@ async def callbacks(client, cb: CallbackQuery):
         if attacking and (uid == attack_user or uid == OWNER_ID):
             attacker.on = False; attacking = False
             vid = rand_vid()
-            text = f"⛔ **ᴀᴛᴛᴀᴄᴋ sᴛᴏᴘᴘᴇᴅ!**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
+            text = f"⛔ **˹ᴀᴛᴛᴀᴄᴋ ꜱᴛᴏᴘᴘᴇᴅ˼**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
             await send_vid(cb.message.chat.id, text, None, vid)
             try: await cb.message.delete()
             except: pass
@@ -1244,16 +1324,16 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "status_btn":
         if attacking:
             e = time.time() - ainfo['start']
-            await cb.answer(f"🟢 ᴀᴛᴛᴀᴄᴋɪɴɢ!\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} pkts", show_alert=True)
+            await cb.answer(f"🟢 ˹ᴀᴛᴛᴀᴄᴋɪɴɢ˼\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} pkts", show_alert=True)
         else:
-            await cb.answer("💤 ɪᴅʟᴇ", show_alert=True)
+            await cb.answer("💤 ˹ɪᴅʟᴇ˼", show_alert=True)
         return
     
     if data == "attack_menu":
         uid = cb.from_user.id
         
         checking_msg = await cb.message.reply_text(
-            "🔍 **sʏsᴛᴇᴍ sᴄᴀɴ ɪɴɪᴛɪᴀᴛᴇᴅ...**\n\n"
+            "🔍 **˹ꜱʏꜱᴛᴇᴍ ꜱᴄᴀɴ ɪɴɪᴛɪᴀᴛᴇᴅ˼...**\n\n"
             "▫️ 🔐 Verifying user credentials...\n"
             "▫️ 📡 Connecting to secure server...\n"
             "▫️ 🔑 Checking subscription status..."
@@ -1265,7 +1345,7 @@ async def callbacks(client, cb: CallbackQuery):
         
         if not access:
             await checking_msg.edit_text(
-                "🚫 **ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ!**\n\n"
+                "🚫 **˹ᴀᴄᴄᴇꜱꜱ ᴅᴇɴɪᴇᴅ˼**\n\n"
                 "╔══════════════════════════╗\n"
                 "║  ❌ INVALID CREDENTIALS  ║\n"
                 "║  🔒 No Active Plan       ║\n"
@@ -1284,7 +1364,7 @@ async def callbacks(client, cb: CallbackQuery):
         
         info = get_user_info(uid)
         await cb.message.edit_text(
-            f"💀 **ᴀᴛᴛᴀᴄᴋ ᴍᴇɴᴜ**\n\n{LINE}\n"
+            f"💀 **˹ᴀᴛᴛᴀᴄᴋ ᴍᴇɴᴜ˼**\n\n{LINE}\n"
             f"⚔️ /attack IP PORT TIME\n"
             f"📋 /attack 1.2.3.4 8080 600\n"
             f"{LINE}\n"
@@ -1292,21 +1372,21 @@ async def callbacks(client, cb: CallbackQuery):
             f"⚡ {info['threads']} Threads\n"
             f"⏱️ {info['max_time']}s Max (10 Minutes)\n"
             f"💳 {a_type}",
-            reply_markup=back_kb()
+            reply_markup=menu_back_kb()
         )
         return
     
     if data == "info_menu":
         info = get_user_info(uid)
         history = get_user_history(uid)
-        text = f"ℹ️ **ᴜsᴇʀ ɪɴғᴏ**\n\n{LINE}\n👤 {cb.from_user.first_name}\n🆔 {uid}\n💳 {info['type']}\n"
+        text = f"ⓘ **˹ᴜꜱᴇʀ ɪɴꜰᴏ˼**\n\n{LINE}\n👤 {cb.from_user.first_name}\n🆔 {uid}\n💳 {info['type']}\n"
         if info.get("remaining"): text += f"⏳ Remaining: {info['remaining']}\n"
         if info.get("expiry"):
             try:
                 exp = datetime.fromisoformat(info["expiry"])
                 text += f"📅 Expires: {exp.strftime('%d %b, %I:%M %p')}\n"
             except: pass
-        text += f"\n{LINE}\n📊 **ᴀᴛᴛᴀᴄᴋ ʜɪsᴛᴏʀʏ:**\n"
+        text += f"\n{LINE}\n▓ **˹ᴀᴛᴛᴀᴄᴋ ʜɪꜱᴛᴏʀʏ˼:**\n"
         if history:
             for h in history[-5:]:
                 try:
@@ -1316,37 +1396,38 @@ async def callbacks(client, cb: CallbackQuery):
         else:
             text += "• No attacks yet!\n"
         text += f"\n{LINE}\n📹 Videos: {len(get_vids())}"
-        await cb.message.edit_text(text, reply_markup=back_kb())
+        await cb.message.edit_text(text, reply_markup=menu_back_kb())
         return
     
     if data == "redeem_menu":
         access, a_type = check_access(uid)
         if access:
             info = get_user_info(uid)
-            await cb.message.edit_text(f"✅ **ᴀᴄᴄᴇss ᴀᴄᴛɪᴠᴇ!**\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!", reply_markup=back_kb())
+            await cb.message.edit_text(f"✅ **˹ᴀᴄᴄᴇꜱꜱ ᴀᴄᴛɪᴠᴇ˼**\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /attack to start!", reply_markup=menu_back_kb())
         else:
             await cb.message.edit_text(
-                f"🔑 **ʀᴇᴅᴇᴇᴍ ᴋᴇʏ**\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [FATHER OF BOT]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
+                f"⚿ **˹ʀᴇᴅᴇᴇᴍ ᴋᴇʏ˼**\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [FATHER OF BOT]({OWNER_LINK})\n\n⏱️ 30m | 24h | 7d | 2w | 1mo",
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("🪪 About Redeem ♡", callback_data="redeem_popup")],
                     [InlineKeyboardButton("📲 Contact-Father", url=OWNER_LINK)],
-                    [InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")],
+                    [InlineKeyboardButton("⌂ ˹ᴍᴇɴᴜ˼", callback_data="menu"),
+                     InlineKeyboardButton("◀ ˹ʙᴀᴄᴋ˼", callback_data="back")],
                 ])
             )
         return
     
     if data == "admin_menu":
         if uid != OWNER_ID: await cb.answer("Owner only!"); return
-        await cb.message.edit_text("👑 **ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ**\n\n🔽 Select:", reply_markup=admin_kb())
+        await cb.message.edit_text("⚜ **˹ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ˼**\n\n🔽 Select:", reply_markup=admin_kb())
         return
     
     if data == "admin_addkey":
-        await cb.answer("🪪 ᴀᴅᴅ ᴋᴇʏ\n\nUse: /genkey NAME TIME\n\nExamples:\n/genkey Test 30m\n/genkey VIP 24h\n/genkey Premium 7d\n\nUnits: m=min, h=hour, d=day, w=week, mo=month", show_alert=True)
+        await cb.answer("⚿ ˹ᴀᴅᴅ ᴋᴇʏ˼\n\nUse: /genkey NAME TIME\n\nExamples:\n/genkey Test 30m\n/genkey VIP 24h\n/genkey Premium 7d\n\nUnits: m=min, h=hour, d=day, w=week, mo=month", show_alert=True)
         return
     
     if data == "admin_auto":
         if uid != OWNER_ID: return
-        await cb.message.edit_text(f"🤖 **ᴀᴜᴛᴏ ɢᴇɴ ᴋᴇʏ**\n\n{LINE}\n🔽 Select Duration:", reply_markup=auto_key_kb())
+        await cb.message.edit_text(f"⚜ **˹ᴀᴜᴛᴏ ɢᴇɴ ᴋᴇʏ˼**\n\n{LINE}\n🔽 Select Duration:", reply_markup=auto_key_kb())
         return
     
     auto_keys = {
@@ -1361,7 +1442,7 @@ async def callbacks(client, cb: CallbackQuery):
         name, time_str = auto_keys[data]
         key_code, duration = create_key(name, time_str)
         if key_code:
-            await cb.message.edit_text(f"🔑 **ᴋᴇʏ ɢᴇɴᴇʀᴀᴛᴇᴅ!**\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 User: /redeem {key_code}", reply_markup=auto_key_kb())
+            await cb.message.edit_text(f"⚿ **˹ᴋᴇʏ ɢᴇɴᴇʀᴀᴛᴇᴅ˼**\n\n{LINE}\n🪪 {name}\n⏱️ {duration}\n🔑 {key_code}\n{LINE}\n\n📋 User: /redeem {key_code}", reply_markup=auto_key_kb())
         else:
             await cb.answer("❌ Failed!", show_alert=True)
         return
@@ -1369,14 +1450,14 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "admin_keys":
         if uid != OWNER_ID: return
         keys = get_keys(); active = [k for k, v in keys.items() if v["active"]]; used = [k for k, v in keys.items() if not v["active"]]
-        await cb.message.edit_text(f"🔑 **ᴀʟʟ ᴋᴇʏs**\n\n{LINE}\n🟢 Active: {len(active)}\n🔴 Used: {len(used)}\n{LINE}", reply_markup=back_admin_kb())
+        await cb.message.edit_text(f"⌘ **˹ᴀʟʟ ᴋᴇʏꜱ˼**\n\n{LINE}\n🟢 Active: {len(active)}\n🔴 Used: {len(used)}\n{LINE}", reply_markup=admin_kb())
         return
     
     if data == "admin_stats":
         if uid != OWNER_ID: return
         vids = get_vids(); users = get_users()
         await cb.message.edit_text(
-            f"📊 **sᴛᴀᴛs**\n\n{LINE}\n"
+            f"⎙ **˹ꜱᴛᴀᴛꜱ˼**\n\n{LINE}\n"
             f"📹 Videos: {len(vids)}\n"
             f"💎 Premium: {len(users.get('premium', []))}\n"
             f"🔑 Key Users: {len(users.get('keys', {}))}\n"
@@ -1385,14 +1466,14 @@ async def callbacks(client, cb: CallbackQuery):
             f"⚙️ Settings:\n"
             f"⏱️ Sticker Time: {get_sticker_display_time()}s\n"
             f"⏱️ Video Delay: {get_video_delay_time()}s",
-            reply_markup=back_admin_kb()
+            reply_markup=admin_kb()
         )
         return
     
     if data == "admin_clear":
         if uid != OWNER_ID: return
         removed = remove_expired()
-        await cb.answer(f"🔄 {removed} expired removed!", show_alert=True)
+        await cb.answer(f"↺ {removed} expired removed!", show_alert=True)
         return
 
 async def send_vid(chat_id, text, kb=None, vid=None):
@@ -1411,7 +1492,7 @@ async def attack_cmd(client, msg):
     uid = msg.from_user.id
     
     checking_msg = await msg.reply_text(
-        "🔍 **ɪɴɪᴛɪᴀᴛɪɴɢ sᴇᴄᴜʀɪᴛʏ ᴘʀᴏᴛᴏᴄᴏʟ...**\n\n"
+        "🔍 **˹ɪɴɪᴛɪᴀᴛɪɴɢ ꜱᴇᴄᴜʀɪᴛʏ ᴘʀᴏᴛᴏᴄᴏʟ˼...**\n\n"
         "▫️ Connecting to secure server...\n"
         "▫️ Validating credentials...\n"
         "▫️ Checking subscription status..."
@@ -1421,7 +1502,7 @@ async def attack_cmd(client, msg):
     
     if is_blocked(uid):
         await checking_msg.edit_text(
-            "🚫 **ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ!**\n\n"
+            "🚫 **˹ᴀᴄᴄᴇꜱꜱ ᴅᴇɴɪᴇᴅ˼**\n\n"
             "╔═══════════════════════╗\n"
             "║  ❌ USER BLOCKED      ║\n"
             "║  🔒 Security Violation ║\n"
@@ -1432,7 +1513,7 @@ async def attack_cmd(client, msg):
         return
     
     await checking_msg.edit_text(
-        "🔍 **sᴄᴀɴɴɪɴɢ ᴜsᴇʀ ᴅᴀᴛᴀʙᴀsᴇ...**\n\n"
+        "🔍 **˹ꜱᴄᴀɴɴɪɴɢ ᴜꜱᴇʀ ᴅᴀᴛᴀʙᴀꜱᴇ˼...**\n\n"
         "▫️ User ID: `" + str(uid) + "`\n"
         "▫️ Status: Analyzing...\n"
         "▫️ Security Level: ⚡⚡⚡\n"
@@ -1443,7 +1524,7 @@ async def attack_cmd(client, msg):
     
     if uid == OWNER_ID:
         await checking_msg.edit_text(
-            "👑 **ᴍᴀsᴛᴇʀ ᴀᴄᴄᴇss ɢʀᴀɴᴛᴇᴅ!**\n\n"
+            "⚜ **˹ᴍᴀꜱᴛᴇʀ ᴀᴄᴄᴇꜱꜱ ɢʀᴀɴᴛᴇᴅ˼**\n\n"
             "╔══════════════════════════╗\n"
             "║  ✅ OWNER VERIFIED       ║\n"
             "║  🛡️ Unlimited Access     ║\n"
@@ -1460,7 +1541,7 @@ async def attack_cmd(client, msg):
     u = get_users()
     if str(uid) in u.get("premium", []):
         await checking_msg.edit_text(
-            "💎 **ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇss ɢʀᴀɴᴛᴇᴅ!**\n\n"
+            "💎 **˹ᴘʀᴇᴍɪᴜᴍ ᴀᴄᴄᴇꜱꜱ ɢʀᴀɴᴛᴇᴅ˼**\n\n"
             "╔══════════════════════════╗\n"
             "║  ✅ SUBSCRIPTION ACTIVE  ║\n"
             "║  💎 Premium User        ║\n"
@@ -1474,7 +1555,7 @@ async def attack_cmd(client, msg):
         return
     
     await checking_msg.edit_text(
-        "🔍 **ᴄʜᴇᴄᴋɪɴɢ ᴋᴇʏ ᴅᴀᴛᴀʙᴀsᴇ...**\n\n"
+        "🔍 **˹ᴄʜᴇᴄᴋɪɴɢ ᴋᴇʏ ᴅᴀᴛᴀʙᴀꜱᴇ˼...**\n\n"
         "▫️ Searching for active keys...\n"
         "▫️ 🔑 Key validation in progress...\n"
         "▫️ Decrypting access tokens..."
@@ -1488,7 +1569,7 @@ async def attack_cmd(client, msg):
             if datetime.now(IST) < datetime.fromisoformat(uk["expiry"]):
                 remaining, _ = get_remaining(uk["expiry"])
                 await checking_msg.edit_text(
-                    "🔑 **ᴋᴇʏ ᴀᴄᴄᴇss ɢʀᴀɴᴛᴇᴅ!**\n\n"
+                    "⚿ **˹ᴋᴇʏ ᴀᴄᴄᴇꜱꜱ ɢʀᴀɴᴛᴇᴅ˼**\n\n"
                     "╔══════════════════════════╗\n"
                     "║  ✅ KEY VERIFIED         ║\n"
                     f"║  ⏱️ Remaining: {remaining} ║\n"
@@ -1504,7 +1585,7 @@ async def attack_cmd(client, msg):
                 del u["keys"][str(uid)]
                 jsave(USERS_DB, u)
                 await checking_msg.edit_text(
-                    "⛔ **ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ!**\n\n"
+                    "⛔ **˹ᴀᴄᴄᴇꜱꜱ ᴅᴇɴɪᴇᴅ˼**\n\n"
                     "╔══════════════════════════╗\n"
                     "║  ❌ KEY EXPIRED          ║\n"
                     "║  ⏰ Time's Up!           ║\n"
@@ -1519,7 +1600,7 @@ async def attack_cmd(client, msg):
             pass
     
     await checking_msg.edit_text(
-        "⛔ **ᴀᴄᴄᴇss ᴅᴇɴɪᴇᴅ!**\n\n"
+        "⛔ **˹ᴀᴄᴄᴇꜱꜱ ᴅᴇɴɪᴇᴅ˼**\n\n"
         "╔══════════════════════════╗\n"
         "║  ❌ NO ACTIVE PLAN       ║\n"
         "║  🔒 Subscription Required ║\n"
@@ -1569,7 +1650,7 @@ async def execute_attack(client, msg, uid):
     
     vid = rand_vid()
     text = (
-        "💀 **ᴀᴛᴛᴀᴄᴋ ʟᴀᴜɴᴄʜᴇᴅ!**\n\n"
+        "💀 **˹ᴀᴛᴛᴀᴄᴋ ʟᴀᴜɴᴄʜᴇᴅ˼**\n\n"
         "╔══════════════════════════╗\n"
         f"║ 🎯 Target: {ip}:{port}     ║\n"
         f"║ ⏱️ Duration: {dur}s        ║\n"
@@ -1593,7 +1674,7 @@ async def execute_attack(client, msg, uid):
                 bar = "█"*int(pct/5) + "░"*(20-int(pct/5))
                 mbps = (attacker.bytes_out*8)/(e*1e6) if e>0 else 0
                 await amsg.edit_text(
-                    f"💀 **ᴀᴛᴛᴀᴄᴋɪɴɢ!**\n\n"
+                    f"💀 **˹ᴀᴛᴛᴀᴄᴋɪɴɢ˼**\n\n"
                     f"╔══════════════════════════╗\n"
                     f"║ 🎯 {ip}:{port}              ║\n"
                     f"║ ⏱️ {int(e)}s / {dur}s        ║\n"
@@ -1616,7 +1697,7 @@ async def execute_attack(client, msg, uid):
     
     vid = rand_vid()
     done = (
-        "✅ **ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ!**\n\n"
+        "✅ **˹ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ˼**\n\n"
         "╔══════════════════════════╗\n"
         f"║ 🎯 {ip}:{port}              ║\n"
         f"║ 📦 {stats['pkts']:,} pkts  ║\n"
@@ -1640,7 +1721,7 @@ async def stop_cmd(client, msg):
     if attacking:
         attacker.on = False; attacking = False
         vid = rand_vid()
-        text = f"⛔ **sᴛᴏᴘᴘᴇᴅ!**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
+        text = f"⛔ **˹ꜱᴛᴏᴘᴘᴇᴅ˼**\n\n📦 {attacker.pkts:,} packets\n\n🔄 /attack IP PORT TIME"
         await send_vid(msg.chat.id, text, None, vid)
     else:
         await msg.reply_text("💤 No attack running!")
@@ -1652,18 +1733,18 @@ async def redeem_cmd(client, msg):
     access, a_type = check_access(uid)
     if access:
         info = get_user_info(uid)
-        return await msg.reply_text(f"✅ ᴀʟʀᴇᴀᴅʏ ᴜɴʟᴏᴄᴋᴇᴅ!\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /start for menu")
+        return await msg.reply_text(f"✅ ˹ᴀʟʀᴇᴀᴅʏ ᴜɴʟᴏᴄᴋᴇᴅ˼\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\nUse /start for menu")
     
     parts = msg.text.split()
     if len(parts) != 2:
-        return await msg.reply_text(f"🔑 ʀᴇᴅᴇᴇᴍ ᴋᴇʏ\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+        return await msg.reply_text(f"⚿ ˹ʀᴇᴅᴇᴇᴍ ᴋᴇʏ˼\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
     
     key = parts[1].upper()
     success, result = redeem_key_code(key, uid)
     
     if success:
         vid = rand_vid()
-        text = f"🎉 ᴋᴇʏ ʀᴇᴅᴇᴇᴍᴇᴅ!\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
+        text = f"🎉 ˹ᴋᴇʏ ʀᴇᴅᴇᴇᴍᴇᴅ˼\n\n{LINE}\n🔑 Key: {key[:20]}...\n📅 Expires: {result}\n{LINE}\n\n🔓 Access granted!\n📋 Send /start"
         await send_vid(msg.chat.id, text, None, vid)
     else:
         await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
@@ -1675,8 +1756,7 @@ async def commands_cmd(client, msg):
     is_owner = (uid == OWNER_ID)
     commands_text = get_commands_list(is_owner)
     formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 ʙᴀᴄᴋ", callback_data="back")]])
-    await msg.reply_text(formatted_text, reply_markup=kb)
+    await msg.reply_text(formatted_text, reply_markup=menu_back_kb())
 
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji"))
@@ -1686,7 +1766,7 @@ async def add_emoji_cmd(client, msg):
     
     if not msg.reply_to_message:
         return await msg.reply_text(
-            "📤 **ᴀᴅᴅ ᴇᴍᴏᴊɪ**\n\n"
+            "⎘ **˹ᴀᴅᴅ ᴇᴍᴏᴊɪ˼**\n\n"
             "Reply to a **premium emoji** with:\n"
             "`/addemoji`\n\n"
             "The emoji will be added to welcome animation!"
@@ -1703,7 +1783,7 @@ async def add_emoji_cmd(client, msg):
         success, total = add_emoji(emoji_id)
         if success:
             await msg.reply_text(
-                f"✅ **ᴇᴍᴏᴊɪ ᴀᴅᴅᴇᴅ!** 🎉\n\n"
+                f"✅ **˹ᴇᴍᴏᴊɪ ᴀᴅᴅᴇᴅ˼** 🎉\n\n"
                 f"🔹 **Total Emojis:** {total}\n\n"
                 "✨ This emoji will appear randomly in welcome animation!"
             )
@@ -1723,7 +1803,7 @@ async def remove_emoji_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 2:
         return await msg.reply_text(
-            "🗑️ **ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ**\n\n"
+            "⌫ **˹ʀᴇᴍᴏᴠᴇ ᴇᴍᴏᴊɪ˼**\n\n"
             "Use: `/removeemoji index`\n\n"
             "Get index from `/listemojis` command."
         )
@@ -1733,7 +1813,7 @@ async def remove_emoji_cmd(client, msg):
         success, removed, total = remove_emoji(index)
         if success:
             await msg.reply_text(
-                f"✅ **ᴇᴍᴏᴊɪ ʀᴇᴍᴏᴠᴇᴅ!**\n\n"
+                f"✅ **˹ᴇᴍᴏᴊɪ ʀᴇᴍᴏᴠᴇᴅ˼**\n\n"
                 f"🔹 **Remaining Emojis:** {total}"
             )
         else:
@@ -1751,7 +1831,7 @@ async def list_emojis_cmd(client, msg):
     if not emojis:
         return await msg.reply_text("📭 **No emojis added yet!**\n\nAdd using `/addemoji`")
     
-    text = "📋 **ᴇᴍᴏᴊɪ ʟɪsᴛ**\n\n"
+    text = "⌘ **˹ᴇᴍᴏᴊɪ ʟɪꜱᴛ˼**\n\n"
     for i, emoji_id in enumerate(emojis, 1):
         text += f"**{i}.** `{emoji_id[:30]}...`\n"
     
@@ -1765,7 +1845,7 @@ async def reset_emojis_cmd(client, msg):
     
     reset_emojis()
     await msg.reply_text(
-        f"🔄 **ᴇᴍᴏᴊɪs ʀᴇsᴇᴛ!**\n\n"
+        f"↺ **˹ᴇᴍᴏᴊɪꜱ ʀᴇꜱᴇᴛ˼**\n\n"
         f"🔹 **Total Emojis:** 0\n\n"
         "All emojis have been removed from the list."
     )
@@ -1778,7 +1858,7 @@ async def add_sticker_cmd(client, msg):
     
     if not msg.reply_to_message:
         return await msg.reply_text(
-            "🎨 **ᴀᴅᴅ sᴛɪᴄᴋᴇʀ**\n\n"
+            "⎘ **˹ᴀᴅᴅ ꜱᴛɪᴄᴋᴇʀ˼**\n\n"
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
             "The sticker will appear randomly in welcome animation!\n\n"
@@ -1808,7 +1888,7 @@ async def add_sticker_cmd(client, msg):
     
     if success:
         await msg.reply_text(
-            f"✅ **sᴛɪᴄᴋᴇʀ ᴀᴅᴅᴇᴅ!** 🎉\n\n"
+            f"✅ **˹ꜱᴛɪᴄᴋᴇʀ ᴀᴅᴅᴇᴅ˼** 🎉\n\n"
             f"🔹 **Total Stickers:** {total}\n"
             f"⏱️ **Duration:** {duration} seconds\n\n"
             "✨ This sticker will appear randomly in welcome animation!\n"
@@ -1827,7 +1907,7 @@ async def remove_sticker_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 2:
         return await msg.reply_text(
-            "🗑️ **ʀᴇᴍᴏᴠᴇ sᴛɪᴄᴋᴇʀ**\n\n"
+            "⌫ **˹ʀᴇᴍᴏᴠᴇ ꜱᴛɪᴄᴋᴇʀ˼**\n\n"
             "Use: `/removesticker index`\n\n"
             "Get index from `/liststickers` command."
         )
@@ -1837,7 +1917,7 @@ async def remove_sticker_cmd(client, msg):
         success, removed, total = remove_sticker(index)
         if success:
             await msg.reply_text(
-                f"✅ **sᴛɪᴄᴋᴇʀ ʀᴇᴍᴏᴠᴇᴅ!**\n\n"
+                f"✅ **˹ꜱᴛɪᴄᴋᴇʀ ʀᴇᴍᴏᴠᴇᴅ˼**\n\n"
                 f"🔹 **Remaining Stickers:** {total}"
             )
         else:
@@ -1856,7 +1936,7 @@ async def list_stickers_cmd(client, msg):
     if not stickers:
         return await msg.reply_text("📭 **No stickers added yet!**\n\nAdd using `/addsticker`")
     
-    text = "📋 **sᴛɪᴄᴋᴇʀ ʟɪsᴛ**\n\n"
+    text = "⌘ **˹ꜱᴛɪᴄᴋᴇʀ ʟɪꜱᴛ˼**\n\n"
     for i, sticker_id in enumerate(stickers, 1):
         time = sticker_times.get(sticker_id, get_sticker_display_time())
         text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
@@ -1872,7 +1952,7 @@ async def reset_stickers_cmd(client, msg):
     
     reset_stickers()
     await msg.reply_text(
-        f"🔄 **sᴛɪᴄᴋᴇʀs ʀᴇsᴇᴛ!**\n\n"
+        f"↺ **˹ꜱᴛɪᴄᴋᴇʀꜱ ʀᴇꜱᴇᴛ˼**\n\n"
         f"🔹 **Total Stickers:** 0\n\n"
         "All stickers have been removed from the list."
     )
@@ -1894,7 +1974,7 @@ async def add_video_cmd(client, msg):
                 duration = f"{mins}m {secs}s"
             
             text = (
-                f"✅ **ᴠɪᴅᴇᴏ ᴀᴅᴅᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ!** ✅\n\n"
+                f"✅ **˹ᴠɪᴅᴇᴏ ᴀᴅᴅᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ˼** ✅\n\n"
                 f"{LINE}\n"
                 f"🆔 **Video ID:** {vid}\n"
                 f"📁 **Name:** {os.path.basename(path)[:30]}\n"
@@ -1915,7 +1995,7 @@ async def list_vids_cmd(client, msg):
     if not check_access(msg.from_user.id)[0]: return
     vids = get_vids()
     if not vids: return await msg.reply_text("📹 No videos!")
-    text = f"📹 **ᴠɪᴅᴇᴏs ({len(vids)}):**\n\n"
+    text = f"📹 **˹ᴠɪᴅᴇᴏꜱ˼ ({len(vids)}):**\n\n"
     for v in vids[:15]:
         text += f"#{v['id']} {v['name'][:30]}\n"
     text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
@@ -1949,7 +2029,7 @@ async def genkey_cmd(client, msg):
     parts = msg.text.split()
     if len(parts) != 3:
         return await msg.reply_text(
-            "🔑 **ɢᴇɴᴋᴇʏ**\n\n"
+            "⚿ **˹ɢᴇɴᴋᴇʏ˼**\n\n"
             "Use: `/genkey NAME TIME`\n\n"
             "Examples:\n"
             "/genkey Premium 7d\n"
@@ -1965,7 +2045,7 @@ async def genkey_cmd(client, msg):
     
     if key_code:
         await msg.reply_text(
-            f"🔑 **ᴋᴇʏ ɢᴇɴᴇʀᴀᴛᴇᴅ!**\n\n"
+            f"⚿ **˹ᴋᴇʏ ɢᴇɴᴇʀᴀᴛᴇᴅ˼**\n\n"
             f"{LINE}\n"
             f"🪪 Name: {name}\n"
             f"⏱️ Duration: {duration}\n"
@@ -1984,7 +2064,7 @@ async def admin_keys_cmd(client, msg):
     active = [k for k, v in keys.items() if v["active"]]
     used = [k for k, v in keys.items() if not v["active"]]
     await msg.reply_text(
-        f"🔑 **ᴀʟʟ ᴋᴇʏs**\n\n{LINE}\n"
+        f"⌘ **˹ᴀʟʟ ᴋᴇʏꜱ˼**\n\n{LINE}\n"
         f"🟢 Active: {len(active)}\n"
         f"🔴 Used: {len(used)}\n"
         f"📊 Total: {len(keys)}\n{LINE}"
@@ -1997,7 +2077,7 @@ async def admin_stats_cmd(client, msg):
     vids = get_vids()
     users = get_users()
     await msg.reply_text(
-        f"📊 **sᴛᴀᴛs**\n\n{LINE}\n"
+        f"⎙ **˹ꜱᴛᴀᴛꜱ˼**\n\n{LINE}\n"
         f"📹 Videos: {len(vids)}\n"
         f"💎 Premium: {len(users.get('premium', []))}\n"
         f"🔑 Key Users: {len(users.get('keys', {}))}\n"
@@ -2013,7 +2093,7 @@ async def admin_clear_cmd(client, msg):
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     removed = remove_expired()
-    await msg.reply_text(f"🔄 {removed} expired keys removed!")
+    await msg.reply_text(f"↺ {removed} expired keys removed!")
 
 # ═══════════════ AUTO EXPIRE ═══════════════
 async def auto_expire():
@@ -2042,8 +2122,9 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  ✅ STYLISH BUTTONS                 ║
-║  ✅ ACCESS DENIED REMOVED           ║
+║  ✅ PREMIUM SYMBOLS + 5 TEXT STYLES ║
+║  ✅ MENU + BACK BUTTONS SATH MEIN   ║
+║  ✅ PERFECT TIMING                  ║
 ║  ✅ 13 EMOJIS - 13 WORDS            ║
 ║  ✅ SET ALL STICKER TIME            ║
 ║  ✅ SET VIDEO DELAY                 ║
