@@ -17,13 +17,19 @@ def save_db(data):
     with open(DB_FILE, 'w') as f:
         json.dump(data, f, indent=4, default=str)
 
-# ═══════════════ TRY MONGODB (OPTIONAL) ═══════════════
+# ═══════════════ MONGODB CONNECTION ═══════════════
 USE_MONGO = False
+MONGO_ERROR = None
+
 try:
     from pymongo import MongoClient
     import certifi
     from config import MONGO_URI
-    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+    
+    # 🔥 FIX: Connection with timeout
+    client = MongoClient(MONGO_URI, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+    # Test connection
+    client.admin.command('ping')
     db = client['bgmi_ddos']
     users_col = db['users']
     logs_col = db['logs']
@@ -31,8 +37,9 @@ try:
     print("✅ MongoDB Connected Successfully!")
     USE_MONGO = True
 except Exception as e:
+    MONGO_ERROR = str(e)
     print(f"⚠️ MongoDB Error: {e}")
-    print("✅ Using JSON Database")
+    print("✅ Using JSON Database (database.json)")
 
 # ═══════════════ DATABASE FUNCTIONS ═══════════════
 def get_user(user_id):
@@ -56,8 +63,9 @@ def get_user(user_id):
                 }
                 users_col.insert_one(user)
             return user
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ MongoDB get_user error: {e}")
+            # Fallback to JSON
     
     # JSON Fallback
     db_data = load_db()
@@ -90,8 +98,8 @@ def update_user(user_id, data):
                     update_data[key] = value
             users_col.update_one({'_id': user_id}, {'$set': update_data}, upsert=True)
             return
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ MongoDB update_user error: {e}")
     
     # JSON Fallback
     db_data = load_db()
@@ -119,8 +127,8 @@ def save_log(user_id, ip, port, duration, packets, method):
                 'time': datetime.now().isoformat()
             })
             return
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ MongoDB save_log error: {e}")
     
     db_data = load_db()
     db_data["logs"].append({
@@ -148,8 +156,8 @@ def create_key(plan, duration):
                 'created_at': datetime.now().isoformat()
             })
             return key_code
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ MongoDB create_key error: {e}")
     
     db_data = load_db()
     db_data["keys"].append({
@@ -182,8 +190,8 @@ def redeem_key(key_code, user_id):
                 )
                 return True, key['plan'], key['duration']
             return False, None, None
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ MongoDB redeem_key error: {e}")
     
     # JSON Fallback
     db_data = load_db()
@@ -199,3 +207,16 @@ def redeem_key(key_code, user_id):
             save_db(db_data)
             return True, key["plan"], key["duration"]
     return False, None, None
+
+def load_db():
+    if os.path.exists("database.json"):
+        try:
+            with open("database.json", 'r') as f:
+                return json.load(f)
+        except:
+            return {"users": {}, "orders": [], "logs": [], "keys": []}
+    return {"users": {}, "orders": [], "logs": [], "keys": []}
+
+def save_db(data):
+    with open("database.json", 'w') as f:
+        json.dump(data, f, indent=4, default=str)
