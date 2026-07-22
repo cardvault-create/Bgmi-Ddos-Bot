@@ -31,10 +31,17 @@ logger = logging.getLogger(__name__)
 # ═══════════════ BOT ═══════════════
 bot = telebot.TeleBot(TOKEN)
 
-# 🔥 Remove webhook before starting
+# 🔥🔥🔥 FIX 409 ERROR - Force remove webhook
 try:
     bot.remove_webhook()
     print("✅ Webhook removed!")
+except Exception as e:
+    print(f"⚠️ Webhook removal: {e}")
+
+# 🔥🔥🔥 FIX - Stop polling if already running
+try:
+    bot.stop_polling()
+    print("✅ Stopped previous polling!")
 except:
     pass
 
@@ -728,7 +735,8 @@ if __name__ == '__main__':
     print("📁 Database: database.json")
     
     try:
+        # 🔥🔥🔥 FIX - Clean start
         bot.remove_webhook()
-        bot.polling(none_stop=True)
+        bot.polling(none_stop=True, interval=0)
     except Exception as e:
         print(f"❌ Bot Error: {e}")
