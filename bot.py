@@ -485,7 +485,9 @@ def premium_text(text, style_num=1):
     styled = styles.get(style_num, style1_smallcaps)(text)
     return f"˹{styled}˼"
 
-# ═══════════════ STYLISH BUTTONS WITH SYMBOLS ═══════════════
+# ═══════════════ PREMIUM SYMBOLS ═══════════════
+# ◖◗◣◥ ✰ ˹˼『』〚〛〔〕
+
 def menu_back_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(f"◖ {premium_text('MENU', 5)} ◗", callback_data="menu"),
@@ -675,7 +677,7 @@ def get_commands_list(is_owner=False):
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ WELCOME ANIMATION ═══════════════
+# ═══════════════ WELCOME ANIMATION - FULL ═══════════════
 async def welcome_animation(client, msg):
     try:
         user = msg.from_user
@@ -712,9 +714,10 @@ async def welcome_animation(client, msg):
 ┗━━━━━━━━━━━━━━━━━⧫
 ๏ {premium_text('ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs', 4)}
 
-🫧 {premium_style('ᴅᴇᴠᴇʟᴏᴩᴇʀ', 5)} 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
+🫧 {premium_text('ᴅᴇᴠᴇʟᴏᴩᴇʀ', 5)} 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
+        # 🔥 STEP 1: EMOJI SEND
         emoji_msg = None
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -725,6 +728,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
+        # 🔥 STEP 2: WELCOME MESSAGE WITH EMOJIS
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
@@ -746,6 +750,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
+        # 🔥 STEP 3: STARTING ANIMATION - 13 WORDS WITH EMOJIS
         starting_emojis = [
             "🚀", "🌠", "🪶", "🍓", "🤖", "🥡", 
             "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"
@@ -766,6 +771,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
+        # 🔥 STEP 4: DELETE WELCOME MESSAGE
         try:
             await welcome_msg.delete()
         except:
@@ -773,6 +779,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
+        # 🔥 STEP 5: SEND STICKER
         sticker_msg = None
         if sticker_id:
             try:
@@ -780,11 +787,13 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
+        # 🔥 STEP 6: WAIT FOR VIDEO DELAY
         if sticker_msg:
             await asyncio.sleep(video_delay_time)
         else:
             await asyncio.sleep(video_delay_time)
         
+        # 🔥 STEP 7: SEND FINAL VIDEO MESSAGE
         final_msg = None
         if video_data and os.path.exists(video_data["path"]):
             final_msg = await client.send_video(
@@ -800,6 +809,7 @@ async def welcome_animation(client, msg):
                 reply_markup=kb
             )
         
+        # 🔥 STEP 8: DELETE STICKER AFTER DISPLAY TIME
         if sticker_msg:
             remaining_time = sticker_display_time - video_delay_time
             if remaining_time > 0:
@@ -814,9 +824,11 @@ async def welcome_animation(client, msg):
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
-        await start_simple(client, msg)
+        # 🔥 IF ERROR, SEND SIMPLE START
+        await simple_start(client, msg)
 
-async def start_simple(client, msg):
+async def simple_start(client, msg):
+    """🔥 Simple start if welcome animation fails"""
     try:
         user = msg.from_user
         user_id = user.id
@@ -2203,6 +2215,7 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
+║  ✅ FULL WELCOME ANIMATION          ║
 ║  ✅ 5 TEXT STYLES + PREMIUM SYMBOLS ║
 ║  ✅ ◖◗◣◥ ✰ ˹˼『』〚〛〔〕 SYMBOLS    ║
 ║  ✅ MENU + BACK BUTTONS SATH MEIN   ║
