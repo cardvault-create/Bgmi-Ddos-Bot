@@ -37,6 +37,7 @@ HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
 STICKER_TIME_DB = "sticker_times.json"
+SETTINGS_DB = "settings.json"  # 🔥 NEW: Settings ke liye
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -44,7 +45,8 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-DEFAULT_STICKER_TIME = 5
+DEFAULT_STICKER_TIME = 6  # 🔥 DEFAULT 6 SECOND
+DEFAULT_VIDEO_DELAY = 4   # 🔥 DEFAULT 4 SECOND
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -113,6 +115,27 @@ def get_remaining(expiry_str):
         else: return f"{minutes}M", False
     except: return "ERROR", False
 
+# ═══════════════ SETTINGS FUNCTIONS ═══════════════
+def get_settings():
+    return jload(SETTINGS_DB, {"sticker_time": DEFAULT_STICKER_TIME, "video_delay": DEFAULT_VIDEO_DELAY})
+
+def save_settings(sticker_time=None, video_delay=None):
+    settings = get_settings()
+    if sticker_time is not None:
+        settings["sticker_time"] = sticker_time
+    if video_delay is not None:
+        settings["video_delay"] = video_delay
+    jsave(SETTINGS_DB, settings)
+    return settings
+
+def get_sticker_display_time():
+    settings = get_settings()
+    return settings.get("sticker_time", DEFAULT_STICKER_TIME)
+
+def get_video_delay_time():
+    settings = get_settings()
+    return settings.get("video_delay", DEFAULT_VIDEO_DELAY)
+
 # ═══════════════ STICKER TIME FUNCTIONS ═══════════════
 def get_sticker_times():
     return jload(STICKER_TIME_DB, {})
@@ -125,7 +148,18 @@ def save_sticker_time(sticker_id, duration):
 
 def get_sticker_time(sticker_id):
     data = get_sticker_times()
-    return data.get(sticker_id, DEFAULT_STICKER_TIME)
+    return data.get(sticker_id, get_sticker_display_time())
+
+def set_all_sticker_times(duration):
+    """🔥 SAB STICKERS KA TIME SET KAREIN"""
+    stickers = get_all_stickers()
+    if not stickers:
+        return False, 0
+    data = get_sticker_times()
+    for sticker_id in stickers:
+        data[sticker_id] = duration
+    jsave(STICKER_TIME_DB, data)
+    return True, len(stickers)
 
 # ═══════════════ EMOJI FUNCTIONS ═══════════════
 def get_emojis():
@@ -523,19 +557,21 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
 /removesticker - 🗑️ Sticker Remove Karein
 /liststickers - 📋 Stickers Dekhein
 /resetstickers - 🔄 Stickers Reset Karein
-/setstickertime - ⏱️ Sticker Time Set Karein
-
-🎯 EMOJI COMMANDS
-/addemoji - 📤 Emoji Add Karein
-/removeemoji - 🗑️ Emoji Remove Karein
-/listemojis - 📋 Emojis Dekhein
-/resetemojis - 🔄 Emojis Reset Karein
+/setstickertime - ⏱️ Single Sticker Time Set
+/setallstickertime - ⏱️ ALL Stickers Time Set
 
 🎬 VIDEO COMMANDS
 /addvideo - 📤 Video Add Karein
 /delvideo - 🗑️ Video Delete Karein
 /videos - 📋 Videos Dekhein
 /clearvideos - 🧹 Videos Clear Karein
+/setvideodelay - ⏱️ Video Delay Set Karein
+
+🎯 EMOJI COMMANDS
+/addemoji - 📤 Emoji Add Karein
+/removeemoji - 🗑️ Emoji Remove Karein
+/listemojis - 📋 Emojis Dekhein
+/resetemojis - 🔄 Emojis Reset Karein
 
 🔑 KEY COMMANDS
 /genkey - 🪪 Key Generate Karein
@@ -564,14 +600,13 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
+        # 🔥 GET CURRENT SETTINGS
+        sticker_display_time = get_sticker_display_time()
+        video_delay_time = get_video_delay_time()
+        
         # 🔥 PEHLE STICKER OR VIDEO SELECT KARO
         sticker_id = get_random_sticker()
         video_data = rand_vid()
-        
-        # 🔥 STICKER KI DURATION GET KARO
-        sticker_display_time = DEFAULT_STICKER_TIME
-        if sticker_id:
-            sticker_display_time = get_sticker_time(sticker_id)
         
         if user_id == OWNER_ID:
             kb = owner_kb()
@@ -633,7 +668,7 @@ async def welcome_animation(client, msg):
         await asyncio.sleep(0.3)
         
         # 🔥 STARTING ANIMATION
-        starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
+        starting_emojis = ["🚀", "🌠", "🪶", "🍓", "🤖", "🥡", "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"]
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
         emoji = starting_emojis[emoji_idx % len(starting_emojis)]
@@ -670,36 +705,36 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # 🔥 🔥 🔥 VIDEO SEND KARO - STICKER KE SAATH (PARALLEL)
-        video_task = None
+        # 🔥 VIDEO KO SET TIME KE BAAD SEND KARNE KE LIYE DELAY
+        await asyncio.sleep(video_delay_time)  # 🔥 VIDEO DELAY TIME
+        
+        # 🔥 AB VIDEO SEND KARO (SET TIME KE BAAD)
+        final_msg = None
         if video_data and os.path.exists(video_data["path"]):
-            video_task = asyncio.create_task(
-                client.send_video(
-                    chat_id,
-                    video_data["path"],
-                    caption=final_text,
-                    reply_markup=kb
-                )
+            final_msg = await client.send_video(
+                chat_id,
+                video_data["path"],
+                caption=final_text,
+                reply_markup=kb
             )
         else:
-            video_task = asyncio.create_task(
-                client.send_message(chat_id, final_text, reply_markup=kb)
+            final_msg = await client.send_message(
+                chat_id,
+                final_text,
+                reply_markup=kb
             )
         
-        # 🔥 🔥 🔥 STICKER KE LIYE EXACT DURATION WAIT KARO
-        # 🔥 STICKER KA TIME DETECT KARO AUR UTNA WAIT KARO
+        # 🔥 STICKER KO SET TIME KE BAAD DELETE KARO
+        remaining_sticker_time = sticker_display_time - video_delay_time
+        if remaining_sticker_time > 0:
+            await asyncio.sleep(remaining_sticker_time)
+        
         if sticker_msg:
-            # Sticker ko delete karne se pehle exact duration wait karein
-            await asyncio.sleep(sticker_display_time)
-            
-            # 🔥 AB STICKER DELETE KARO (COMPLETE HONE KE BAAD)
             try:
                 await sticker_msg.delete()
             except:
                 pass
         
-        # 🔥 VIDEO KA INTZAAR KARO
-        final_msg = await video_task
         return final_msg
         
     except Exception as e:
@@ -775,6 +810,173 @@ async def send_vid(chat_id, text, kb=None, vid=None):
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
+
+# ═══════════════ SET ALL STICKER TIME ═══════════════
+@app.on_message(filters.command("setallstickertime") & filters.private)
+async def set_all_sticker_time_cmd(client, msg):
+    """🔥 SAB STICKERS KA TIME EK SAATH SET KAREIN"""
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "⏱️ **SET ALL STICKER TIME**\n\n"
+            "Use: `/setallstickertime seconds`\n\n"
+            "Example: `/setallstickertime 10`\n"
+            "This sets ALL stickers to display for 10 seconds\n\n"
+            "📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
+        )
+    
+    try:
+        duration = int(parts[1])
+        if duration < 1:
+            return await msg.reply_text("❌ Duration must be at least 1 second!")
+        
+        # 🔥 SAVE GLOBAL SETTING
+        save_settings(sticker_time=duration)
+        
+        # 🔥 SAB STICKERS KA TIME UPDATE KARO
+        success, count = set_all_sticker_times(duration)
+        
+        if success:
+            await msg.reply_text(
+                f"✅ **ALL STICKERS UPDATED!** 🎉\n\n"
+                f"⏱️ New Duration: {duration} seconds\n"
+                f"📊 Total Stickers Updated: {count}\n\n"
+                f"🔄 All stickers will now display for {duration} seconds!\n"
+                f"📋 Current Video Delay: {get_video_delay_time()}s"
+            )
+        else:
+            await msg.reply_text(
+                f"⚠️ **No stickers found!**\n\n"
+                f"⏱️ Global Sticker Time set to: {duration}s\n"
+                f"📋 Add stickers using `/addsticker`"
+            )
+            
+    except ValueError:
+        await msg.reply_text("❌ Invalid input! Use a number.")
+
+# ═══════════════ SET VIDEO DELAY ═══════════════
+@app.on_message(filters.command("setvideodelay") & filters.private)
+async def set_video_delay_cmd(client, msg):
+    """🔥 VIDEO KITNE TIME BAAD AAYE SET KAREIN"""
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 2:
+        return await msg.reply_text(
+            "⏱️ **SET VIDEO DELAY**\n\n"
+            "Use: `/setvideodelay seconds`\n\n"
+            "Example: `/setvideodelay 4`\n"
+            "Video will appear after 4 seconds\n\n"
+            "📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
+        )
+    
+    try:
+        delay = int(parts[1])
+        if delay < 1:
+            return await msg.reply_text("❌ Delay must be at least 1 second!")
+        
+        # 🔥 CHECK KARO STICKER TIME SE ZYADA TO NAHI
+        sticker_time = get_sticker_display_time()
+        if delay >= sticker_time:
+            await msg.reply_text(
+                f"⚠️ **Warning!**\n\n"
+                f"Video Delay ({delay}s) should be less than Sticker Time ({sticker_time}s)\n\n"
+                f"💡 Recommended: Video Delay < Sticker Time\n"
+                f"Example: Sticker 6s, Video 4s"
+            )
+            return
+        
+        # 🔥 SAVE SETTING
+        save_settings(video_delay=delay)
+        
+        await msg.reply_text(
+            f"✅ **VIDEO DELAY UPDATED!** 🎉\n\n"
+            f"⏱️ New Video Delay: {delay} seconds\n"
+            f"📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s\n\n"
+            f"🔄 Video will now appear after {delay} seconds!"
+        )
+            
+    except ValueError:
+        await msg.reply_text("❌ Invalid input! Use a number.")
+
+# ═══════════════ SET SINGLE STICKER TIME ═══════════════
+@app.on_message(filters.command("setstickertime") & filters.private)
+async def set_sticker_time_cmd(client, msg):
+    """🔥 EK STICKER KA TIME SET KAREIN"""
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    parts = msg.text.split()
+    if len(parts) != 3:
+        return await msg.reply_text(
+            "⏱️ **SET STICKER TIME**\n\n"
+            "Use: `/setstickertime index seconds`\n\n"
+            "Example: `/setstickertime 1 10`\n"
+            "This sets sticker #1 to display for 10 seconds\n\n"
+            "Get index from `/liststickers` command.\n\n"
+            "📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
+        )
+    
+    try:
+        index = int(parts[1]) - 1
+        duration = int(parts[2])
+        
+        if duration < 1:
+            return await msg.reply_text("❌ Duration must be at least 1 second!")
+        
+        stickers = get_all_stickers()
+        if index < 0 or index >= len(stickers):
+            return await msg.reply_text(f"❌ Invalid index! Total stickers: {len(stickers)}")
+        
+        sticker_id = stickers[index]
+        save_sticker_time(sticker_id, duration)
+        
+        await msg.reply_text(
+            f"✅ **STICKER TIME UPDATED!**\n\n"
+            f"🆔 Sticker #{index+1}\n"
+            f"⏱️ New Duration: {duration} seconds\n\n"
+            f"📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
+        )
+    except ValueError:
+        await msg.reply_text("❌ Invalid input! Use numbers only.")
+
+# ═══════════════ SHOW SETTINGS ═══════════════
+@app.on_message(filters.command("settings") & filters.private)
+async def settings_cmd(client, msg):
+    """🔥 CURRENT SETTINGS DEKHEIN"""
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    sticker_time = get_sticker_display_time()
+    video_delay = get_video_delay_time()
+    
+    await msg.reply_text(
+        f"⚙️ **CURRENT SETTINGS**\n\n"
+        f"{LINE}\n"
+        f"⏱️ Sticker Display Time: {sticker_time}s\n"
+        f"⏱️ Video Delay: {video_delay}s\n"
+        f"{LINE}\n\n"
+        f"📝 **Commands:**\n"
+        f"• `/setallstickertime seconds` - Set ALL stickers\n"
+        f"• `/setstickertime index seconds` - Set single sticker\n"
+        f"• `/setvideodelay seconds` - Set video delay\n"
+        f"• `/settings` - Show this menu\n\n"
+        f"💡 **Note:** Video Delay should be less than Sticker Time"
+    )
 
 # ═══════════════ COMMANDS CALLBACK ═══════════════
 @app.on_callback_query(filters.regex("commands_menu"))
@@ -1164,7 +1366,7 @@ async def add_sticker_cmd(client, msg):
             "Reply to a **sticker** with:\n"
             "`/addsticker`\n\n"
             "The sticker will appear randomly in welcome animation!\n\n"
-            "⏱️ **Auto-Detect:** Sticker duration will be detected automatically!"
+            f"⏱️ Default Sticker Time: {get_sticker_display_time()}s"
         )
     
     if not msg.reply_to_message.sticker:
@@ -1172,7 +1374,7 @@ async def add_sticker_cmd(client, msg):
     
     sticker_id = msg.reply_to_message.sticker.file_id
     
-    duration = DEFAULT_STICKER_TIME
+    duration = get_sticker_display_time()
     try:
         if hasattr(msg.reply_to_message.sticker, 'duration'):
             duration = msg.reply_to_message.sticker.duration
@@ -1181,10 +1383,10 @@ async def add_sticker_cmd(client, msg):
             if hasattr(sticker_obj, 'duration'):
                 duration = sticker_obj.duration
     except:
-        duration = DEFAULT_STICKER_TIME
+        duration = get_sticker_display_time()
     
     if duration < 2:
-        duration = DEFAULT_STICKER_TIME
+        duration = get_sticker_display_time()
     
     success, total = add_sticker(sticker_id, duration)
     
@@ -1192,9 +1394,11 @@ async def add_sticker_cmd(client, msg):
         await msg.reply_text(
             f"✅ **STICKER ADDED!** 🎉\n\n"
             f"🔹 **Total Stickers:** {total}\n"
-            f"⏱️ **Detected Duration:** {duration} seconds\n\n"
+            f"⏱️ **Duration:** {duration} seconds\n\n"
             "✨ This sticker will appear randomly in welcome animation!\n"
-            f"🔄 Sticker will be visible for exactly {duration} seconds then video appears instantly!"
+            f"📋 Current Settings:\n"
+            f"• Sticker Time: {get_sticker_display_time()}s\n"
+            f"• Video Delay: {get_video_delay_time()}s"
         )
     else:
         await msg.reply_text("❌ This sticker is already in the list!")
@@ -1238,10 +1442,11 @@ async def list_stickers_cmd(client, msg):
     
     text = "📋 **STICKER LIST**\n\n"
     for i, sticker_id in enumerate(stickers, 1):
-        time = sticker_times.get(sticker_id, DEFAULT_STICKER_TIME)
+        time = sticker_times.get(sticker_id, get_sticker_display_time())
         text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
     
     text += f"\n🔹 **Total:** {len(stickers)}"
+    text += f"\n\n📋 **Settings:** Sticker Time: {get_sticker_display_time()}s | Video Delay: {get_video_delay_time()}s"
     await msg.reply_text(text)
 
 @app.on_message(filters.command("resetstickers"))
@@ -1255,44 +1460,6 @@ async def reset_stickers_cmd(client, msg):
         f"🔹 **Total Stickers:** 0\n\n"
         "All stickers have been removed from the list."
     )
-
-@app.on_message(filters.command("setstickertime"))
-async def set_sticker_time_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    parts = msg.text.split()
-    if len(parts) != 3:
-        return await msg.reply_text(
-            "⏱️ **SET STICKER TIME**\n\n"
-            "Use: `/setstickertime index seconds`\n\n"
-            "Example: `/setstickertime 1 10`\n"
-            "This sets sticker #1 to display for 10 seconds\n\n"
-            "Get index from `/liststickers` command."
-        )
-    
-    try:
-        index = int(parts[1]) - 1
-        duration = int(parts[2])
-        
-        if duration < 1:
-            return await msg.reply_text("❌ Duration must be at least 1 second!")
-        
-        stickers = get_all_stickers()
-        if index < 0 or index >= len(stickers):
-            return await msg.reply_text(f"❌ Invalid index! Total stickers: {len(stickers)}")
-        
-        sticker_id = stickers[index]
-        save_sticker_time(sticker_id, duration)
-        
-        await msg.reply_text(
-            f"✅ **STICKER TIME UPDATED!**\n\n"
-            f"🆔 Sticker #{index+1}\n"
-            f"⏱️ New Duration: {duration} seconds\n\n"
-            "✨ Sticker will now display for this duration!"
-        )
-    except ValueError:
-        await msg.reply_text("❌ Invalid input! Use numbers only.")
 
 # ═══════════════ VIDEO COMMANDS ═══════════════
 @app.on_message(filters.command("addvideo"))
@@ -1319,7 +1486,7 @@ async def add_video_cmd(client, msg):
                 f"⏱️ **Duration:** {duration}\n"
                 f"{LINE}\n\n"
                 "🎲 Video will play randomly on welcome!\n"
-                "📋 /videos to see all videos"
+                f"⏱️ Video Delay: {get_video_delay_time()}s"
             )
             await s.edit_text(text)
         except Exception as e:
@@ -1335,6 +1502,7 @@ async def list_vids_cmd(client, msg):
     text = f"📹 **Videos ({len(vids)}):**\n\n"
     for v in vids[:15]:
         text += f"#{v['id']} {v['name'][:30]}\n"
+    text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
     await msg.reply_text(text)
 
 @app.on_message(filters.command("delvideo"))
@@ -1417,7 +1585,11 @@ async def admin_stats_cmd(client, msg):
         f"📹 Videos: {len(vids)}\n"
         f"💎 Premium: {len(users.get('premium', []))}\n"
         f"🔑 Key Users: {len(users.get('keys', {}))}\n"
-        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n{LINE}"
+        f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n"
+        f"{LINE}\n"
+        f"⚙️ Settings:\n"
+        f"⏱️ Sticker Time: {get_sticker_display_time()}s\n"
+        f"⏱️ Video Delay: {get_video_delay_time()}s"
     )
 
 @app.on_message(filters.command("admin_clear") & filters.private)
@@ -1620,17 +1792,18 @@ async def callbacks(client, cb: CallbackQuery):
         if stickers:
             text += "🔹 **Sticker Times:**\n"
             for i, sid in enumerate(stickers[:5], 1):
-                time = sticker_times.get(sid, DEFAULT_STICKER_TIME)
+                time = sticker_times.get(sid, get_sticker_display_time())
                 text += f"   #{i}: {time}s\n"
         text += f"\n🔹 **Commands:**\n"
         text += f"• `/addsticker` - Reply to sticker (Auto-detect)\n"
         text += f"• `/removesticker index` - Remove by index\n"
         text += f"• `/liststickers` - List all stickers\n"
         text += f"• `/resetstickers` - Reset all\n"
-        text += f"• `/setstickertime index seconds` - Set time\n\n"
-        text += f"⏱️ **Default Time:** {DEFAULT_STICKER_TIME} seconds\n"
-        text += f"✨ Stickers appear randomly in welcome animation!\n"
-        text += f"🔄 Auto-detects sticker duration when added!",
+        text += f"• `/setstickertime index seconds` - Set single sticker\n"
+        text += f"• `/setallstickertime seconds` - Set ALL stickers\n\n"
+        text += f"⏱️ **Default Time:** {get_sticker_display_time()}s\n"
+        text += f"⏱️ **Video Delay:** {get_video_delay_time()}s\n"
+        text += f"✨ Stickers appear randomly in welcome animation!",
         await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
@@ -1675,9 +1848,10 @@ async def callbacks(client, cb: CallbackQuery):
         sticker_times = get_sticker_times()
         text = "📋 **STICKER LIST**\n\n"
         for i, sticker_id in enumerate(stickers, 1):
-            time = sticker_times.get(sticker_id, DEFAULT_STICKER_TIME)
+            time = sticker_times.get(sticker_id, get_sticker_display_time())
             text += f"**{i}.** `{sticker_id[:25]}...` ⏱️ {time}s\n"
         text += f"\n🔹 **Total:** {len(stickers)}"
+        text += f"\n\n📋 **Settings:** Sticker Time: {get_sticker_display_time()}s | Video Delay: {get_video_delay_time()}s"
         await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
     
@@ -1705,7 +1879,9 @@ async def callbacks(client, cb: CallbackQuery):
             f"• `/addvideo` - Reply to video\n"
             f"• `/delvideo ID` - Delete by ID\n"
             f"• `/videos` - List all videos\n"
-            f"• `/clearvideos` - Clear all\n\n"
+            f"• `/clearvideos` - Clear all\n"
+            f"• `/setvideodelay seconds` - Set video delay\n\n"
+            f"⏱️ **Video Delay:** {get_video_delay_time()}s\n"
             f"✨ Videos appear randomly in welcome animation!",
             reply_markup=video_kb()
         )
@@ -1746,6 +1922,7 @@ async def callbacks(client, cb: CallbackQuery):
         for v in vids[:15]:
             text += f"#{v['id']} {v['name'][:30]}\n"
         text += f"\n🔹 **Total:** {len(vids)}"
+        text += f"\n⏱️ Video Delay: {get_video_delay_time()}s"
         await cb.message.edit_text(text, reply_markup=back_admin_kb())
         return
     
@@ -1768,6 +1945,7 @@ async def callbacks(client, cb: CallbackQuery):
             "📋 List: /videos\n"
             "🗑️ Delete: /delvideo ID\n"
             "🧹 Clear: /clearvideos\n"
+            "⏱️ Set Delay: /setvideodelay seconds\n"
             f"{LINE}",
             reply_markup=back_admin_kb()
         )
@@ -1920,7 +2098,18 @@ async def callbacks(client, cb: CallbackQuery):
     if data == "admin_stats":
         if uid != OWNER_ID: return
         vids = get_vids(); users = get_users()
-        await cb.message.edit_text(f"📊 **STATS**\n\n{LINE}\n📹 Videos: {len(vids)}\n💎 Premium: {len(users.get('premium', []))}\n🔑 Key Users: {len(users.get('keys', {}))}\n⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n{LINE}", reply_markup=back_admin_kb())
+        await cb.message.edit_text(
+            f"📊 **STATS**\n\n{LINE}\n"
+            f"📹 Videos: {len(vids)}\n"
+            f"💎 Premium: {len(users.get('premium', []))}\n"
+            f"🔑 Key Users: {len(users.get('keys', {}))}\n"
+            f"⚡ Attack: {'🟢 On' if attacking else '💤 Idle'}\n"
+            f"{LINE}\n"
+            f"⚙️ Settings:\n"
+            f"⏱️ Sticker Time: {get_sticker_display_time()}s\n"
+            f"⏱️ Video Delay: {get_video_delay_time()}s",
+            reply_markup=back_admin_kb()
+        )
         return
     
     if data == "admin_clear":
@@ -1944,7 +2133,8 @@ for f, d in [
     (HISTORY_DB, {}), 
     (STICKER_DB, {"stickers": []}),
     (EMOJI_DB, {"emojis": []}),
-    (STICKER_TIME_DB, {})
+    (STICKER_TIME_DB, {}),
+    (SETTINGS_DB, {"sticker_time": DEFAULT_STICKER_TIME, "video_delay": DEFAULT_VIDEO_DELAY})
 ]:
     if not os.path.exists(f): jsave(f, d)
 
@@ -1955,9 +2145,11 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  STICKER COMPLETE HONE KE BAAD DELETE ║
+║  ✅ SET ALL STICKER TIME            ║
+║  ✅ SET VIDEO DELAY                 ║
+║  ✅ STICKER COMPLETE HONE KE BAAD   ║
+║  ✅ VIDEO SET TIME KE BAAD AAYEGA   ║
 ║  SIRF INLINE BUTTONS                ║
-║  REAL-TIME CHECKING SYSTEM          ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
