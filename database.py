@@ -1,9 +1,7 @@
 import json
 import os
 from datetime import datetime
-from config import MONGO_URI
 
-# ═══════════════ JSON FALLBACK ═══════════════
 DB_FILE = "database.json"
 
 def load_db():
@@ -19,10 +17,12 @@ def save_db(data):
     with open(DB_FILE, 'w') as f:
         json.dump(data, f, indent=4, default=str)
 
-# ═══════════════ TRY MONGODB ═══════════════
+# ═══════════════ TRY MONGODB (OPTIONAL) ═══════════════
+USE_MONGO = False
 try:
     from pymongo import MongoClient
     import certifi
+    from config import MONGO_URI
     client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
     db = client['bgmi_ddos']
     users_col = db['users']
@@ -33,7 +33,6 @@ try:
 except Exception as e:
     print(f"⚠️ MongoDB Error: {e}")
     print("✅ Using JSON Database")
-    USE_MONGO = False
 
 # ═══════════════ DATABASE FUNCTIONS ═══════════════
 def get_user(user_id):
@@ -200,16 +199,3 @@ def redeem_key(key_code, user_id):
             save_db(db_data)
             return True, key["plan"], key["duration"]
     return False, None, None
-
-def load_db():
-    if os.path.exists("database.json"):
-        try:
-            with open("database.json", 'r') as f:
-                return json.load(f)
-        except:
-            return {"users": {}, "orders": [], "logs": [], "keys": []}
-    return {"users": {}, "orders": [], "logs": [], "keys": []}
-
-def save_db(data):
-    with open("database.json", 'w') as f:
-        json.dump(data, f, indent=4, default=str)
