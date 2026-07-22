@@ -7,7 +7,6 @@
 
 import os
 import json
-import requests
 import logging
 import time
 import socket
@@ -20,11 +19,18 @@ from threading import Thread
 import sys
 import string
 
-# ✅ FIX: Correct import for telebot
+# ✅ Check and install missing modules
+try:
+    import requests
+except ImportError:
+    print("📦 Installing requests...")
+    os.system("pip install requests")
+    import requests
+
 try:
     import telebot
 except ImportError:
-    print("❌ telebot not found! Installing...")
+    print("📦 Installing pyTelegramBotAPI...")
     os.system("pip install pyTelegramBotAPI")
     import telebot
 
@@ -36,7 +42,6 @@ logger = logging.getLogger(__name__)
 TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "FathersOfCreater"
-FORWARD_CHANNEL_ID = -4564006861
 
 # ═══════════════ JSON DATABASE ═══════════════
 DB_FILE = "database.json"
