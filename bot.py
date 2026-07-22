@@ -37,7 +37,7 @@ HISTORY_DB = "history.json"
 STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
 STICKER_TIME_DB = "sticker_times.json"
-SETTINGS_DB = "settings.json"  # 🔥 NEW: Settings ke liye
+SETTINGS_DB = "settings.json"
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -45,8 +45,8 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-DEFAULT_STICKER_TIME = 6  # 🔥 DEFAULT 6 SECOND
-DEFAULT_VIDEO_DELAY = 4   # 🔥 DEFAULT 4 SECOND
+DEFAULT_STICKER_TIME = 6
+DEFAULT_VIDEO_DELAY = 4
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -151,7 +151,6 @@ def get_sticker_time(sticker_id):
     return data.get(sticker_id, get_sticker_display_time())
 
 def set_all_sticker_times(duration):
-    """🔥 SAB STICKERS KA TIME SET KAREIN"""
     stickers = get_all_stickers()
     if not stickers:
         return False, 0
@@ -592,7 +591,7 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ WELCOME ANIMATION ═══════════════
+# ═══════════════ WELCOME ANIMATION - FIXED ═══════════════
 async def welcome_animation(client, msg):
     try:
         user = msg.from_user
@@ -667,26 +666,33 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # 🔥 STARTING ANIMATION
-        starting_emojis = ["🚀", "🌠", "🪶", "🍓", "🤖", "🥡", "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"]
-        chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
-        emoji_idx = 0
-        emoji = starting_emojis[emoji_idx % len(starting_emojis)]
+        # 🔥 STARTING ANIMATION - 13 WORDS, 13 EMOJIS
+        # 🔥 13 EMOJIS FOR 13 WORDS
+        starting_emojis = [
+            "🚀", "🌠", "🪶", "🍓", "🤖", "🥡", 
+            "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"
+        ]
         
-        await welcome_msg.edit_text(f"**{emoji}**")
+        # 🔥 13 WORDS
+        words = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
+        
+        # 🔥 PEHLA EMOJI SET KARO
+        await welcome_msg.edit_text(f"**{starting_emojis[0]}**")
         await asyncio.sleep(0.2)
         
-        for i, char in enumerate(chars_to_add):
-            await asyncio.sleep(0.1)
+        # 🔥 HAR WORD PAR EMOJI CHANGE
+        for i in range(len(words)):
+            # 🔥 CURRENT WORD TAK KA TEXT
+            current_text = "".join(words[:i+1])
+            # 🔥 CURRENT EMOJI
+            emoji = starting_emojis[i % len(starting_emojis)]
+            
             try:
-                if i % 2 == 0:
-                    emoji_idx += 1
-                    emoji = starting_emojis[emoji_idx % len(starting_emojis)]
-                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
-                else:
-                    await welcome_msg.edit_text(f"**{emoji} " + "".join(chars_to_add[:i+1]) + "**")
+                await welcome_msg.edit_text(f"**{emoji} " + current_text + "**")
             except:
                 pass
+            
+            await asyncio.sleep(0.15)
         
         await asyncio.sleep(0.3)
         
@@ -706,7 +712,7 @@ async def welcome_animation(client, msg):
                 pass
         
         # 🔥 VIDEO KO SET TIME KE BAAD SEND KARNE KE LIYE DELAY
-        await asyncio.sleep(video_delay_time)  # 🔥 VIDEO DELAY TIME
+        await asyncio.sleep(video_delay_time)
         
         # 🔥 AB VIDEO SEND KARO (SET TIME KE BAAD)
         final_msg = None
@@ -814,7 +820,6 @@ async def start_cmd(client, msg):
 # ═══════════════ SET ALL STICKER TIME ═══════════════
 @app.on_message(filters.command("setallstickertime") & filters.private)
 async def set_all_sticker_time_cmd(client, msg):
-    """🔥 SAB STICKERS KA TIME EK SAATH SET KAREIN"""
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -835,10 +840,7 @@ async def set_all_sticker_time_cmd(client, msg):
         if duration < 1:
             return await msg.reply_text("❌ Duration must be at least 1 second!")
         
-        # 🔥 SAVE GLOBAL SETTING
         save_settings(sticker_time=duration)
-        
-        # 🔥 SAB STICKERS KA TIME UPDATE KARO
         success, count = set_all_sticker_times(duration)
         
         if success:
@@ -862,7 +864,6 @@ async def set_all_sticker_time_cmd(client, msg):
 # ═══════════════ SET VIDEO DELAY ═══════════════
 @app.on_message(filters.command("setvideodelay") & filters.private)
 async def set_video_delay_cmd(client, msg):
-    """🔥 VIDEO KITNE TIME BAAD AAYE SET KAREIN"""
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -883,7 +884,6 @@ async def set_video_delay_cmd(client, msg):
         if delay < 1:
             return await msg.reply_text("❌ Delay must be at least 1 second!")
         
-        # 🔥 CHECK KARO STICKER TIME SE ZYADA TO NAHI
         sticker_time = get_sticker_display_time()
         if delay >= sticker_time:
             await msg.reply_text(
@@ -894,7 +894,6 @@ async def set_video_delay_cmd(client, msg):
             )
             return
         
-        # 🔥 SAVE SETTING
         save_settings(video_delay=delay)
         
         await msg.reply_text(
@@ -912,7 +911,6 @@ async def set_video_delay_cmd(client, msg):
 # ═══════════════ SET SINGLE STICKER TIME ═══════════════
 @app.on_message(filters.command("setstickertime") & filters.private)
 async def set_sticker_time_cmd(client, msg):
-    """🔥 EK STICKER KA TIME SET KAREIN"""
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -957,7 +955,6 @@ async def set_sticker_time_cmd(client, msg):
 # ═══════════════ SHOW SETTINGS ═══════════════
 @app.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, msg):
-    """🔥 CURRENT SETTINGS DEKHEIN"""
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text("❌ Owner only!")
     
@@ -2145,10 +2142,10 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
+║  ✅ 13 EMOJIS - 13 WORDS            ║
+║  ✅ HAR WORD PAR EMOJI CHANGE       ║
 ║  ✅ SET ALL STICKER TIME            ║
 ║  ✅ SET VIDEO DELAY                 ║
-║  ✅ STICKER COMPLETE HONE KE BAAD   ║
-║  ✅ VIDEO SET TIME KE BAAD AAYEGA   ║
 ║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
