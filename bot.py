@@ -591,7 +591,7 @@ Example: /redeem BGMI-XXXX-XXXX-XXXX
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ WELCOME ANIMATION - FIXED ═══════════════
+# ═══════════════ WELCOME ANIMATION ═══════════════
 async def welcome_animation(client, msg):
     try:
         user = msg.from_user
@@ -599,11 +599,9 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
-        # 🔥 GET CURRENT SETTINGS
         sticker_display_time = get_sticker_display_time()
         video_delay_time = get_video_delay_time()
         
-        # 🔥 PEHLE STICKER OR VIDEO SELECT KARO
         sticker_id = get_random_sticker()
         video_data = rand_vid()
         
@@ -633,7 +631,6 @@ async def welcome_animation(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
-        # 🔥 EMOJI SEND KARO
         emoji_msg = None
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -644,7 +641,6 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
-        # 🔥 WELCOME MESSAGE
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
@@ -666,32 +662,22 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # 🔥 STARTING ANIMATION - 13 WORDS, 13 EMOJIS
-        # 🔥 13 EMOJIS FOR 13 WORDS
         starting_emojis = [
             "🚀", "🌠", "🪶", "🍓", "🤖", "🥡", 
             "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"
         ]
-        
-        # 🔥 13 WORDS
         words = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         
-        # 🔥 PEHLA EMOJI SET KARO
         await welcome_msg.edit_text(f"**{starting_emojis[0]}**")
         await asyncio.sleep(0.2)
         
-        # 🔥 HAR WORD PAR EMOJI CHANGE
         for i in range(len(words)):
-            # 🔥 CURRENT WORD TAK KA TEXT
             current_text = "".join(words[:i+1])
-            # 🔥 CURRENT EMOJI
             emoji = starting_emojis[i % len(starting_emojis)]
-            
             try:
                 await welcome_msg.edit_text(f"**{emoji} " + current_text + "**")
             except:
                 pass
-            
             await asyncio.sleep(0.15)
         
         await asyncio.sleep(0.3)
@@ -703,7 +689,6 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
-        # 🔥 STICKER SEND KARO
         sticker_msg = None
         if sticker_id:
             try:
@@ -711,10 +696,8 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # 🔥 VIDEO KO SET TIME KE BAAD SEND KARNE KE LIYE DELAY
         await asyncio.sleep(video_delay_time)
         
-        # 🔥 AB VIDEO SEND KARO (SET TIME KE BAAD)
         final_msg = None
         if video_data and os.path.exists(video_data["path"]):
             final_msg = await client.send_video(
@@ -730,7 +713,6 @@ async def welcome_animation(client, msg):
                 reply_markup=kb
             )
         
-        # 🔥 STICKER KO SET TIME KE BAAD DELETE KARO
         remaining_sticker_time = sticker_display_time - video_delay_time
         if remaining_sticker_time > 0:
             await asyncio.sleep(remaining_sticker_time)
@@ -745,72 +727,6 @@ async def welcome_animation(client, msg):
         
     except Exception as e:
         logger.error(f"Welcome animation error: {e}")
-        await normal_start(client, msg)
-
-async def normal_start(client, msg):
-    uid = msg.from_user.id
-    user = msg.from_user
-    access, a_type = check_access(uid)
-    
-    if not access:
-        vid = rand_vid()
-        text = (
-            "🩵 𝘼𝘾𝘾𝙀𝙎𝙎 𝘿𝙀𝙉𝙄𝙀𝘿!\n\n"
-            "━━━━━━━━━━━━━━━━━━━\n"
-            f"💌 {user.first_name}\n"
-            f"🍄 {uid}\n"
-            "━━━━━━━━━━━━━━━━━━━\n\n"
-            "🏞️ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙈𝙀𝙈𝘽𝙀𝙍𝙎 𝙊𝙉𝙇𝙔\n"
-            "🔑 𝙍𝙚𝙙𝙚𝙚𝙢 𝙔𝙤𝙪𝙧 𝙆𝙚𝙮\n\n"
-            "🍰 /redeem 𝙆𝙚𝙮\n"
-            f"🕸️ [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})"
-        )
-        kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛒 𝘽𝙪𝙮-𝙆𝙚𝙮 🔑", url=OWNER_LINK)],
-            [InlineKeyboardButton("🪪 𝘼𝙗𝙤𝙪𝙩 𝙍𝙚𝙙𝙚𝙚𝙢 ♡", callback_data="redeem_popup")],
-            [InlineKeyboardButton("📝 COMMANDS", callback_data="commands_menu")],
-        ])
-        return await send_vid(msg.chat.id, text, kb, vid)
-    
-    info = get_user_info(uid)
-    vid = rand_vid()
-    kb = owner_kb() if uid == OWNER_ID else user_kb()
-    
-    expiry_text = ""
-    if info.get("remaining"): expiry_text += f"\n⏳ Remaining: {info['remaining']}"
-    if info.get("expiry"):
-        try:
-            exp = datetime.fromisoformat(info["expiry"])
-            expiry_text += f"\n📅 Expires: {exp.strftime('%d %b %Y, %I:%M %p')}"
-        except: pass
-    
-    text = (
-        "💀 𝐁𝐆𝐌𝐈 𝐀𝐓𝐓𝐀𝐂𝐊 𝐁𝐎𝐓 💀\n\n"
-        f"{LINE}\n"
-        f"👤 {user.first_name}\n"
-        f"🆔 {uid}\n"
-        f"💳 {a_type}{expiry_text}\n"
-        f"{LINE}\n"
-        f"⚡ {info['threads']} Threads\n"
-        f"⏱️ {info['max_time']}s Max Time\n"
-        f"📹 {len(get_vids())} Videos\n"
-        f"{LINE}\n"
-        "⚔️ /attack IP PORT TIME\n"
-        "📋 /attack 1.2.3.4 8080 600\n"
-        "🎮 BGMI Ports: 7000-15000\n"
-        f"{LINE}\n"
-        "🔽 SELECT OPTION:"
-    )
-    return await send_vid(msg.chat.id, text, kb, vid)
-
-async def send_vid(chat_id, text, kb=None, vid=None):
-    if vid is None: vid = rand_vid()
-    try:
-        if vid and os.path.exists(vid["path"]):
-            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
-        return await app.send_message(chat_id, text, reply_markup=kb)
-    except:
-        return await app.send_message(chat_id, text, reply_markup=kb)
 
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
@@ -1212,6 +1128,15 @@ async def execute_attack(client, msg, uid):
         await amsg.edit_text(done)
     except: 
         pass
+
+async def send_vid(chat_id, text, kb=None, vid=None):
+    if vid is None: vid = rand_vid()
+    try:
+        if vid and os.path.exists(vid["path"]):
+            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
+        return await app.send_message(chat_id, text, reply_markup=kb)
+    except:
+        return await app.send_message(chat_id, text, reply_markup=kb)
 
 # ═══════════════ STOP ═══════════════
 @app.on_message(filters.command("stop"))
@@ -2142,6 +2067,7 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
+║  ✅ ACCESS DENIED COMPLETELY REMOVED║
 ║  ✅ 13 EMOJIS - 13 WORDS            ║
 ║  ✅ HAR WORD PAR EMOJI CHANGE       ║
 ║  ✅ SET ALL STICKER TIME            ║
