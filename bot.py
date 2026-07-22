@@ -456,7 +456,7 @@ def premium_text(text, style="smallcaps"):
 def menu_back_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")]
     ])
 
 # ═══════════════ STYLISH PREMIUM BUTTONS ═══════════════
@@ -467,7 +467,7 @@ def user_kb():
         [InlineKeyboardButton(f"▓ {premium_text('STATUS')}", callback_data="status_btn"),
          InlineKeyboardButton(f"ⓘ {premium_text('INFO')}", callback_data="info_menu")],
         [InlineKeyboardButton(f"⚿ {premium_text('REDEEM KEY')}", callback_data="redeem_menu")],
-        [InlineKeyboardButton(f"⌨ {premium_text('COMMANDS')}", callback_data="commands_menu")],
+        [InlineKeyboardButton(f"⌨ {premium_text('COMMANDS')}", callback_data="commands_menu")]
     ])
 
 def owner_kb():
@@ -482,7 +482,7 @@ def owner_kb():
         [InlineKeyboardButton(f"▶ {premium_text('VIDEO MANAGER')}", callback_data="video_menu")],
         [InlineKeyboardButton(f"★ {premium_text('EMOJI MANAGER')}", callback_data="emoji_menu")],
         [InlineKeyboardButton(f"❄ {premium_text('STICKER MANAGER')}", callback_data="sticker_menu")],
-        [InlineKeyboardButton(f"⚜ {premium_text('ADMIN PANEL')}", callback_data="admin_menu")],
+        [InlineKeyboardButton(f"⚜ {premium_text('ADMIN PANEL')}", callback_data="admin_menu")]
     ])
 
 def auto_key_kb():
@@ -502,7 +502,7 @@ def auto_key_kb():
          InlineKeyboardButton(f"⎚ {premium_text('2 MONTH')}", callback_data="ak_2mo"),
          InlineKeyboardButton(f"⎚ {premium_text('3 MONTH')}", callback_data="ak_3mo")],
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")]
     ])
 
 def video_kb():
@@ -514,7 +514,7 @@ def video_kb():
         [InlineKeyboardButton(f"⌘ {premium_text('LIST VIDEOS')}", callback_data="v_list")],
         [InlineKeyboardButton(f"❓ {premium_text('HELP')}", callback_data="v_help")],
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")]
     ])
 
 def emoji_kb():
@@ -525,7 +525,7 @@ def emoji_kb():
         [InlineKeyboardButton(f"⌘ {premium_text('LIST EMOJIS')}", callback_data="e_list")],
         [InlineKeyboardButton(f"↺ {premium_text('RESET ALL')}", callback_data="e_reset")],
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")]
     ])
 
 def sticker_kb():
@@ -536,7 +536,7 @@ def sticker_kb():
         [InlineKeyboardButton(f"⌘ {premium_text('LIST STICKERS')}", callback_data="s_list")],
         [InlineKeyboardButton(f"↺ {premium_text('RESET ALL')}", callback_data="s_reset")],
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back_admin")]
     ])
 
 def admin_kb():
@@ -549,7 +549,7 @@ def admin_kb():
         [InlineKeyboardButton(f"↺ {premium_text('CLEAR EXPIRED')}", callback_data="admin_clear")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
         [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")],
+         InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")]
     ])
 
 # ═══════════════ COMMANDS LIST ═══════════════
@@ -1208,9 +1208,8 @@ async def callbacks(client, cb: CallbackQuery):
         text += f"• `/setallstickertime seconds` - Set ALL stickers\n\n"
         text += f"⏱️ **Default Time:** {get_sticker_display_time()}s\n"
         text += f"⏱️ **Video Delay:** {get_video_delay_time()}s\n"
-        text += f"✨ Stickers appear randomly in welcome animation!",
-        reply_markup=sticker_kb()
-        )
+        text += f"✨ Stickers appear randomly in welcome animation!"
+        await cb.message.edit_text(text, reply_markup=sticker_kb())
         return
     
     if data == "s_add":
@@ -1460,7 +1459,7 @@ async def callbacks(client, cb: CallbackQuery):
                     [InlineKeyboardButton("🪪 About Redeem ♡", callback_data="redeem_popup")],
                     [InlineKeyboardButton("📲 Contact-Father", url=OWNER_LINK)],
                     [InlineKeyboardButton(f"⌂ {premium_text('MENU')}", callback_data="menu"),
-                     InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")],
+                     InlineKeyboardButton(f"◀ {premium_text('BACK')}", callback_data="back")]
                 ])
             )
         return
