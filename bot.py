@@ -1,4 +1,3 @@
-```python
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
@@ -2334,4 +2333,3 @@ print("""
 
 if __name__ == "__main__":
     app.run()
-```
