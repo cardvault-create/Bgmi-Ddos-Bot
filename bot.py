@@ -46,8 +46,9 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-DEFAULT_STICKER_TIME = 5
+DEFAULT_STICKER_TIME = 6
 DEFAULT_VIDEO_DELAY = 3
+EMOJI_DISPLAY_TIME = 2
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -598,43 +599,6 @@ def auto_key_kb():
         [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
-# ═══════════════ STOP STICKER ADD COMMAND ═══════════════
-@app.on_message(filters.command("addstop") & filters.private)
-async def add_stop_sticker_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    if not msg.reply_to_message or not msg.reply_to_message.sticker:
-        return await msg.reply_text(
-            f"⛔ **{premium_text('ADD STOP STICKER', 5)}**\n\n"
-            f"{premium_text('Reply to a sticker with:', 3)}\n"
-            "`/addstop`\n\n"
-            f"✨ {premium_text('This sticker will appear when you use /stop command!', 1)}",
-            reply_markup=back_to_menu_kb(True)
-        )
-    
-    sticker_id = msg.reply_to_message.sticker.file_id
-    set_stop_sticker(sticker_id)
-    
-    await msg.reply_text(
-        f"✅ **{premium_text('STOP STICKER ADDED', 5)}** 🎉\n\n"
-        f"🔹 {premium_text('Now this sticker will appear when using /stop command!', 1)}\n"
-        f"📋 {premium_text('Use /removestop to remove it.', 3)}",
-        reply_markup=back_to_menu_kb(True)
-    )
-
-@app.on_message(filters.command("removestop") & filters.private)
-async def remove_stop_sticker_cmd(client, msg):
-    if msg.from_user.id != OWNER_ID:
-        return await msg.reply_text("❌ Owner only!")
-    
-    clear_stop_sticker()
-    await msg.reply_text(
-        f"✅ **{premium_text('STOP STICKER REMOVED', 5)}**\n\n"
-        f"🔹 {premium_text('No sticker will appear for /stop command now.', 1)}",
-        reply_markup=back_to_menu_kb(True)
-    )
-
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
     user_commands = f"""
@@ -719,6 +683,9 @@ def get_commands_list(is_owner=False):
 /admin_stats - ⎙ {premium_text('STATISTICS DEKHEIN', 2)}
 /admin_clear - ↺ {premium_text('EXPIRED CLEAR KAREIN', 3)}
 
+⚙️ {premium_text('SETTINGS COMMANDS', 3)}
+/settings - ⚙️ {premium_text('SHOW SETTINGS', 4)}
+
 ╔══════════════════════════════════════╗
 ║      📲 {premium_text('CONTACT', 5)}                   ║
 ╚══════════════════════════════════════╝
@@ -793,8 +760,9 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # Delete emoji after animation
+        # Delete emoji after animation (emoji ko 2 second dikhao)
         if emoji_msg:
+            await asyncio.sleep(EMOJI_DISPLAY_TIME)
             try:
                 await emoji_msg.delete()
             except:
@@ -912,7 +880,16 @@ async def simple_start(client, msg):
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
 
-# ═══════════════ STOP COMMAND - WITH STOP STICKER ═══════════════
+# ═══════════════ COMMANDS COMMAND ═══════════════
+@app.on_message(filters.command("commands") & filters.private)
+async def commands_cmd(client, msg):
+    uid = msg.from_user.id
+    is_owner = (uid == OWNER_ID)
+    commands_text = get_commands_list(is_owner)
+    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+    await msg.reply_text(formatted_text, reply_markup=back_to_menu_kb(is_owner))
+
+# ═══════════════ STOP COMMAND ═══════════════
 @app.on_message(filters.command("stop"))
 async def stop_cmd(client, msg):
     global attacking
@@ -1180,6 +1157,43 @@ async def redeem_popup_callback(client, cb: CallbackQuery):
         "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
         f"💎 {premium_text('Premium = Power!', 5)}",
         show_alert=True
+    )
+
+# ═══════════════ ADD STOP STICKER ═══════════════
+@app.on_message(filters.command("addstop") & filters.private)
+async def add_stop_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message or not msg.reply_to_message.sticker:
+        return await msg.reply_text(
+            f"⛔ **{premium_text('ADD STOP STICKER', 5)}**\n\n"
+            f"{premium_text('Reply to a sticker with:', 3)}\n"
+            "`/addstop`\n\n"
+            f"✨ {premium_text('This sticker will appear when you use /stop command!', 1)}",
+            reply_markup=back_to_menu_kb(True)
+        )
+    
+    sticker_id = msg.reply_to_message.sticker.file_id
+    set_stop_sticker(sticker_id)
+    
+    await msg.reply_text(
+        f"✅ **{premium_text('STOP STICKER ADDED', 5)}** 🎉\n\n"
+        f"🔹 {premium_text('Now this sticker will appear when using /stop command!', 1)}\n"
+        f"📋 {premium_text('Use /removestop to remove it.', 3)}",
+        reply_markup=back_to_menu_kb(True)
+    )
+
+@app.on_message(filters.command("removestop") & filters.private)
+async def remove_stop_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    clear_stop_sticker()
+    await msg.reply_text(
+        f"✅ **{premium_text('STOP STICKER REMOVED', 5)}**\n\n"
+        f"🔹 {premium_text('No sticker will appear for /stop command now.', 1)}",
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ EMOJI ADD COMMAND ═══════════════
@@ -1532,16 +1546,6 @@ async def redeem_cmd(client, msg):
         await send_vid(msg.chat.id, text, None, vid)
     else:
         await msg.reply_text(f"❌ {result}\n\n📲 [𝐅𝐀𝐓𝐇𝐄𝐑 𝐎𝐅 𝐁𝐎𝐓]({OWNER_LINK})")
-
-# ═══════════════ COMMANDS COMMAND ═══════════════
-@app.on_message(filters.command("commands"))
-async def commands_cmd(client, msg):
-    uid = msg.from_user.id
-    is_owner = (uid == OWNER_ID)
-    commands_text = get_commands_list(is_owner)
-    formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-    is_owner = (uid == OWNER_ID)
-    await msg.reply_text(formatted_text, reply_markup=back_to_menu_kb(is_owner))
 
 # ═══════════════ CALLBACKS ═══════════════
 @app.on_callback_query()
@@ -2632,6 +2636,7 @@ print("""
 ║  ✅ BACK BUTTON GOES BACK           ║
 ║  ✅ PRECISE TIMING                  ║
 ║  ✅ EMOJI ANIMATION COMPLETE        ║
+║  ✅ USER/OWNER COMMANDS SEPARATE    ║
 ║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
