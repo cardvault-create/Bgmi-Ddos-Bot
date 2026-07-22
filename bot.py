@@ -370,7 +370,7 @@ attack_user = None
 # ═══════════════ BOT ═══════════════
 app = Client("final_bgmi_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ═══════════════ INLINE KEYBOARDS - SIRF INLINE BUTTONS ═══════════════
+# ═══════════════ INLINE KEYBOARDS ═══════════════
 def user_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("💀 ATTACK", callback_data="attack_menu"),
@@ -564,9 +564,11 @@ async def welcome_animation(client, msg):
         first_name = user.first_name or "User"
         user_id = user.id
         
+        # 🔥 PEHLE STICKER OR VIDEO SELECT KARO
         sticker_id = get_random_sticker()
         video_data = rand_vid()
         
+        # 🔥 STICKER KI DURATION GET KARO
         sticker_display_time = DEFAULT_STICKER_TIME
         if sticker_id:
             sticker_display_time = get_sticker_time(sticker_id)
@@ -597,6 +599,7 @@ async def welcome_animation(client, msg):
 🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
+        # 🔥 EMOJI SEND KARO
         emoji_msg = None
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -607,6 +610,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.5)
         
+        # 🔥 WELCOME MESSAGE
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
@@ -628,6 +632,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
+        # 🔥 STARTING ANIMATION
         starting_emojis = ["🩵", "🌠", "🪶", "🍓", "🌶️", "🥡", "🍷", "🍭", "🍨", "🧭"]
         chars_to_add = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         emoji_idx = 0
@@ -657,6 +662,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.3)
         
+        # 🔥 STICKER SEND KARO
         sticker_msg = None
         if sticker_id:
             try:
@@ -664,6 +670,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
+        # 🔥 🔥 🔥 VIDEO SEND KARO - STICKER KE SAATH (PARALLEL)
         video_task = None
         if video_data and os.path.exists(video_data["path"]):
             video_task = asyncio.create_task(
@@ -679,14 +686,19 @@ async def welcome_animation(client, msg):
                 client.send_message(chat_id, final_text, reply_markup=kb)
             )
         
-        await asyncio.sleep(sticker_display_time)
-        
+        # 🔥 🔥 🔥 STICKER KE LIYE EXACT DURATION WAIT KARO
+        # 🔥 STICKER KA TIME DETECT KARO AUR UTNA WAIT KARO
         if sticker_msg:
+            # Sticker ko delete karne se pehle exact duration wait karein
+            await asyncio.sleep(sticker_display_time)
+            
+            # 🔥 AB STICKER DELETE KARO (COMPLETE HONE KE BAAD)
             try:
                 await sticker_msg.delete()
             except:
                 pass
         
+        # 🔥 VIDEO KA INTZAAR KARO
         final_msg = await video_task
         return final_msg
         
@@ -1943,10 +1955,9 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
-║  SIRF INLINE BUTTONS - CHAT KE ANDAR║
-║  KEYBOARD KE BYAN KUCH NAHI          ║
+║  STICKER COMPLETE HONE KE BAAD DELETE ║
+║  SIRF INLINE BUTTONS                ║
 ║  REAL-TIME CHECKING SYSTEM          ║
-║  HACKER STYLE VERIFICATION          ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
 """)
