@@ -2,7 +2,6 @@
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
 SERVER FREEZE BOT | ALL WORKING FIXED
-PAHLE JAISA LEKIN FIXED
 """
 
 import asyncio, json, random, os, time, socket, threading, logging, string, uuid
@@ -418,7 +417,7 @@ amsg = None
 attack_user = None
 
 # ═══════════════ BOT ═══════════════
-app = Client("bgmi_bot_fixed", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("final_bgmi_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ═══════════════ STYLISH TEXT HELPERS ═══════════════
 def style1_smallcaps(text):
@@ -762,7 +761,9 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
+        # Delete emoji after animation complete
         if emoji_msg:
+            await asyncio.sleep(0.5)
             try:
                 await emoji_msg.delete()
             except:
@@ -803,13 +804,13 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # STEP 5: Wait for video delay
+        # STEP 5: Wait for sticker to display completely
         if sticker_msg:
-            await asyncio.sleep(video_delay_time)
+            await asyncio.sleep(sticker_display_time)
         else:
             await asyncio.sleep(video_delay_time)
         
-        # STEP 6: Send final video/message
+        # STEP 6: Send final video/message after sticker complete
         final_msg = None
         if video_data and os.path.exists(video_data["path"]):
             final_msg = await client.send_video(
@@ -825,11 +826,8 @@ async def welcome_animation(client, msg):
                 reply_markup=kb
             )
         
-        # STEP 7: Delete sticker after display time
+        # STEP 7: Delete sticker after complete display
         if sticker_msg:
-            remaining_time = sticker_display_time - video_delay_time
-            if remaining_time > 0:
-                await asyncio.sleep(remaining_time)
             try:
                 await sticker_msg.delete()
             except:
@@ -960,6 +958,33 @@ async def status_cmd(client, msg):
     
     await msg.reply_text(text)
 
+# ═══════════════ STATUS BUTTON ═══════════════
+@app.on_callback_query(filters.regex("status_btn"))
+async def status_btn_callback(client, cb: CallbackQuery):
+    uid = cb.from_user.id
+    
+    if not check_access(uid)[0]:
+        await cb.answer("🔒 Access Denied!", show_alert=True)
+        return
+    
+    if attacking:
+        e = time.time() - ainfo['start']
+        await cb.answer(
+            f"🟢 ATTACKING\n"
+            f"⏱️ {int(e)}s\n"
+            f"📦 {attacker.pkts:,} pkts",
+            show_alert=True
+        )
+    else:
+        info = get_user_info(uid)
+        await cb.answer(
+            f"💤 IDLE\n\n"
+            f"👤 {cb.from_user.first_name}\n"
+            f"💳 {info['type']}\n"
+            f"⚡ {info['threads']} Threads",
+            show_alert=True
+        )
+
 # ═══════════════ REDEEM COMMAND ═══════════════
 @app.on_message(filters.command("redeem"))
 async def redeem_cmd(client, msg):
@@ -1053,7 +1078,7 @@ async def attack_cmd(client, msg):
         f"⚡ System compromised!\n"
         f"🔴 Attack in progress..."
     )
-    amsg = await msg.reply_text(text)
+    amsg = await send_vid(msg.chat.id, text, None, vid)
     add_history(uid, "ATTACK START", f"{ip}:{port} | {dur}s")
     
     async def live():
@@ -1688,6 +1713,16 @@ async def admin_clear_cmd(client, msg):
         reply_markup=back_to_menu_kb(True)
     )
 
+# ═══════════════ SEND VIDEO HELPER ═══════════════
+async def send_vid(chat_id, text, kb=None, vid=None):
+    if vid is None: vid = rand_vid()
+    try:
+        if vid and os.path.exists(vid["path"]):
+            return await app.send_video(chat_id, vid["path"], caption=text, reply_markup=kb)
+        return await app.send_message(chat_id, text, reply_markup=kb)
+    except:
+        return await app.send_message(chat_id, text, reply_markup=kb)
+
 # ═══════════════ CALLBACK QUERY HANDLER ═══════════════
 @app.on_callback_query()
 async def callback_handler(client, cb: CallbackQuery):
@@ -1698,6 +1733,32 @@ async def callback_handler(client, cb: CallbackQuery):
     # ═══════ SEPARATOR ═══════
     if data == "sep":
         await cb.answer()
+        return
+    
+    # ═══════ ABOUT REDEEM POPUP ═══════
+    if data == "redeem_popup":
+        await cb.answer(
+            f"🪪 About Redeem ♡\n\n"
+            f"🔑 How To Redeem Key?\n\n"
+            f"1️⃣ Get Key From Admin\n"
+            f"📲 @{OWNER_USERNAME}\n\n"
+            f"2️⃣ Use Command:\n"
+            "/redeem YOUR_KEY\n\n"
+            f"3️⃣ Example:\n"
+            "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
+            f"⏱️ Durations:\n"
+            "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
+            f"💎 Premium = Power!",
+            show_alert=True
+        )
+        return
+    
+    # ═══════ COMMANDS MENU ═══════
+    if data == "commands_menu":
+        commands_text = get_commands_list(is_owner)
+        formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
+        await cb.message.edit_text(formatted_text, reply_markup=back_to_menu_kb(is_owner))
+        await cb.answer("📝 Commands List")
         return
     
     # ═══════ MAIN MENU ═══════
@@ -1737,10 +1798,31 @@ async def callback_handler(client, cb: CallbackQuery):
     
     # ═══════ ATTACK MENU ═══════
     if data == "attack_menu":
+        # Checking message show karein
+        checking_msg = await cb.message.reply_text(
+            f"🔍 **SYSTEM SCAN INITIATED...**\n\n"
+            f"▫️ 🔐 Verifying user credentials...\n"
+            f"▫️ 📡 Connecting to secure server...\n"
+            f"▫️ 🔑 Checking subscription status..."
+        )
+        
+        await asyncio.sleep(0.5)
+        
         access, a_type = check_access(uid)
         if not access:
-            await cb.answer("🔒 Access Denied!", show_alert=True)
+            await checking_msg.edit_text(
+                f"🚫 ACCESS DENIED\n\n"
+                f"╔══════════════════════════╗\n"
+                f"║  ❌ INVALID CREDENTIALS\n"
+                f"║  🔒 No Active Plan\n"
+                f"║  🚫 Access Blocked\n"
+                f"╚══════════════════════════╝\n\n"
+                f"🔑 You don't have any active plan!\n\n"
+                f"👑 Contact: @{OWNER_USERNAME}"
+            )
             return
+        
+        await checking_msg.delete()
         
         info = get_user_info(uid)
         text = (
@@ -1802,50 +1884,6 @@ async def callback_handler(client, cb: CallbackQuery):
                 ])
             )
         await cb.answer("⚿ Redeem Menu")
-        return
-    
-    # ═══════ REDEEM POPUP ═══════
-    if data == "redeem_popup":
-        await cb.answer(
-            f"🪪 About Redeem ♡\n\n"
-            f"🔑 How To Redeem Key?\n\n"
-            f"1️⃣ Get Key From Admin\n"
-            f"📲 @{OWNER_USERNAME}\n\n"
-            f"2️⃣ Use Command:\n"
-            "/redeem YOUR_KEY\n\n"
-            f"3️⃣ Example:\n"
-            "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
-            f"⏱️ Durations:\n"
-            "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
-            f"💎 Premium = Power!",
-            show_alert=True
-        )
-        return
-    
-    # ═══════ COMMANDS MENU ═══════
-    if data == "commands_menu":
-        commands_text = get_commands_list(is_owner)
-        formatted_text = commands_text.replace("{OWNER_LINK}", OWNER_LINK).replace("{BOT_USERNAME}", BOT_USERNAME)
-        await cb.message.edit_text(formatted_text, reply_markup=back_to_menu_kb(is_owner))
-        await cb.answer("📝 Commands List")
-        return
-    
-    # ═══════ STATUS BUTTON ═══════
-    if data == "status_btn":
-        if attacking:
-            e = time.time() - ainfo['start']
-            await cb.answer(
-                f"🟢 ATTACKING\n"
-                f"⏱️ {int(e)}s\n"
-                f"📦 {attacker.pkts:,} pkts",
-                show_alert=True
-            )
-        else:
-            await cb.answer(
-                f"💤 IDLE\n\n"
-                f"✅ No attack running",
-                show_alert=True
-            )
         return
     
     # ═══════ STOP ATTACK ═══════
@@ -2298,16 +2336,14 @@ asyncio.get_event_loop().create_task(auto_expire())
 print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
-║  ✅ PAHLE JAISA SAB KUCH             ║
-║  ✅ SIRF FIXES KE SAATH              ║
-║  ✅ ALL COMMANDS WORKING             ║
+║  ✅ SAB KUCH FIXED                   ║
+║  ✅ STATUS BUTTON WORKING            ║
+║  ✅ ATTACK CHECKING MSG WORKING      ║
+║  ✅ ABOUT REDEEM POPUP WORKING       ║
+║  ✅ COMMANDS BUTTON WORKING          ║
+║  ✅ EMOJI COMPLETE HOKE DELETE       ║
+║  ✅ STICKER COMPLETE HOKE WELCOME    ║
 ║  ✅ ALL BUTTONS WORKING              ║
-║  ✅ STOP STICKER SEPARATE            ║
-║  ✅ REDEEM POPUP WORKING             ║
-║  ✅ BACK BUTTON GOES BACK            ║
-║  ✅ PRECISE TIMING                   ║
-║  ✅ EMOJI ANIMATION COMPLETE         ║
-║  ✅ USER/OWNER COMMANDS SEPARATE     ║
 ║  SIRF INLINE BUTTONS                 ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
