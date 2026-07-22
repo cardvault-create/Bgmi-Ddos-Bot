@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 💎 PREMIUM BGMI ATTACK BOT - ULTRA PRO
-🔥 ALL BUTTONS FIXED - NO DELAY
+🔥 ALL BUTTONS FIXED - 5 STYLES
 📸 SCREENSHOT JAISA
 """
 
@@ -57,6 +57,12 @@ PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
 DEFAULT_STICKER_TIME = 5
 DEFAULT_VIDEO_DELAY = 3
+
+# ═══════════════ TRACKING ═══════════════
+used_videos = []
+last_emoji_index = -1
+last_sticker_index = -1
+last_video_index = -1
 
 # ═══════════════ HELPERS ═══════════════
 def jload(f, d=None):
@@ -498,192 +504,279 @@ attack_user = None
 # ═══════════════ BOT ═══════════════
 app = Client("bgmi_bot_final", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ═══════════════ STYLISH TEXT HELPERS ═══════════════
-def premium_text(text, style_num=1):
-    return f"✦{text}✦"
+# ═══════════════ 5 STYLISH TEXT HELPERS ═══════════════
+def style1_smallcaps(text):
+    chars = {
+        'a':'ᴀ','b':'ʙ','c':'ᴄ','d':'ᴅ','e':'ᴇ','f':'ғ','g':'ɢ','h':'ʜ','i':'ɪ',
+        'j':'ᴊ','k':'ᴋ','l':'ʟ','m':'ᴍ','n':'ɴ','o':'ᴏ','p':'ᴘ','q':'ǫ','r':'ʀ',
+        's':'s','t':'ᴛ','u':'ᴜ','v':'ᴠ','w':'ᴡ','x':'x','y':'ʏ','z':'ᴢ',
+        'A':'ᴀ','B':'ʙ','C':'ᴄ','D':'ᴅ','E':'ᴇ','F':'ғ','G':'ɢ','H':'ʜ','I':'ɪ',
+        'J':'ᴊ','K':'ᴋ','L':'ʟ','M':'ᴍ','N':'ɴ','O':'ᴏ','P':'ᴘ','Q':'ǫ','R':'ʀ',
+        'S':'s','T':'ᴛ','U':'ᴜ','V':'ᴠ','W':'ᴡ','X':'x','Y':'ʏ','Z':'ᴢ'
+    }
+    result = ""
+    for char in text:
+        result += chars.get(char, char)
+    return result
 
-# ═══════════════ BUTTONS ═══════════════
+def style2_greek(text):
+    chars = {
+        'a':'α','b':'в','c':'¢','d':'∂','e':'є','f':'f','g':'g','h':'н','i':'ι',
+        'j':'נ','k':'κ','l':'ℓ','m':'м','n':'η','o':'σ','p':'ρ','q':'q','r':'я',
+        's':'ѕ','t':'т','u':'υ','v':'ν','w':'ω','x':'χ','y':'γ','z':'z',
+        'A':'α','B':'в','C':'¢','D':'∂','E':'є','F':'f','G':'g','H':'н','I':'ι',
+        'J':'נ','K':'κ','L':'ℓ','M':'м','N':'η','O':'σ','P':'ρ','Q':'q','R':'я',
+        'S':'ѕ','T':'т','U':'υ','V':'ν','W':'ω','X':'χ','Y':'γ','Z':'z'
+    }
+    result = ""
+    for char in text:
+        result += chars.get(char, char)
+    return result
+
+def style3_bolditalic(text):
+    chars = {
+        'a':'𝒂','b':'𝒃','c':'𝒄','d':'𝒅','e':'𝒆','f':'𝒇','g':'𝒈','h':'𝒉','i':'𝒊',
+        'j':'𝒋','k':'𝒌','l':'𝒍','m':'𝒎','n':'𝒏','o':'𝒐','p':'𝒑','q':'𝒒','r':'𝒓',
+        's':'𝒔','t':'𝒕','u':'𝒖','v':'𝒗','w':'𝒘','x':'𝒙','y':'𝒚','z':'𝒛',
+        'A':'𝑨','B':'𝑩','C':'𝑪','D':'𝑫','E':'𝑬','F':'𝑭','G':'𝑮','H':'𝑯','I':'𝑰',
+        'J':'𝑱','K':'𝑲','L':'𝑳','M':'𝑴','N':'𝑵','O':'𝑶','P':'𝑷','Q':'𝑸','R':'𝑹',
+        'S':'𝑺','T':'𝑻','U':'𝑼','V':'𝑽','W':'𝑾','X':'𝑿','Y':'𝒀','Z':'𝒁'
+    }
+    result = ""
+    for char in text:
+        result += chars.get(char, char)
+    return result
+
+def style4_script(text):
+    chars = {
+        'a':'𝓪','b':'𝓫','c':'𝓬','d':'𝓭','e':'𝓮','f':'𝓯','g':'𝓰','h':'𝓱','i':'𝓲',
+        'j':'𝓳','k':'𝓴','l':'𝓵','m':'𝓶','n':'𝓷','o':'𝓸','p':'𝓹','q':'𝓺','r':'𝓻',
+        's':'𝓼','t':'𝓽','u':'𝓾','v':'𝓿','w':'𝔀','x':'𝔁','y':'𝔂','z':'𝔃',
+        'A':'𝓐','B':'𝓑','C':'𝓒','D':'𝓓','E':'𝓔','F':'𝓕','G':'𝓖','H':'𝓗','I':'𝓘',
+        'J':'𝓙','K':'𝓚','L':'𝓛','M':'𝓜','N':'𝓝','O':'𝓞','P':'𝓟','Q':'𝓠','R':'𝓡',
+        'S':'𝓢','T':'𝓣','U':'𝓤','V':'𝓥','W':'𝓦','X':'𝓧','Y':'𝓨','Z':'𝓩'
+    }
+    result = ""
+    for char in text:
+        result += chars.get(char, char)
+    return result
+
+def style5_bold(text):
+    chars = {
+        'a':'𝐚','b':'𝐛','c':'𝐜','d':'𝐝','e':'𝐞','f':'𝐟','g':'𝐠','h':'𝐡','i':'𝐢',
+        'j':'𝐣','k':'𝐤','l':'𝐥','m':'𝐦','n':'𝐧','o':'𝐨','p':'𝐩','q':'𝐪','r':'𝐫',
+        's':'𝐬','t':'𝐭','u':'𝐮','v':'𝐯','w':'𝐰','x':'𝐱','y':'𝐲','z':'𝐳',
+        'A':'𝐀','B':'𝐁','C':'𝐂','D':'𝐃','E':'𝐄','F':'𝐅','G':'𝐆','H':'𝐇','I':'𝐈',
+        'J':'𝐉','K':'𝐊','L':'𝐋','M':'𝐌','N':'𝐍','O':'𝐎','P':'𝐏','Q':'𝐐','R':'𝐑',
+        'S':'𝐒','T':'𝐓','U':'𝐔','V':'𝐕','W':'𝐖','X':'𝐗','Y':'𝐘','Z':'𝐙'
+    }
+    result = ""
+    for char in text:
+        result += chars.get(char, char)
+    return result
+
+def premium_text(text, style_num=1):
+    styles = {
+        1: style1_smallcaps,
+        2: style2_greek,
+        3: style3_bolditalic,
+        4: style4_script,
+        5: style5_bold
+    }
+    styled = styles.get(style_num, style1_smallcaps)(text)
+    return f"˹{styled}˼"
+
+# ═══════════════ BUTTONS - STYLISH 5 STYLES ═══════════════
 def main_menu_kb(is_owner=False):
     if is_owner:
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("⚔ ATTACK", callback_data="attack_menu"),
-             InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
-            [InlineKeyboardButton("▓ STATUS", callback_data="status_btn"),
-             InlineKeyboardButton("ⓘ INFO", callback_data="info_menu")],
-            [InlineKeyboardButton("⚿ REDEEM KEY", callback_data="redeem_menu")],
-            [InlineKeyboardButton("⌨ COMMANDS", callback_data="commands_menu")],
+            [InlineKeyboardButton(f"⚔ {premium_text('ATTACK', 2)}", callback_data="attack_menu"),
+             InlineKeyboardButton(f"⛔ {premium_text('STOP', 1)}", callback_data="stop_attack")],
+            [InlineKeyboardButton(f"▓ {premium_text('STATUS', 3)}", callback_data="status_btn"),
+             InlineKeyboardButton(f"ⓘ {premium_text('INFO', 4)}", callback_data="info_menu")],
+            [InlineKeyboardButton(f"⚿ {premium_text('REDEEM KEY', 5)}", callback_data="redeem_menu")],
+            [InlineKeyboardButton(f"⌨ {premium_text('COMMANDS', 1)}", callback_data="commands_menu")],
             [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-            [InlineKeyboardButton("▶ VIDEO MANAGER", callback_data="video_menu")],
-            [InlineKeyboardButton("★ EMOJI MANAGER", callback_data="emoji_menu")],
-            [InlineKeyboardButton("❄ STICKER MANAGER", callback_data="sticker_menu")],
-            [InlineKeyboardButton("⚜ ADMIN PANEL", callback_data="admin_menu")]
+            [InlineKeyboardButton(f"▶ {premium_text('VIDEO MANAGER', 3)}", callback_data="video_menu")],
+            [InlineKeyboardButton(f"★ {premium_text('EMOJI MANAGER', 4)}", callback_data="emoji_menu")],
+            [InlineKeyboardButton(f"❄ {premium_text('STICKER MANAGER', 1)}", callback_data="sticker_menu")],
+            [InlineKeyboardButton(f"⚜ {premium_text('ADMIN PANEL', 5)}", callback_data="admin_menu")]
         ])
     else:
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("⚔ ATTACK", callback_data="attack_menu"),
-             InlineKeyboardButton("⛔ STOP", callback_data="stop_attack")],
-            [InlineKeyboardButton("▓ STATUS", callback_data="status_btn"),
-             InlineKeyboardButton("ⓘ INFO", callback_data="info_menu")],
-            [InlineKeyboardButton("⚿ REDEEM KEY", callback_data="redeem_menu")],
-            [InlineKeyboardButton("⌨ COMMANDS", callback_data="commands_menu")]
+            [InlineKeyboardButton(f"⚔ {premium_text('ATTACK', 2)}", callback_data="attack_menu"),
+             InlineKeyboardButton(f"⛔ {premium_text('STOP', 1)}", callback_data="stop_attack")],
+            [InlineKeyboardButton(f"▓ {premium_text('STATUS', 3)}", callback_data="status_btn"),
+             InlineKeyboardButton(f"ⓘ {premium_text('INFO', 4)}", callback_data="info_menu")],
+            [InlineKeyboardButton(f"⚿ {premium_text('REDEEM KEY', 5)}", callback_data="redeem_menu")],
+            [InlineKeyboardButton(f"⌨ {premium_text('COMMANDS', 1)}", callback_data="commands_menu")]
         ])
 
 def back_to_menu_kb(is_owner=False):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def admin_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⚿ ADD KEY", callback_data="admin_addkey")],
-        [InlineKeyboardButton("⚜ AUTO GEN KEY", callback_data="admin_auto")],
+        [InlineKeyboardButton(f"⚿ {premium_text('ADD KEY', 2)}", callback_data="admin_addkey")],
+        [InlineKeyboardButton(f"⚜ {premium_text('AUTO GEN KEY', 3)}", callback_data="admin_auto")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌘ ALL KEYS", callback_data="admin_keys")],
-        [InlineKeyboardButton("⎙ STATS", callback_data="admin_stats")],
-        [InlineKeyboardButton("↺ CLEAR EXPIRED", callback_data="admin_clear")],
+        [InlineKeyboardButton(f"⌘ {premium_text('ALL KEYS', 4)}", callback_data="admin_keys")],
+        [InlineKeyboardButton(f"⎙ {premium_text('STATS', 5)}", callback_data="admin_stats")],
+        [InlineKeyboardButton(f"↺ {premium_text('CLEAR EXPIRED', 1)}", callback_data="admin_clear")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def video_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⎘ ADD VIDEO", callback_data="v_add")],
-        [InlineKeyboardButton("⌫ DELETE VIDEO", callback_data="v_del")],
-        [InlineKeyboardButton("⎚ CLEAR ALL", callback_data="v_clear")],
+        [InlineKeyboardButton(f"⎘ {premium_text('ADD VIDEO', 3)}", callback_data="v_add")],
+        [InlineKeyboardButton(f"⌫ {premium_text('DELETE VIDEO', 4)}", callback_data="v_del")],
+        [InlineKeyboardButton(f"⎚ {premium_text('CLEAR ALL', 5)}", callback_data="v_clear")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌘ LIST VIDEOS", callback_data="v_list")],
-        [InlineKeyboardButton("❓ HELP", callback_data="v_help")],
+        [InlineKeyboardButton(f"⌘ {premium_text('LIST VIDEOS', 1)}", callback_data="v_list")],
+        [InlineKeyboardButton(f"❓ {premium_text('HELP', 2)}", callback_data="v_help")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def emoji_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⎘ ADD EMOJI", callback_data="e_add")],
-        [InlineKeyboardButton("⌫ REMOVE EMOJI", callback_data="e_remove")],
+        [InlineKeyboardButton(f"⎘ {premium_text('ADD EMOJI', 4)}", callback_data="e_add")],
+        [InlineKeyboardButton(f"⌫ {premium_text('REMOVE EMOJI', 5)}", callback_data="e_remove")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌘ LIST EMOJIS", callback_data="e_list")],
-        [InlineKeyboardButton("↺ RESET ALL", callback_data="e_reset")],
+        [InlineKeyboardButton(f"⌘ {premium_text('LIST EMOJIS', 1)}", callback_data="e_list")],
+        [InlineKeyboardButton(f"↺ {premium_text('RESET ALL', 2)}", callback_data="e_reset")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def sticker_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⎘ ADD STICKER", callback_data="s_add")],
-        [InlineKeyboardButton("⌫ REMOVE STICKER", callback_data="s_remove")],
+        [InlineKeyboardButton(f"⎘ {premium_text('ADD STICKER', 3)}", callback_data="s_add")],
+        [InlineKeyboardButton(f"⌫ {premium_text('REMOVE STICKER', 4)}", callback_data="s_remove")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌘ LIST STICKERS", callback_data="s_list")],
-        [InlineKeyboardButton("↺ RESET ALL", callback_data="s_reset")],
+        [InlineKeyboardButton(f"⌘ {premium_text('LIST STICKERS', 5)}", callback_data="s_list")],
+        [InlineKeyboardButton(f"↺ {premium_text('RESET ALL', 1)}", callback_data="s_reset")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def auto_key_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("⏱ 20 MINUTE", callback_data="ak_20m"),
-         InlineKeyboardButton("⏱ 40 MINUTE", callback_data="ak_40m"),
-         InlineKeyboardButton("⏱ 60 MINUTE", callback_data="ak_60m")],
+        [InlineKeyboardButton(f"⏱ {premium_text('20 MINUTE', 1)}", callback_data="ak_20m"),
+         InlineKeyboardButton(f"⏱ {premium_text('40 MINUTE', 2)}", callback_data="ak_40m"),
+         InlineKeyboardButton(f"⏱ {premium_text('60 MINUTE', 3)}", callback_data="ak_60m")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌚ 1 DAY", callback_data="ak_1d"),
-         InlineKeyboardButton("⌚ 3 DAY", callback_data="ak_3d"),
-         InlineKeyboardButton("⌚ 7 DAY", callback_data="ak_7d")],
-        [InlineKeyboardButton("⌚ 15 DAY", callback_data="ak_15d"),
-         InlineKeyboardButton("⌚ 23 DAY", callback_data="ak_23d"),
-         InlineKeyboardButton("⌚ 30 DAY", callback_data="ak_30d")],
+        [InlineKeyboardButton(f"⌚ {premium_text('1 DAY', 4)}", callback_data="ak_1d"),
+         InlineKeyboardButton(f"⌚ {premium_text('3 DAY', 5)}", callback_data="ak_3d"),
+         InlineKeyboardButton(f"⌚ {premium_text('7 DAY', 1)}", callback_data="ak_7d")],
+        [InlineKeyboardButton(f"⌚ {premium_text('15 DAY', 2)}", callback_data="ak_15d"),
+         InlineKeyboardButton(f"⌚ {premium_text('23 DAY', 3)}", callback_data="ak_23d"),
+         InlineKeyboardButton(f"⌚ {premium_text('30 DAY', 4)}", callback_data="ak_30d")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⎚ 1 MONTH", callback_data="ak_1mo"),
-         InlineKeyboardButton("⎚ 2 MONTH", callback_data="ak_2mo"),
-         InlineKeyboardButton("⎚ 3 MONTH", callback_data="ak_3mo")],
+        [InlineKeyboardButton(f"⎚ {premium_text('1 MONTH', 5)}", callback_data="ak_1mo"),
+         InlineKeyboardButton(f"⎚ {premium_text('2 MONTH', 1)}", callback_data="ak_2mo"),
+         InlineKeyboardButton(f"⎚ {premium_text('3 MONTH', 2)}", callback_data="ak_3mo")],
         [InlineKeyboardButton("┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅", callback_data="sep")],
-        [InlineKeyboardButton("⌂ MAIN MENU", callback_data="menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
-    user_commands = """
+    user_commands = f"""
 ╔══════════════════════════════════════╗
-║         ⌨ COMMANDS LIST             ║
+║         ⌨ {premium_text('COMMANDS LIST', 5)}          ║
 ╚══════════════════════════════════════╝
 
 ╔══════════════════════════════════════╗
-║      👤 USER COMMANDS                ║
+║      👤 {premium_text('USER COMMANDS', 4)}            ║
 ╚══════════════════════════════════════╝
 
-/start - ✨ BOT START KAREIN
-/attack - ⚔ ATTACK START KAREIN
-/stop - ⛔ ATTACK STOP KAREIN
-/redeem - ⚿ KEY REDEEM KAREIN
-/status - 📊 STATUS CHECK KAREIN
-/commands - 📝 COMMANDS DEKHEIN
+/start - ✨ {premium_text('BOT START KAREIN', 1)}
+/attack - ⚔ {premium_text('ATTACK START KAREIN', 2)}  
+/stop - ⛔ {premium_text('ATTACK STOP KAREIN', 3)}
+/redeem - ⚿ {premium_text('KEY REDEEM KAREIN', 4)}
+/status - 📊 {premium_text('STATUS CHECK KAREIN', 5)}
+/commands - 📝 {premium_text('COMMANDS DEKHEIN', 1)}
 
 ╔══════════════════════════════════════╗
-║      🎯 ATTACK HELP                  ║
+║      🎯 {premium_text('ATTACK HELP', 2)}              ║
 ╚══════════════════════════════════════╝
 
-Format: /attack IP PORT TIME
-Example: /attack 1.2.3.4 8080 600
-BGMI Ports: 7000 - 15000
-Max Time: 600 Seconds (10 Minutes)
+{premium_text('Format:', 5)} /attack IP PORT TIME
+{premium_text('Example:', 5)} /attack 1.2.3.4 8080 600
+{premium_text('BGMI Ports:', 5)} 7000 - 15000
+{premium_text('Max Time:', 5)} 600 {premium_text('Seconds', 1)} (10 {premium_text('Minutes', 1)})
 
 ╔══════════════════════════════════════╗
-║      🔑 REDEEM HELP                  ║
+║      🔑 {premium_text('REDEEM HELP', 3)}              ║
 ╚══════════════════════════════════════╝
 
-Format: /redeem KEY_CODE
-Example: /redeem BGMI-XXXX-XXXX-XXXX
+{premium_text('Format:', 5)} /redeem KEY_CODE
+{premium_text('Example:', 5)} /redeem BGMI-XXXX-XXXX-XXXX
 
 ╔══════════════════════════════════════╗
-║      ⏱ DURATIONS                    ║
+║      ⏱ {premium_text('DURATIONS', 1)}                 ║
 ╚══════════════════════════════════════╝
 
-30m - 30 Minutes
-1h - 1 Hour
-24h - 24 Hours
-7d - 7 Days
-2w - 2 Weeks
-1mo - 1 Month
-3mo - 3 Months
+{premium_text('30m', 2)} - 30 {premium_text('Minutes', 1)}
+{premium_text('1h', 3)} - 1 {premium_text('Hour', 1)}
+{premium_text('24h', 4)} - 24 {premium_text('Hours', 1)}
+{premium_text('7d', 5)} - 7 {premium_text('Days', 1)}
+{premium_text('2w', 1)} - 2 {premium_text('Weeks', 1)}
+{premium_text('1mo', 2)} - 1 {premium_text('Month', 1)}
+{premium_text('3mo', 3)} - 3 {premium_text('Months', 1)}
+
 """
     
-    owner_commands = """
+    owner_commands = f"""
 ╔══════════════════════════════════════╗
-║      ⚜ OWNER COMMANDS               ║
+║      ⚜ {premium_text('OWNER COMMANDS', 5)}            ║
 ╚══════════════════════════════════════╝
 
-🎨 STICKER COMMANDS
-/addsticker - ⎘ STICKER ADD KAREIN
-/removesticker - ⌫ STICKER REMOVE KAREIN
-/liststickers - ⌘ STICKERS DEKHEIN
-/resetstickers - ↺ STICKERS RESET KAREIN
-/setstickertime - ⏱ SINGLE STICKER TIME SET
-/setallstickertime - ⏱ ALL STICKERS TIME SET
+🎨 {premium_text('STICKER COMMANDS', 4)}
+/addsticker - ⎘ {premium_text('STICKER ADD KAREIN', 1)}
+/removesticker - ⌫ {premium_text('STICKER REMOVE KAREIN', 2)}
+/liststickers - ⌘ {premium_text('STICKERS DEKHEIN', 3)}
+/resetstickers - ↺ {premium_text('STICKERS RESET KAREIN', 4)}
+/setstickertime - ⏱ {premium_text('SINGLE STICKER TIME SET', 5)}
+/setallstickertime - ⏱ {premium_text('ALL STICKERS TIME SET', 1)}
 
-⛔ STOP STICKER COMMANDS
-/addstop - ⎘ STOP STICKER ADD KAREIN
-/removestop - ⌫ STOP STICKER REMOVE KAREIN
+⛔ {premium_text('STOP STICKER COMMANDS', 5)}
+/addstop - ⎘ {premium_text('STOP STICKER ADD KAREIN', 3)}
+/removestop - ⌫ {premium_text('STOP STICKER REMOVE KAREIN', 4)}
 
-🎯 EMOJI COMMANDS
-/addemoji - ⎘ EMOJI ADD KAREIN
-/removeemoji - ⌫ EMOJI REMOVE KAREIN
-/listemojis - ⌘ EMOJIS DEKHEIN
-/resetemojis - ↺ EMOJIS RESET KAREIN
+🎯 {premium_text('EMOJI COMMANDS', 2)}
+/addemoji - ⎘ {premium_text('EMOJI ADD KAREIN', 3)}
+/removeemoji - ⌫ {premium_text('EMOJI REMOVE KAREIN', 4)}
+/listemojis - ⌘ {premium_text('EMOJIS DEKHEIN', 5)}
+/resetemojis - ↺ {premium_text('EMOJIS RESET KAREIN', 1)}
 
-🎬 VIDEO COMMANDS
-/addvideo - ⎘ VIDEO ADD KAREIN
-/delvideo - ⌫ VIDEO DELETE KAREIN
-/videos - ⌘ VIDEOS DEKHEIN
-/clearvideos - ⎚ VIDEOS CLEAR KAREIN
-/setvideodelay - ⏱ VIDEO DELAY SET KAREIN
+🎬 {premium_text('VIDEO COMMANDS', 3)}
+/addvideo - ⎘ {premium_text('VIDEO ADD KAREIN', 4)}
+/delvideo - ⌫ {premium_text('VIDEO DELETE KAREIN', 5)}
+/videos - ⌘ {premium_text('VIDEOS DEKHEIN', 1)}
+/clearvideos - ⎚ {premium_text('VIDEOS CLEAR KAREIN', 2)}
+/setvideodelay - ⏱ {premium_text('VIDEO DELAY SET KAREIN', 3)}
 
-🔑 KEY COMMANDS
-/genkey - ⚿ KEY GENERATE KAREIN
-/admin_keys - ⌘ ALL KEYS DEKHEIN
-/admin_stats - ⎙ STATISTICS DEKHEIN
-/admin_clear - ↺ EXPIRED CLEAR KAREIN
+🔑 {premium_text('KEY COMMANDS', 4)}
+/genkey - ⚿ {premium_text('KEY GENERATE KAREIN', 5)}
+/admin_keys - ⌘ {premium_text('ALL KEYS DEKHEIN', 1)}
+/admin_stats - ⎙ {premium_text('STATISTICS DEKHEIN', 2)}
+/admin_clear - ↺ {premium_text('EXPIRED CLEAR KAREIN', 3)}
 
-⚙️ SETTINGS COMMANDS
-/settings - ⚙️ SHOW SETTINGS
+⚙️ {premium_text('SETTINGS COMMANDS', 3)}
+/settings - ⚙️ {premium_text('SHOW SETTINGS', 4)}
+
+╔══════════════════════════════════════╗
+║      📲 {premium_text('CONTACT', 5)}                   ║
+╚══════════════════════════════════════╝
+
+⚜ {premium_text('Owner:', 5)} {premium_text('FATHER OF BOT', 4)}
+🤖 {premium_text('Bot:', 5)} @BeStChEaT_BGMIDdos_Bot
+
 """
     
     if is_owner:
@@ -712,20 +805,20 @@ async def welcome_animation(client, msg):
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
 
 ┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs
-┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ
+┠ ◆ {premium_text('ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs', 1)}
+┠ ◆ {premium_text('ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ', 2)}
 ┗━━━━━━━━━━━━━━━━━⧫
 ┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ
-┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 𝟷𝟶 ᴍɪɴᴜᴛᴇꜱ
-┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ
-┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ', 3)}
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ', 4)}
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ', 5)}
+┠ ◆ {premium_text('ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 𝟷𝟶 ᴍɪɴᴜᴛᴇꜱ', 1)}
+┠ ◆ {premium_text('ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ', 2)}
+┠ ◆ {premium_text('ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ', 3)}
 ┗━━━━━━━━━━━━━━━━━⧫
-๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ
+๏ {premium_text('ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs', 4)}
 
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [FATHER OF BOT]({OWNER_LINK}) ✔︎
+🫧 {premium_text('ᴅᴇᴠᴇʟᴏᴩᴇʀ', 5)} 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
 
         # STEP 1: Send emoji sticker
@@ -849,20 +942,20 @@ async def simple_start(client, msg):
 ɪ'ᴍ [˹𝚩𝒈𝒎𝒊 ✘ 𝚫𝛕𝛕𝛂𝛓𝛋𝛆𝛄˹ ♪]({BOT_LINK}),
 
 ┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs
-┠ ◆ ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ
+┠ ◆ {premium_text('ɪ ʜᴀᴠᴇ sᴘᴇᴄɪᴀʟ ғᴇᴀᴛᴜʀᴇs', 1)}
+┠ ◆ {premium_text('ᴀʟʟ-ɪɴ-ᴏɴᴇ ʙᴏᴛ', 2)}
 ┗━━━━━━━━━━━━━━━━━⧫
 ┏━━━━━━━━━━━━━━━━━⧫
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ
-┠ ◆ ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ
-┠ ◆ ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 𝟷𝟶 ᴍɪɴᴜᴛᴇꜱ
-┠ ◆ ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ
-┠ ◆ ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ғʀᴇᴇᴢᴇ ʙɢᴍɪ ꜱᴇʀᴠᴇʀ', 3)}
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ᴅᴅᴏꜱ ᴀɴʏ ɪᴘ/ᴘᴏʀᴛ', 4)}
+┠ ◆ {premium_text('ʏᴏᴜ ᴄᴀɴ ᴜꜱᴇ 5000+ ᴛʜʀᴇᴀᴅꜱ ꜰᴏʀ ᴍᴀx ᴅᴀᴍᴀɢᴇ', 5)}
+┠ ◆ {premium_text('ɪ ᴄᴀɴ ᴀᴛᴛᴀᴄᴋ ᴜᴘᴛᴏ 𝟷𝟶 ᴍɪɴᴜᴛᴇꜱ', 1)}
+┠ ◆ {premium_text('ꜱᴘᴇᴄɪᴀʟ ᴡᴇʟᴄᴏᴍᴇ', 2)}
+┠ ◆ {premium_text('ᴍᴏʀᴇ ғᴇᴀᴛᴜʀᴇs ᴄʟɪᴄᴋ ᴄᴏᴍᴍᴀɴᴅs ʙᴜᴛᴛᴏɴ', 3)}
 ┗━━━━━━━━━━━━━━━━━⧫
-๏ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ
+๏ {premium_text('ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʜᴇʟᴩ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ɪɴғᴏʀᴍᴀᴛɪᴏɴ ᴀʙᴏᴜᴛ ᴍʏ ᴍᴏᴅᴜʟᴇs ᴀɴᴅ ᴄᴏᴍᴍᴀɴᴅs', 4)}
 
-🫧 ᴅᴇᴠᴇʟᴏᴩᴇʀ 🪽 ➪ [FATHER OF BOT]({OWNER_LINK}) ✔︎
+🫧 {premium_text('ᴅᴇᴠᴇʟᴏᴩᴇʀ', 5)} 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         await client.send_message(msg.chat.id, text, reply_markup=kb)
     except Exception as e:
@@ -2414,11 +2507,13 @@ print("""
 ╔══════════════════════════════════════╗
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  ✅ ALL BUTTONS FIXED               ║
+║  ✅ 5 STYLES ACTIVE                 ║
 ║  ✅ STATUS WORKING                  ║
 ║  ✅ STOP WORKING                    ║
 ║  ✅ ABOUT REDEEM WORKING            ║
 ║  ✅ BACK BUTTON GOES BACK           ║
 ║  ✅ NO DELAY                        ║
+║  ✅ PREMIUM SYMBOLS                 ║
 ║  ✅ SCREENSHOT JAISA                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
