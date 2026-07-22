@@ -38,6 +38,7 @@ STICKER_DB = "sticker.json"
 EMOJI_DB = "emojis.json"
 STICKER_TIME_DB = "sticker_times.json"
 SETTINGS_DB = "settings.json"
+STOP_STICKER_DB = "stop_sticker.json"
 
 IST = pytz.timezone('Asia/Kolkata')
 LINE = "━━━━━━━━━━━━━━━━━━━"
@@ -45,8 +46,8 @@ LINE = "━━━━━━━━━━━━━━━━━━━"
 # ═══════════════ SETTINGS ═══════════════
 PREMIUM_THREADS = 5000
 PREMIUM_TIME = 600
-DEFAULT_STICKER_TIME = 3  # Default 3 seconds
-DEFAULT_VIDEO_DELAY = 2   # Default 2 seconds
+DEFAULT_STICKER_TIME = 5
+DEFAULT_VIDEO_DELAY = 3
 
 # ═══════════════ TRACKING ═══════════════
 used_videos = []
@@ -137,6 +138,19 @@ def get_sticker_display_time():
 def get_video_delay_time():
     settings = get_settings()
     return settings.get("video_delay", DEFAULT_VIDEO_DELAY)
+
+# ═══════════════ STOP STICKER FUNCTIONS ═══════════════
+def get_stop_sticker():
+    data = jload(STOP_STICKER_DB, {"sticker_id": None})
+    return data.get("sticker_id")
+
+def set_stop_sticker(sticker_id):
+    jsave(STOP_STICKER_DB, {"sticker_id": sticker_id})
+    return True
+
+def clear_stop_sticker():
+    jsave(STOP_STICKER_DB, {"sticker_id": None})
+    return True
 
 # ═══════════════ STICKER TIME FUNCTIONS ═══════════════
 def get_sticker_times():
@@ -487,9 +501,7 @@ def premium_text(text, style_num=1):
     styled = styles.get(style_num, style1_smallcaps)(text)
     return f"˹{styled}˼"
 
-# ═══════════════ BUTTONS - ALL WITH PROPER BACK ═══════════════
-
-# Main Menu Buttons
+# ═══════════════ BUTTONS ═══════════════
 def main_menu_kb(is_owner=False):
     if is_owner:
         return InlineKeyboardMarkup([
@@ -515,21 +527,9 @@ def main_menu_kb(is_owner=False):
             [InlineKeyboardButton(f"⌨ {premium_text('COMMANDS', 1)}", callback_data="commands_menu")]
         ])
 
-# Generic Back button - goes to previous screen
 def back_to_menu_kb(is_owner=False):
-    if is_owner:
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
-        ])
-    else:
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
-        ])
-
-def back_to_admin_kb():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu"),
-         InlineKeyboardButton(f"⚜ {premium_text('ADMIN PANEL', 5)}", callback_data="admin_menu")]
+        [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
 def admin_kb():
@@ -598,6 +598,43 @@ def auto_key_kb():
         [InlineKeyboardButton(f"⌂ {premium_text('MAIN MENU', 5)}", callback_data="menu")]
     ])
 
+# ═══════════════ STOP STICKER ADD COMMAND ═══════════════
+@app.on_message(filters.command("addstop") & filters.private)
+async def add_stop_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    if not msg.reply_to_message or not msg.reply_to_message.sticker:
+        return await msg.reply_text(
+            f"⛔ **{premium_text('ADD STOP STICKER', 5)}**\n\n"
+            f"{premium_text('Reply to a sticker with:', 3)}\n"
+            "`/addstop`\n\n"
+            f"✨ {premium_text('This sticker will appear when you use /stop command!', 1)}",
+            reply_markup=back_to_menu_kb(True)
+        )
+    
+    sticker_id = msg.reply_to_message.sticker.file_id
+    set_stop_sticker(sticker_id)
+    
+    await msg.reply_text(
+        f"✅ **{premium_text('STOP STICKER ADDED', 5)}** 🎉\n\n"
+        f"🔹 {premium_text('Now this sticker will appear when using /stop command!', 1)}\n"
+        f"📋 {premium_text('Use /removestop to remove it.', 3)}",
+        reply_markup=back_to_menu_kb(True)
+    )
+
+@app.on_message(filters.command("removestop") & filters.private)
+async def remove_stop_sticker_cmd(client, msg):
+    if msg.from_user.id != OWNER_ID:
+        return await msg.reply_text("❌ Owner only!")
+    
+    clear_stop_sticker()
+    await msg.reply_text(
+        f"✅ **{premium_text('STOP STICKER REMOVED', 5)}**\n\n"
+        f"🔹 {premium_text('No sticker will appear for /stop command now.', 1)}",
+        reply_markup=back_to_menu_kb(True)
+    )
+
 # ═══════════════ COMMANDS LIST ═══════════════
 def get_commands_list(is_owner=False):
     user_commands = f"""
@@ -659,6 +696,10 @@ def get_commands_list(is_owner=False):
 /setstickertime - ⏱ {premium_text('SINGLE STICKER TIME SET', 5)}
 /setallstickertime - ⏱ {premium_text('ALL STICKERS TIME SET', 1)}
 
+⛔ {premium_text('STOP STICKER COMMANDS', 5)}
+/addstop - ⎘ {premium_text('STOP STICKER ADD KAREIN', 3)}
+/removestop - ⌫ {premium_text('STOP STICKER REMOVE KAREIN', 4)}
+
 🎯 {premium_text('EMOJI COMMANDS', 2)}
 /addemoji - ⎘ {premium_text('EMOJI ADD KAREIN', 3)}
 /removeemoji - ⌫ {premium_text('EMOJI REMOVE KAREIN', 4)}
@@ -691,7 +732,7 @@ def get_commands_list(is_owner=False):
         return user_commands + owner_commands
     return user_commands
 
-# ═══════════════ WELCOME ANIMATION - FIXED TIMING ═══════════════
+# ═══════════════ WELCOME ANIMATION - FULLY FIXED ═══════════════
 async def welcome_animation(client, msg):
     try:
         user = msg.from_user
@@ -729,7 +770,7 @@ async def welcome_animation(client, msg):
 🫧 {premium_text('ᴅᴇᴠᴇʟᴏᴩᴇʀ', 5)} 🪽 ➪ [𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞]({OWNER_LINK}) ✔︎
 """
         
-        # STEP 1: Send emoji (instantly)
+        # STEP 1: Send emoji sticker (pahle)
         emoji_msg = None
         emoji_id = get_random_emoji()
         if emoji_id:
@@ -738,9 +779,7 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        await asyncio.sleep(0.3)
-        
-        # STEP 2: Welcome message with animation
+        # STEP 2: Welcome animation
         welcome_emojis = ["🩷", "🌸", "🏖️", "🍰", "🥂"]
         welcome_msg = await client.send_message(
             chat_id, 
@@ -748,13 +787,13 @@ async def welcome_animation(client, msg):
         )
         
         for emoji in welcome_emojis:
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.4)
             try:
                 await welcome_msg.edit_text(f"𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁ᴀʙʏ ꨄ [{first_name}](tg://user?id={user_id})...{emoji}")
             except:
                 pass
         
-        # Delete emoji
+        # Delete emoji after animation
         if emoji_msg:
             try:
                 await emoji_msg.delete()
@@ -764,10 +803,7 @@ async def welcome_animation(client, msg):
         await asyncio.sleep(0.2)
         
         # STEP 3: Starting animation
-        starting_emojis = [
-            "🚀", "🌠", "🪶", "🍓", "🤖", "🥡", 
-            "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"
-        ]
+        starting_emojis = ["🚀", "🌠", "🪶", "🍓", "🤖", "🥡", "🍷", "🍭", "🍨", "🧭", "🫧", "🍫", "🛸"]
         words = ["s", "t", "α", "я", "т", "ι", "и", "g", ".", ".", ".", ".", "."]
         
         await welcome_msg.edit_text(f"**{starting_emojis[0]}**")
@@ -791,7 +827,7 @@ async def welcome_animation(client, msg):
         
         await asyncio.sleep(0.2)
         
-        # STEP 4: Send sticker
+        # STEP 4: Send welcome sticker (phir)
         sticker_msg = None
         if sticker_id:
             try:
@@ -799,13 +835,13 @@ async def welcome_animation(client, msg):
             except:
                 pass
         
-        # STEP 5: WAIT EXACTLY for video delay time
+        # STEP 5: Wait for video delay
         if sticker_msg:
             await asyncio.sleep(video_delay_time)
         else:
             await asyncio.sleep(video_delay_time)
         
-        # STEP 6: Send final video message
+        # STEP 6: Send final video/message
         final_msg = None
         if video_data and os.path.exists(video_data["path"]):
             final_msg = await client.send_video(
@@ -821,7 +857,7 @@ async def welcome_animation(client, msg):
                 reply_markup=kb
             )
         
-        # STEP 7: Delete sticker after EXACT display time
+        # STEP 7: Delete sticker after display time
         if sticker_msg:
             remaining_time = sticker_display_time - video_delay_time
             if remaining_time > 0:
@@ -876,21 +912,30 @@ async def simple_start(client, msg):
 async def start_cmd(client, msg):
     await welcome_animation(client, msg)
 
-# ═══════════════ STOP COMMAND ═══════════════
+# ═══════════════ STOP COMMAND - WITH STOP STICKER ═══════════════
 @app.on_message(filters.command("stop"))
 async def stop_cmd(client, msg):
     global attacking
     uid = msg.from_user.id
     
     if not check_access(uid)[0]:
-        sticker_id = get_random_sticker()
-        if sticker_id:
+        stop_sticker = get_stop_sticker()
+        if stop_sticker:
             try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
+                sticker_msg = await msg.reply_sticker(stop_sticker)
                 await asyncio.sleep(1)
                 await sticker_msg.delete()
             except:
                 pass
+        else:
+            sticker_id = get_random_sticker()
+            if sticker_id:
+                try:
+                    sticker_msg = await msg.reply_sticker(sticker_id)
+                    await asyncio.sleep(1)
+                    await sticker_msg.delete()
+                except:
+                    pass
         
         await msg.reply_text(
             f"🔒 **{premium_text('ACCESS DENIED', 5)}**\n\n"
@@ -912,14 +957,23 @@ async def stop_cmd(client, msg):
     await asyncio.sleep(0.5)
     
     if attacking:
-        sticker_id = get_random_sticker()
-        if sticker_id:
+        stop_sticker = get_stop_sticker()
+        if stop_sticker:
             try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
+                sticker_msg = await msg.reply_sticker(stop_sticker)
                 await asyncio.sleep(1)
                 await sticker_msg.delete()
             except:
                 pass
+        else:
+            sticker_id = get_random_sticker()
+            if sticker_id:
+                try:
+                    sticker_msg = await msg.reply_sticker(sticker_id)
+                    await asyncio.sleep(1)
+                    await sticker_msg.delete()
+                except:
+                    pass
         
         attacker.on = False
         attacking = False
@@ -934,14 +988,23 @@ async def stop_cmd(client, msg):
             f"🔄 /attack IP PORT TIME"
         )
     else:
-        sticker_id = get_random_sticker()
-        if sticker_id:
+        stop_sticker = get_stop_sticker()
+        if stop_sticker:
             try:
-                sticker_msg = await msg.reply_sticker(sticker_id)
+                sticker_msg = await msg.reply_sticker(stop_sticker)
                 await asyncio.sleep(1)
                 await sticker_msg.delete()
             except:
                 pass
+        else:
+            sticker_id = get_random_sticker()
+            if sticker_id:
+                try:
+                    sticker_msg = await msg.reply_sticker(sticker_id)
+                    await asyncio.sleep(1)
+                    await sticker_msg.delete()
+                except:
+                    pass
         
         await checking_msg.edit_text(
             f"🔍 **{premium_text('SCAN COMPLETE', 5)}**\n\n"
@@ -1054,14 +1117,23 @@ async def stop_attack_callback(client, cb: CallbackQuery):
     await asyncio.sleep(0.5)
     
     if attacking and (uid == attack_user or uid == OWNER_ID):
-        sticker_id = get_random_sticker()
-        if sticker_id:
+        stop_sticker = get_stop_sticker()
+        if stop_sticker:
             try:
-                sticker_msg = await cb.message.reply_sticker(sticker_id)
+                sticker_msg = await cb.message.reply_sticker(stop_sticker)
                 await asyncio.sleep(1)
                 await sticker_msg.delete()
             except:
                 pass
+        else:
+            sticker_id = get_random_sticker()
+            if sticker_id:
+                try:
+                    sticker_msg = await cb.message.reply_sticker(sticker_id)
+                    await asyncio.sleep(1)
+                    await sticker_msg.delete()
+                except:
+                    pass
         
         attacker.on = False
         attacking = False
@@ -1092,6 +1164,24 @@ async def stop_attack_callback(client, cb: CallbackQuery):
             f"🛡️ {premium_text('Your system is secure!', 4)}"
         )
 
+# ═══════════════ REDEEM POPUP ═══════════════
+@app.on_callback_query(filters.regex("redeem_popup"))
+async def redeem_popup_callback(client, cb: CallbackQuery):
+    await cb.answer(
+        f"🪪 {premium_text('About Redeem', 5)} ♡\n\n"
+        f"🔑 {premium_text('How To Redeem Key?', 5)}\n\n"
+        f"1️⃣ {premium_text('Get Key From Admin', 1)}\n"
+        f"📲 @{OWNER_USERNAME}\n\n"
+        f"2️⃣ {premium_text('Use Command:', 3)}\n"
+        "/redeem YOUR_KEY\n\n"
+        f"3️⃣ {premium_text('Example:', 3)}\n"
+        "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
+        f"⏱️ {premium_text('Durations:', 3)}\n"
+        "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
+        f"💎 {premium_text('Premium = Power!', 5)}",
+        show_alert=True
+    )
+
 # ═══════════════ EMOJI ADD COMMAND ═══════════════
 @app.on_message(filters.command("addemoji") & filters.private)
 async def add_emoji_cmd(client, msg):
@@ -1104,7 +1194,7 @@ async def add_emoji_cmd(client, msg):
             f"{premium_text('Reply to a premium emoji with:', 3)}\n"
             "`/addemoji`\n\n"
             f"✨ {premium_text('The emoji will be added to welcome animation!', 1)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     emoji_id = None
@@ -1121,18 +1211,18 @@ async def add_emoji_cmd(client, msg):
                 f"✅ **{premium_text('EMOJI ADDED', 5)}** 🎉\n\n"
                 f"🔹 {premium_text('Total Emojis:', 3)} {total}\n\n"
                 f"✨ {premium_text('This emoji will appear randomly in welcome animation!', 1)}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         else:
             await msg.reply_text(
                 f"❌ {premium_text('This emoji is already in the list!', 5)}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
     else:
         await msg.reply_text(
             f"❌ **{premium_text('No emoji found!', 5)}**\n\n"
             f"{premium_text('Please reply to a premium emoji or sticker.', 1)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ STICKER ADD COMMAND ═══════════════
@@ -1148,13 +1238,13 @@ async def add_sticker_cmd(client, msg):
             "`/addsticker`\n\n"
             f"✨ {premium_text('The sticker will appear randomly in welcome animation!', 1)}\n\n"
             f"⏱️ {premium_text('Default Sticker Time:', 3)} {get_sticker_display_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     if not msg.reply_to_message.sticker:
         return await msg.reply_text(
             f"❌ {premium_text('Please reply to a sticker!', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     sticker_id = msg.reply_to_message.sticker.file_id
@@ -1184,12 +1274,12 @@ async def add_sticker_cmd(client, msg):
             f"📋 {premium_text('Current Settings:', 3)}\n"
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     else:
         await msg.reply_text(
             f"❌ {premium_text('This sticker is already in the list!', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ ATTACK ═══════════════
@@ -1486,20 +1576,7 @@ async def callbacks(client, cb: CallbackQuery):
         return
     
     if data == "redeem_popup":
-        await cb.answer(
-            f"🪪 {premium_text('About Redeem', 5)} ♡\n\n"
-            f"🔑 {premium_text('How To Redeem Key?', 5)}\n\n"
-            f"1️⃣ {premium_text('Get Key From Admin', 1)}\n"
-            f"📲 @{OWNER_USERNAME}\n\n"
-            f"2️⃣ {premium_text('Use Command:', 3)}\n"
-            "/redeem YOUR_KEY\n\n"
-            f"3️⃣ {premium_text('Example:', 3)}\n"
-            "/redeem BGMI-XXXX-XXXX-XXXX\n\n"
-            f"⏱️ {premium_text('Durations:', 3)}\n"
-            "30m • 1h • 24h • 7d • 2w • 1mo\n\n"
-            f"💎 {premium_text('Premium = Power!', 5)}",
-            show_alert=True
-        )
+        await redeem_popup_callback(client, cb)
         return
     
     # ─── COMMANDS MENU ───
@@ -2029,7 +2106,7 @@ async def remove_emoji_cmd(client, msg):
             f"⌫ **{premium_text('REMOVE EMOJI', 5)}**\n\n"
             f"{premium_text('Use:', 3)} `/removeemoji index`\n\n"
             f"{premium_text('Get index from', 1)} `/listemojis` {premium_text('command.', 2)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
@@ -2039,17 +2116,17 @@ async def remove_emoji_cmd(client, msg):
             await msg.reply_text(
                 f"✅ **{premium_text('EMOJI REMOVED', 5)}**\n\n"
                 f"🔹 {premium_text('Remaining Emojis:', 3)} {total}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         else:
             await msg.reply_text(
                 f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total emojis:', 3)} {total}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
     except ValueError:
         await msg.reply_text(
             f"❌ {premium_text('Invalid index! Use a number.', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ LIST EMOJIS COMMAND ═══════════════
@@ -2063,7 +2140,7 @@ async def list_emojis_cmd(client, msg):
     if not emojis:
         return await msg.reply_text(
             f"📭 {premium_text('No emojis added yet!', 1)}\n\n{premium_text('Add using', 3)} `/addemoji`",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     text = f"⌘ **{premium_text('EMOJI LIST', 5)}**\n\n"
@@ -2071,7 +2148,7 @@ async def list_emojis_cmd(client, msg):
         text += f"**{i}.** `{emoji_id[:30]}...`\n"
     
     text += f"\n🔹 **{premium_text('Total:', 3)}** {len(emojis)}"
-    await msg.reply_text(text, reply_markup=back_to_admin_kb())
+    await msg.reply_text(text, reply_markup=back_to_menu_kb(True))
 
 # ═══════════════ RESET EMOJIS COMMAND ═══════════════
 @app.on_message(filters.command("resetemojis") & filters.private)
@@ -2084,7 +2161,7 @@ async def reset_emojis_cmd(client, msg):
         f"↺ **{premium_text('EMOJIS RESET', 5)}**\n\n"
         f"🔹 {premium_text('Total Emojis:', 3)} 0\n\n"
         f"{premium_text('All emojis have been removed from the list.', 1)}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ REMOVE STICKER COMMAND ═══════════════
@@ -2099,7 +2176,7 @@ async def remove_sticker_cmd(client, msg):
             f"⌫ **{premium_text('REMOVE STICKER', 5)}**\n\n"
             f"{premium_text('Use:', 3)} `/removesticker index`\n\n"
             f"{premium_text('Get index from', 1)} `/liststickers` {premium_text('command.', 2)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
@@ -2109,17 +2186,17 @@ async def remove_sticker_cmd(client, msg):
             await msg.reply_text(
                 f"✅ **{premium_text('STICKER REMOVED', 5)}**\n\n"
                 f"🔹 {premium_text('Remaining Stickers:', 3)} {total}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         else:
             await msg.reply_text(
                 f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total stickers:', 3)} {total}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
     except ValueError:
         await msg.reply_text(
             f"❌ {premium_text('Invalid index! Use a number.', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ LIST STICKERS COMMAND ═══════════════
@@ -2134,7 +2211,7 @@ async def list_stickers_cmd(client, msg):
     if not stickers:
         return await msg.reply_text(
             f"📭 {premium_text('No stickers added yet!', 1)}\n\n{premium_text('Add using', 3)} `/addsticker`",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     text = f"⌘ **{premium_text('STICKER LIST', 5)}**\n\n"
@@ -2144,7 +2221,7 @@ async def list_stickers_cmd(client, msg):
     
     text += f"\n🔹 **{premium_text('Total:', 3)}** {len(stickers)}"
     text += f"\n\n📋 **{premium_text('Settings:', 3)}** {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s | {premium_text('Video Delay:', 5)} {get_video_delay_time()}s"
-    await msg.reply_text(text, reply_markup=back_to_admin_kb())
+    await msg.reply_text(text, reply_markup=back_to_menu_kb(True))
 
 # ═══════════════ RESET STICKERS COMMAND ═══════════════
 @app.on_message(filters.command("resetstickers") & filters.private)
@@ -2157,7 +2234,7 @@ async def reset_stickers_cmd(client, msg):
         f"↺ **{premium_text('STICKERS RESET', 5)}**\n\n"
         f"🔹 {premium_text('Total Stickers:', 3)} 0\n\n"
         f"{premium_text('All stickers have been removed from the list.', 1)}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ SET STICKER TIME COMMAND ═══════════════
@@ -2177,7 +2254,7 @@ async def set_sticker_time_cmd(client, msg):
             f"📋 {premium_text('Current Settings:', 3)}\n"
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
@@ -2187,14 +2264,14 @@ async def set_sticker_time_cmd(client, msg):
         if duration < 1:
             return await msg.reply_text(
                 "❌ Duration must be at least 1 second!",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         
         stickers = get_all_stickers()
         if index < 0 or index >= len(stickers):
             return await msg.reply_text(
                 f"❌ {premium_text('Invalid index!', 5)} {premium_text('Total stickers:', 1)} {len(stickers)}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         
         sticker_id = stickers[index]
@@ -2207,12 +2284,12 @@ async def set_sticker_time_cmd(client, msg):
             f"📋 {premium_text('Current Settings:', 3)}\n"
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     except ValueError:
         await msg.reply_text(
             "❌ Invalid input! Use numbers only.",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ SET ALL STICKER TIME ═══════════════
@@ -2231,7 +2308,7 @@ async def set_all_sticker_time_cmd(client, msg):
             f"📋 {premium_text('Current Settings:', 3)}\n"
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
@@ -2239,7 +2316,7 @@ async def set_all_sticker_time_cmd(client, msg):
         if duration < 1:
             return await msg.reply_text(
                 "❌ Duration must be at least 1 second!",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         
         save_settings(sticker_time=duration)
@@ -2252,20 +2329,20 @@ async def set_all_sticker_time_cmd(client, msg):
                 f"📊 {premium_text('Total Stickers Updated:', 5)} {count}\n\n"
                 f"🔄 {premium_text('All stickers will now display for', 3)} {duration} {premium_text('seconds!', 1)}\n"
                 f"📋 {premium_text('Current Video Delay:', 5)} {get_video_delay_time()}s",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         else:
             await msg.reply_text(
                 f"⚠️ **{premium_text('No stickers found!', 5)}**\n\n"
                 f"⏱️ {premium_text('Global Sticker Time set to:', 5)} {duration}s\n"
                 f"📋 {premium_text('Add stickers using', 1)} `/addsticker`",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
             
     except ValueError:
         await msg.reply_text(
             "❌ Invalid input! Use a number.",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ SET VIDEO DELAY ═══════════════
@@ -2284,7 +2361,7 @@ async def set_video_delay_cmd(client, msg):
             f"📋 {premium_text('Current Settings:', 3)}\n"
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     try:
@@ -2292,7 +2369,7 @@ async def set_video_delay_cmd(client, msg):
         if delay < 1:
             return await msg.reply_text(
                 "❌ Delay must be at least 1 second!",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         
         sticker_time = get_sticker_display_time()
@@ -2302,7 +2379,7 @@ async def set_video_delay_cmd(client, msg):
                 f"{premium_text('Video Delay', 3)} ({delay}s) {premium_text('should be less than Sticker Time', 1)} ({sticker_time}s)\n\n"
                 f"💡 {premium_text('Recommended:', 5)} {premium_text('Video Delay < Sticker Time', 2)}\n"
                 f"{premium_text('Example:', 5)} {premium_text('Sticker 6s, Video 4s', 4)}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
             return
         
@@ -2315,13 +2392,13 @@ async def set_video_delay_cmd(client, msg):
             f"• {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
             f"• {premium_text('Video Delay:', 5)} {get_video_delay_time()}s\n\n"
             f"🔄 {premium_text('Video will now appear after', 3)} {delay} {premium_text('seconds!', 1)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
             
     except ValueError:
         await msg.reply_text(
             "❌ Invalid input! Use a number.",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 # ═══════════════ SHOW SETTINGS ═══════════════
@@ -2345,7 +2422,7 @@ async def settings_cmd(client, msg):
         f"• `/setvideodelay seconds` - {premium_text('Set video delay', 3)}\n"
         f"• `/settings` - {premium_text('Show this menu', 4)}\n\n"
         f"💡 **{premium_text('Note:', 5)}** {premium_text('Video Delay should be less than Sticker Time', 1)}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ VIDEO COMMANDS ═══════════════
@@ -2376,13 +2453,13 @@ async def add_video_cmd(client, msg):
                 f"📋 /videos {premium_text('to see all videos', 2)}\n"
                 f"⏱️ {premium_text('Video Delay:', 3)} {get_video_delay_time()}s"
             )
-            await s.edit_text(text, reply_markup=back_to_admin_kb())
+            await s.edit_text(text, reply_markup=back_to_menu_kb(True))
         except Exception as e:
-            await s.edit_text(f"❌ {premium_text('Error:', 3)} {e}", reply_markup=back_to_admin_kb())
+            await s.edit_text(f"❌ {premium_text('Error:', 3)} {e}", reply_markup=back_to_menu_kb(True))
     else:
         await msg.reply_text(
             f"❌ {premium_text('Reply to a video!', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 @app.on_message(filters.command("videos") & filters.private)
@@ -2407,23 +2484,23 @@ async def del_vid_cmd(client, msg):
     if len(parts) != 2: 
         return await msg.reply_text(
             "❌ /delvideo ID",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     try:
         if del_vid(int(parts[1])):
             await msg.reply_text(
                 f"✅ {premium_text('Video', 3)} #{parts[1]} {premium_text('deleted!', 1)}\n📹 {premium_text('Remaining:', 3)} {len(get_vids())}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
         else:
             await msg.reply_text(
                 f"❌ {premium_text('Not found!', 5)}",
-                reply_markup=back_to_admin_kb()
+                reply_markup=back_to_menu_kb(True)
             )
     except:
         await msg.reply_text(
             f"❌ {premium_text('Invalid ID!', 5)}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 @app.on_message(filters.command("clearvideos") & filters.private)
@@ -2432,7 +2509,7 @@ async def clear_vids_cmd(client, msg):
     n = clear_vids()
     await msg.reply_text(
         f"🗑️ {n} {premium_text('videos cleared!', 1)}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ ADMIN COMMANDS ═══════════════
@@ -2451,7 +2528,7 @@ async def genkey_cmd(client, msg):
             "/genkey VIP 30m\n"
             "/genkey Test 24h\n\n"
             f"⏱️ {premium_text('Units:', 3)} m=min, h=hour, d=day, w=week, mo=month",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     
     name = parts[1]
@@ -2468,12 +2545,12 @@ async def genkey_cmd(client, msg):
             f"🔑 {premium_text('Key:', 3)} `{key_code}`\n"
             f"{LINE}\n\n"
             f"📋 {premium_text('User:', 3)} /redeem {key_code}",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
     else:
         await msg.reply_text(
             f"❌ {premium_text('Invalid time format!', 5)}\n\n{premium_text('Use:', 3)} 30m, 1h, 7d, 2w, 1mo",
-            reply_markup=back_to_admin_kb()
+            reply_markup=back_to_menu_kb(True)
         )
 
 @app.on_message(filters.command("admin_keys") & filters.private)
@@ -2488,7 +2565,7 @@ async def admin_keys_cmd(client, msg):
         f"🟢 {premium_text('Active:', 3)} {len(active)}\n"
         f"🔴 {premium_text('Used:', 3)} {len(used)}\n"
         f"📊 {premium_text('Total:', 3)} {len(keys)}\n{LINE}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 @app.on_message(filters.command("admin_stats") & filters.private)
@@ -2507,7 +2584,7 @@ async def admin_stats_cmd(client, msg):
         f"⚙️ {premium_text('Settings:', 3)}\n"
         f"⏱️ {premium_text('Sticker Time:', 5)} {get_sticker_display_time()}s\n"
         f"⏱️ {premium_text('Video Delay:', 5)} {get_video_delay_time()}s",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 @app.on_message(filters.command("admin_clear") & filters.private)
@@ -2517,7 +2594,7 @@ async def admin_clear_cmd(client, msg):
     removed = remove_expired()
     await msg.reply_text(
         f"↺ {removed} {premium_text('expired keys removed!', 1)}",
-        reply_markup=back_to_admin_kb()
+        reply_markup=back_to_menu_kb(True)
     )
 
 # ═══════════════ AUTO EXPIRE ═══════════════
@@ -2536,7 +2613,8 @@ for f, d in [
     (STICKER_DB, {"stickers": []}),
     (EMOJI_DB, {"emojis": []}),
     (STICKER_TIME_DB, {}),
-    (SETTINGS_DB, {"sticker_time": DEFAULT_STICKER_TIME, "video_delay": DEFAULT_VIDEO_DELAY})
+    (SETTINGS_DB, {"sticker_time": DEFAULT_STICKER_TIME, "video_delay": DEFAULT_VIDEO_DELAY}),
+    (STOP_STICKER_DB, {"sticker_id": None})
 ]:
     if not os.path.exists(f): jsave(f, d)
 
@@ -2548,13 +2626,12 @@ print("""
 ║  💀 BGMI ATTACK BOT - ULTRA PRO     ║
 ║  SERVER FREEZE BOT                  ║
 ║  ✅ ALL COMMANDS WORKING            ║
-║  ✅ STOP WITH STICKER + HACKER MSG  ║
-║  ✅ STATUS REAL-TIME TIME           ║
+║  ✅ STOP STICKER SEPARATE           ║
 ║  ✅ REDEEM POPUP WORKING            ║
 ║  ✅ ALL BUTTONS WORKING             ║
 ║  ✅ BACK BUTTON GOES BACK           ║
-║  ✅ PRECISE STICKER/VIDEO TIMING    ║
-║  ✅ PREMIUM STYLISH BUTTONS         ║
+║  ✅ PRECISE TIMING                  ║
+║  ✅ EMOJI ANIMATION COMPLETE        ║
 ║  SIRF INLINE BUTTONS                ║
 ╚══════════════════════════════════════╝
 ✅ Bot Ready!
