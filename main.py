@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # Bot Token - Apna token yahan daalein
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+BOT_TOKEN = "8865276403:AAGCxWFbGQeMbrikXNUu8h-DlFb9VuYbdFA"
 
 # Colors
 C_BOX    = "\033[1;35m"
