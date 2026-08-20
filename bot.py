@@ -7,7 +7,7 @@ import random
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from aiogram.filters import Command
+from aiogram.filters import Command, F  # ✅ FIXED: Added 'F' here
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 # --- Configuration ---
@@ -171,7 +171,7 @@ async def cmd_attack(message: Message):
     
     await message.answer(f"🚀 **Attack Launched on {target_ip}!**\n⏳ Duration: {duration}s\n🔥 Threads: 50 (TCP+UDP Mixed)")
 
-@dp.callback_query(F.data == "start")
+@dp.callback_query(F.data == "start") # ✅ FIXED: F is now defined
 async def cb_start(callback: CallbackQuery):
     await callback.message.edit_text("Send /attack <IP> <Seconds> to start.")
 
