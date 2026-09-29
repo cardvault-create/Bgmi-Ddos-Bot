@@ -625,18 +625,18 @@ def cmd_start(msg):
                 join_time_display = data["users"][str(uid)].get("joined_ist", "N/A")
                 owner_notif = (
                     "╔══════════════════════╗\n"
-                    "║  🆕 𝗡𝗘𝗪 𝗨𝗦𝗘𝗥 𝗔𝗟𝗘𝗥𝗧 🪩  ║\n"
+                    "║        🆕 𝗡𝗘𝗪 𝗨𝗦𝗘𝗥 𝗔𝗟𝗘𝗥𝗧 🪩    ║\n"
                     "╚══════════════════════╝\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃   👤 𝗨𝗦𝗘𝗥 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃     👤 𝗨𝗦𝗘𝗥 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
                     f"🆔 <b>ᴜꜱᴇʀ ɪᴅ:</b> <code>{uid}</code>\n"
                     f"📛 <b>ɴᴀᴍᴇ:</b> <b>{escape_html(name)}</b>\n"
                     f"🔗 <b>ᴜꜱᴇʀɴᴀᴍᴇ:</b> @{escape_html(username or 'N/A')}\n"
                     f"📅 <b>ᴊᴏɪɴᴇᴅ ᴀᴛ:</b> <code>{join_time_display} IST</code>\n"
                     f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <b>{len(ensure_dict(data['users']))}</b>\n\n"
                     "╔══════════════════════╗\n"
-                    "║ ✴️ 𝗔𝗖𝗧𝗜𝗢𝗡 𝗕𝗨𝗧𝗧𝗢𝗡𝗦 🌠    ║\n"
+                    "║       ✴️ 𝗔𝗖𝗧𝗜𝗢𝗡 𝗕𝗨𝗧𝗧𝗢𝗡𝗦 🌠      ║\n"
                     "╚══════════════════════╝"
                 )
                 kb = InlineKeyboardMarkup()
@@ -822,7 +822,7 @@ def handle_callbacks(call):
                 "⚠️ <b>ᴋᴇʏ ᴀᴄᴛɪᴠᴀᴛᴇ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
                 f"➤ <code>/redeem {new_key}</code>\n\n"
                 "╔══════════════════════════╗\n"
-                "║      ⚡ 𝗥𝗘𝗗𝗘𝗘𝗠 𝗡𝗢𝗪 ⚡      ║\n"
+                "║             ⚡ 𝗥𝗘𝗗𝗘𝗘𝗠 𝗡𝗢𝗪 ⚡              ║\n"
                 "╚══════════════════════════╝"
             )
             try: bot.send_message(int(target_uid), key_notif, parse_mode="HTML")
