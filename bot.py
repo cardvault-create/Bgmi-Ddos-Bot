@@ -242,7 +242,7 @@ def cmd_start(msg):
     # ===== FINAL MESSAGE =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
-      f"┊         {BOT_NAME}        ┊\n"
+      f"┊         {BOT_NAME}              ┊\n"
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
     )
 
