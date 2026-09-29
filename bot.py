@@ -299,20 +299,17 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER (Random) → Instagram bot jaisa timing =====
-    # Sticker aayega → 3 sec rahega
-    # Final message uske turant baad aayega
-    # Sticker final msg ke 4 sec baad delete hoga
+    # ===== STICKER (Random) → 3 sec dikhega =====
     sticker_msg = None
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
         try:
             sticker_msg = bot.send_sticker(cid, chosen_sticker)
-            time.sleep(3)  # Instagram bot jaisa: 3 sec sticker
+            time.sleep(3)  # ← 3 second sticker dikhega
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE =====
+    # ===== FINAL MESSAGE (3 sec ke baad aayega) =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -382,7 +379,7 @@ def cmd_start(msg):
 
     bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
 
-    # ===== STICKER DELETE (4 sec baad, final msg ke baad) =====
+    # ===== STICKER DELETE (4 sec baad final msg ke baad) =====
     if sticker_msg:
         def delete_sticker():
             time.sleep(4)
