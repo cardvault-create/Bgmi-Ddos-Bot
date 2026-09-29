@@ -477,112 +477,160 @@ def cmd_attack(msg):
     threading.Thread(target=done, daemon=True).start()
     
 # ============= LIVE STATUS (FIXED) =============
+def escape_html(text):
+    """HTML special characters escape karo"""
+    if text is None:
+        return "N/A"
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
     uid = msg.from_user.id
     cid = msg.chat.id
 
-    status_msg = bot.send_message(cid, "📊 ʟᴏᴀᴅɪɴɢ...")
+    try:
+        status_msg = bot.send_message(cid, "📊 ʟᴏᴀᴅɪɴɢ...")
+    except Exception as e:
+        print(f"Status send error: {e}")
+        return
 
     def build_status():
-        with attack_lock:
+        try:
             now = datetime.now()
-            running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+            with attack_lock:
+                running = [(a, dict(atk)) for a, atk in active_attacks.items() if atk['end_time'] > now]
 
-        uptime = str(datetime.now() - BOT_START_TIME).split('.')[0]
-        total_users = len(data['users'])
-        total_attacks = len(data['attack_logs'])
-        total_keys = len(data['keys'])
-        total_stickers = len(data.get('stickers', []))
-        total_videos = len(data.get('videos', []))
-        total_pyf = len(data.get('pyf_videos', []))
-        total_banned = len(data.get('banned_users', {}))
-        user_attacks = data['users'].get(str(uid), {}).get('total_attacks', 0)
-        time_left = time_remaining(uid)
-        role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
+            uptime = str(datetime.now() - BOT_START_TIME).split('.')[0]
+            total_users = len(data.get('users', {}))
+            total_attacks = len(data.get('attack_logs', []))
+            total_keys = len(data.get('keys', {}))
+            total_stickers = len(data.get('stickers', []))
+            total_videos = len(data.get('videos', []))
+            total_pyf = len(data.get('pyf_videos', []))
+            total_banned = len(data.get('banned_users', {}))
+            user_attacks = data['users'].get(str(uid), {}).get('total_attacks', 0)
+            time_left = time_remaining(uid)
+            role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
 
-        txt = ""
+            txt = ""
 
-        if running:
-            atk = running[0][1]
-            rem = int((atk['end_time'] - now).total_seconds())
-            dur = atk.get('duration', 60)
-            pct = int(((dur - rem) / dur) * 100) if dur > 0 else 0
-            filled = int(pct / 10)
-            bar = "▰" * filled + "▱" * (10 - filled)
+            if running:
+                atk = running[0][1]
+                rem = max(0, int((atk['end_time'] - now).total_seconds()))
+                dur = atk.get('duration', 60)
+                pct = int(((dur - rem) / dur) * 100) if dur > 0 else 0
+                pct = max(0, min(100, pct))
+                filled = int(pct / 10)
+                bar = "▰" * filled + "▱" * (10 - filled)
 
-            if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
-            elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
-            elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
-            elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
-            else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+                if pct < 20:
+                    st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
+                elif pct < 50:
+                    st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
+                elif pct < 80:
+                    st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
+                elif pct < 100:
+                    st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
+                else:
+                    st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+
+                target = escape_html(f"{atk.get('target', 'N/A')}:{atk.get('port', 'N/A')}")
+                uname = escape_html(atk.get('username', 'Unknown'))
+
+                txt += (
+                    "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                    "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
+                    "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                    f"{bar} {pct}%\n"
+                    f"{st}\n\n"
+                    "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+                    "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+                    "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+                    f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
+                    f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem}ꜱ</b>\n"
+                    f"┣ 🕐 ᴛᴏᴛᴀʟ ➪ <b>{dur}ꜱ</b>\n"
+                    f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
+                )
+
+            method = escape_html(get_setting('api_method', 'UDP-BIG'))
+            geo = escape_html(get_setting('api_geolocation', 'ALL'))
+            uptime_esc = escape_html(uptime)
 
             txt += (
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                f"{bar} {pct}%\n"
-                f"{st}\n\n"
+                "╔══════════════════════════╗\n"
+                "║   📊 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 📊   ║\n"
+                "╚══════════════════════════╝\n\n"
                 "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-                "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+                "┃  🤖 𝗕𝗢𝗧 𝗜𝗡𝗙𝗢\n"
                 "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-                f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{atk['target']}:{atk['port']}</code>\n"
-                f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem}ꜱ</b>\n"
-                f"┣ 🕐 ᴛᴏᴛᴀʟ ➪ <b>{dur}ꜱ</b>\n"
-                f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{atk.get('username', 'Unknown')}</b>\n\n"
+                f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🟢 <b>ᴏɴʟɪɴᴇ</b>\n"
+                f"┣ ⏱️ ᴜᴘᴛɪᴍᴇ ➪ <b>{uptime_esc}</b>\n"
+                f"┣ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{method}</code>\n"
+                f"┗ 🌍 ɢᴇᴏ ➪ <code>{geo}</code>\n\n"
+                "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+                "┃  📈 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗖𝗦\n"
+                "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+                f"┣ 👥 ᴜꜱᴇʀꜱ ➪ <b>{total_users}</b>\n"
+                f"┣ 🔑 ᴋᴇʏꜱ ➪ <b>{total_keys}</b>\n"
+                f"┣ 💀 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_attacks}</b>\n"
+                f"┣ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{total_banned}</b>\n"
+                f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{total_stickers}</b>\n"
+                f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{total_videos}</b>\n"
+                f"┗ 🎬 ᴘʏꜰ ➪ <b>{total_pyf}</b>\n\n"
+                "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+                "┃  👤 𝗬𝗢𝗨𝗥 𝗜𝗡𝗙𝗢\n"
+                "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+                f"┣ 🎭 ʀᴏʟᴇ ➪ {role}\n"
+                f"┣ 🎯 ʏᴏᴜʀ ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{user_attacks}</b>\n"
+                f"┗ ⏰ ᴛɪᴍᴇ ➪ <b>{time_left}</b>\n\n"
+                "╔══════════════════════════╗\n"
+                "║   🔥 𝗥𝗘𝗔𝗗𝗬 𝗧𝗢 𝗔𝗧𝗧𝗔𝗖𝗞 🔥   ║\n"
+                "╚══════════════════════════╝"
             )
+            return txt
+        except Exception as e:
+            print(f"Build Status Error: {e}")
+            return "⚠️ <b>ꜱᴛᴀᴛᴜꜱ ʟᴏᴀᴅ ᴇʀʀᴏʀ</b>"
 
-        txt += (
-            "╔══════════════════════════╗\n"
-            "║   📊 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 📊   ║\n"
-            "╚══════════════════════════╝\n\n"
-            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-            "┃  🤖 𝗕𝗢𝗧 𝗜𝗡𝗙𝗢\n"
-            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-            f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🟢 <b>ᴏɴʟɪɴᴇ</b>\n"
-            f"┣ ⏱️ ᴜᴘᴛɪᴍᴇ ➪ <b>{uptime}</b>\n"
-            f"┣ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
-            f"┗ 🌍 ɢᴇᴏ ➪ <code>{get_setting('api_geolocation', 'ALL')}</code>\n\n"
-            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-            "┃  📈 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗖𝗦\n"
-            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-            f"┣ 👥 ᴜꜱᴇʀꜱ ➪ <b>{total_users}</b>\n"
-            f"┣ 🔑 ᴋᴇʏꜱ ➪ <b>{total_keys}</b>\n"
-            f"┣ 💀 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_attacks}</b>\n"
-            f"┣ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{total_banned}</b>\n"
-            f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{total_stickers}</b>\n"
-            f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{total_videos}</b>\n"
-            f"┗ 🎬 ᴘʏꜰ ➪ <b>{total_pyf}</b>\n\n"
-            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-            "┃  👤 𝗬𝗢𝗨𝗥 𝗜𝗡𝗙𝗢\n"
-            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-            f"┣ 🎭 ʀᴏʟᴇ ➪ {role}\n"
-            f"┣ 🎯 ʏᴏᴜʀ ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{user_attacks}</b>\n"
-            f"┗ ⏰ ᴛɪᴍᴇ ➪ <b>{time_left}</b>\n\n"
-            "╔══════════════════════════╗\n"
-            "║   🔥 𝗥𝗘𝗔𝗗𝗬 𝗧𝗢 𝗔𝗧𝗧𝗔𝗖𝗞 🔥   ║\n"
-            "╚══════════════════════════╝"
-        )
-        return txt
-
+    # Pehla update
     try:
-        bot.edit_message_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
+        bot.edit_message_text(
+            chat_id=cid,
+            message_id=status_msg.message_id,
+            text=build_status(),
+            parse_mode="HTML"
+        )
     except Exception as e:
-        print(f"Status Error: {e}")
-        try:
-            bot.edit_message_text(cid, status_msg.message_id, build_status())
-        except: pass
+        print(f"Status First Edit Error: {e}")
 
+    # Auto update thread
     def auto_update():
-        for _ in range(400):
+        last_text = None
+        for _ in range(400):  # 400 * 3s = 20 min max
             time.sleep(3)
             try:
-                bot.edit_message_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
-            except:
+                new_text = build_status()
+                if new_text != last_text:
+                    bot.edit_message_text(
+                        chat_id=cid,
+                        message_id=status_msg.message_id,
+                        text=new_text,
+                        parse_mode="HTML"
+                    )
+                    last_text = new_text
+            except Exception as e:
+                err = str(e)
+                # Agar message not modified ya flood wait hai toh skip karo
+                if "message is not modified" in err.lower():
+                    continue
+                if "Too Many Requests" in err or "retry after" in err.lower():
+                    time.sleep(5)
+                    continue
+                # Agar message delete ho gaya ya koi aur permanent error hai toh break
+                print(f"Auto Update Error: {e}")
                 break
 
     threading.Thread(target=auto_update, daemon=True).start()
-
 
 # ============= PROFILE =============
 @bot.message_handler(commands=['profile'])
