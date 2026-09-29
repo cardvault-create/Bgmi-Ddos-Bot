@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+"""
+APROLX ELITE V22 - TELEGRAM BOT
+Fixed: get_setting() default argument
+"""
+
 import telebot
 from telebot.types import ReplyKeyboardMarkup
 import threading
@@ -17,7 +23,7 @@ sys.stderr.reconfigure(line_buffering=True)
 BOT_START_TIME = datetime.now()
 
 # ============= CONFIG =============
-BOT_TOKEN = "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY"
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAGLF4op1GZ3TlClElifakajJMqYq3RSRUc")
 BOT_OWNER = 1987818347
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
@@ -189,8 +195,8 @@ def cmd_attack(msg):
     if is_banned(uid): return
     cid = msg.chat.id
 
-    if get_setting('maintenance_mode') and not is_owner(uid):
-        bot.reply_to(msg, f"🔧 {get_setting('maintenance_msg')}"); return
+    if get_setting('maintenance_mode', False) and not is_owner(uid):
+        bot.reply_to(msg, f"🔧 {get_setting('maintenance_msg', 'Maintenance')}"); return
 
     if msg.chat.type in ['group', 'supergroup']:
         if str(cid) not in data["approved_groups"]:
@@ -525,80 +531,3 @@ while True:
     except Exception as e:
         print(f"⚠️ Polling Error: {e}")
         time.sleep(3)
-```
-
-Save karo: CTRL + X → Y → Enter
-
----
-
-🎯 STEP 4: Bot Chalao
-
-```bash
-python bot.py
-```
-
-Output aayega:
-
-```
-=======================================================
-  🔥 APROLX ELITE V22 - POLLING MODE
-=======================================================
-  👑 Owner: 1987818347
-  📡 API: https://stresser.works/api/start
-=======================================================
-  ✅ Bot running...
-=======================================================
-```
-
-Ab Telegram pe /start bhejo.
-
----
-
-🎯 STEP 5: Background Me Chalao (Optional)
-
-Bot chal raha hai toh CTRL + C dabao. Fir:
-
-```bash
-termux-wake-lock
-nohup python bot.py > bot.log 2>&1 &
-```
-
-Logs dekho:
-
-```bash
-tail -f bot.log
-```
-
----
-
-📋 Quick Commands Summary
-
-Kaam Command
-Bot start cd ~/aprolx-bot && python bot.py
-Background cd ~/aprolx-bot && nohup python bot.py > bot.log 2>&1 &
-Bot band pkill -f "python bot.py"
-Logs tail -f ~/aprolx-bot/bot.log
-Wake lock termux-wake-lock
-Process check ps aux \| grep python
-
----
-
-⚠️ Important Baatein
-
-1. Polling me reply 3-5 second me aayega — yeh normal hai, stable hai
-2. VPN zaroori nahi — polling direct chalta hai
-3. Battery optimization OFF karo Termux ke liye
-4. Termux lock karo recent apps me
-
----
-
-🚀 Abhi Yeh Karo
-
-1. Termux fresh karo (upar wale commands)
-2. nano bot.py kholo
-3. Full code paste karo
-4. Save karo: CTRL + X → Y → Enter
-5. python bot.py chalao
-6. Telegram pe /start bhejo
-
-Screenshot bhejo jab bot chal jaye. 🚀
