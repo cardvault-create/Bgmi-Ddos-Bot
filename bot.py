@@ -5,7 +5,7 @@ Owner: 1987818347
 """
 
 import telebot
-from telebot.types import ReplyKeyboardRemove
+from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 import threading
 import os
 import re
@@ -26,7 +26,7 @@ BOT_START_TIME = datetime.now()
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
 
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝚇˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
@@ -187,6 +187,26 @@ def api_attack(ip, port, dur):
     except Exception as e:
         return False, str(e)
 
+# ============= KEYBOARDS =============
+def kb_main(uid):
+    m = ReplyKeyboardMarkup(resize_keyboard=True)
+    if is_owner(uid):
+        m.row("🔥 ATTACK", "📊 STATUS")
+        m.row("👤 PROFILE", "👑 OWNER PANEL")
+    elif is_reseller(uid) or has_valid_key(uid):
+        m.row("🔥 ATTACK", "📊 STATUS")
+        m.row("🔑 REDEEM", "👤 PROFILE")
+    else:
+        m.row("🔑 REDEEM", "👤 PROFILE")
+    return m
+
+def kb_owner():
+    m = ReplyKeyboardMarkup(resize_keyboard=True)
+    m.row("🔑 GEN KEY", "👥 USERS")
+    m.row("📊 STATS", "📢 BROADCAST")
+    m.row("⚙️ SETTINGS", "❌ CLOSE")
+    return m
+
 # ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
@@ -199,14 +219,7 @@ def cmd_start(msg):
     username = msg.from_user.username
     cid = msg.chat.id
 
-    # ⭐ PURANE KEYBOARD BUTTONS REMOVE KARNE KE LIYE
-    try:
-        bot.send_message(cid, "🔄 Removing old keyboard...", reply_markup=ReplyKeyboardRemove())
-        time.sleep(0.3)
-    except: pass
-    # ⭐ AB PURANE BUTTONS GAYAB HO JAYENGE
-
-    # ===== CHECKING ANIMATION (with PYF video attached) =====
+    # ===== CHECKING ANIMATION =====
     check_text = (
         "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
         "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
@@ -286,9 +299,7 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ============================================================
-    # ⭐ STICKER → 5 SEC → FINAL MSG → 1 SEC → STICKER DELETE
-    # ============================================================
+    # ===== STICKER → 5 SEC → FINAL MSG → 1 SEC → DELETE =====
     sticker_msg = None
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
@@ -298,7 +309,7 @@ def cmd_start(msg):
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE =====
+    # ===== FINAL MESSAGE (WITH KEYBOARD BUTTONS) =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -324,7 +335,8 @@ def cmd_start(msg):
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "⚠️ <b>Bina key ke attack nahi lagega!</b>\n"
             "🔑 Key lene ke liye owner se contact karo.\n"
-            "━━━━━━━━━━━━━━━━━━━━━"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "👇 <b>Neeche buttons se start karo</b>"
         )
     elif has_key:
         u = data["users"].get(str(uid), {})
@@ -361,10 +373,12 @@ def cmd_start(msg):
             "📌 <b>Key Redeem Karo:</b>\n"
             "➤ <code>/redeem YOUR-KEY</code>\n\n"
             "🔑 Naya key lene ke liye owner se contact karo.\n"
-            "━━━━━━━━━━━━━━━━━━━━━"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "👇 <b>Neeche buttons se start karo</b>"
         )
 
-    bot.send_message(cid, text, parse_mode="HTML")
+    # ⭐ FINAL MESSAGE WITH KEYBOARD BUTTONS
+    bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
 
     # ===== STICKER DELETE (final msg ke 1 sec baad) =====
     if sticker_msg:
@@ -570,7 +584,7 @@ def cmd_status(msg):
 @bot.message_handler(commands=['panel'])
 def cmd_panel(msg):
     if not is_owner(msg.from_user.id): return
-    bot.reply_to(msg, "👑 <b>OWNER PANEL</b>\n\nCommands use karo:\n/panel /users /stats /broadcast /ban /unban", parse_mode="HTML")
+    bot.reply_to(msg, "👑 <b>OWNER PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
 
 @bot.message_handler(commands=['users'])
 def cmd_users(msg):
@@ -866,6 +880,48 @@ def cmd_settings(msg):
         "━━━━━━━━━━━━━━━━━━━━━"
     )
     bot.reply_to(msg, txt, parse_mode="HTML")
+
+# ============= BUTTONS =============
+@bot.message_handler(func=lambda m: m.text == "🔥 ATTACK")
+def btn_attack(msg):
+    bot.reply_to(msg, "🎯 <code>/attack IP PORT TIME</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "📊 STATUS")
+def btn_status(msg): cmd_status(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👤 PROFILE")
+def btn_profile(msg): cmd_profile(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👑 OWNER PANEL")
+def btn_owner(msg):
+    if not is_owner(msg.from_user.id): return
+    bot.reply_to(msg, "👑 <b>PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔑 REDEEM")
+def btn_redeem(msg):
+    bot.reply_to(msg, "🔑 <code>/redeem KEY</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔑 GEN KEY")
+def btn_genkey(msg):
+    bot.reply_to(msg, "🔑 <code>/genkey DAYS AMOUNT</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "📊 STATS")
+def btn_stats(msg): cmd_stats(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👥 USERS")
+def btn_users(msg): cmd_users(msg)
+
+@bot.message_handler(func=lambda m: m.text == "📢 BROADCAST")
+def btn_broadcast(msg):
+    bot.reply_to(msg, "📢 <code>/broadcast MSG</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "⚙️ SETTINGS")
+def btn_settings(msg):
+    cmd_settings(msg)
+
+@bot.message_handler(func=lambda m: m.text == "❌ CLOSE")
+def btn_close(msg):
+    bot.reply_to(msg, "❌ Closed.", reply_markup=kb_main(msg.from_user.id))
 
 # ============= MAIN =============
 print("=" * 55)
