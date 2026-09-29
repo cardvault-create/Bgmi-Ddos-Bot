@@ -43,6 +43,7 @@ def load_data():
         "approved_groups": {}, "attack_logs": [], "admin_logs": [],
         "banned_users": {}, "feedbacks": [],
         "stickers": [],
+        "videos": [],
         "pyf_videos": [],
         "settings": {
             "max_attack_time": 300,
@@ -79,25 +80,33 @@ def save_data(d):
 data = load_data()
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
-# ============= RANDOM ROTATION (No Repeat) =============
+# ============= RANDOM ROTATION =============
 _sticker_pool = []
+_video_pool = []
 _pyf_pool = []
 
 def get_random_sticker():
     global _sticker_pool
     stickers = data.get("stickers", [])
-    if not stickers:
-        return None
+    if not stickers: return None
     if not _sticker_pool:
         _sticker_pool = stickers.copy()
         random.shuffle(_sticker_pool)
     return _sticker_pool.pop()
 
+def get_random_video():
+    global _video_pool
+    videos = data.get("videos", [])
+    if not videos: return None
+    if not _video_pool:
+        _video_pool = videos.copy()
+        random.shuffle(_video_pool)
+    return _video_pool.pop()
+
 def get_random_pyf():
     global _pyf_pool
     pyfs = data.get("pyf_videos", [])
-    if not pyfs:
-        return None
+    if not pyfs: return None
     if not _pyf_pool:
         _pyf_pool = pyfs.copy()
         random.shuffle(_pyf_pool)
@@ -264,7 +273,7 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER (Random Rotation) → then DELETE =====
+    # ===== STICKER (Random) → 3 sec → DELETE =====
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
         try:
@@ -277,7 +286,7 @@ def cmd_start(msg):
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE =====
+    # ===== FINAL MESSAGE (with PYF VIDEO if available) =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -345,7 +354,16 @@ def cmd_start(msg):
             "👇 <b>Neeche buttons se start karo</b>"
         )
 
-    bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+    # ===== SEND WITH PYF VIDEO (attached) =====
+    chosen_pyf = get_random_pyf()
+    if chosen_pyf:
+        try:
+            bot.send_video(cid, chosen_pyf, caption=text, parse_mode="HTML", reply_markup=kb_main(uid))
+        except Exception as e:
+            print(f"Pyf Send Error: {e}")
+            bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+    else:
+        bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
 
 # ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
@@ -395,7 +413,7 @@ def cmd_attack(msg):
     if not ok:
         bot.reply_to(msg, f"❌ <b>FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
-    # ===== SEND ATTACK VIDEO (from /addpyf) with CAPTION =====
+    # ===== ATTACK LAUNCHED (with video attached) =====
     attack_caption = (
         f"💀 <b>ATTACK LAUNCHED</b> 💀\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
@@ -406,12 +424,12 @@ def cmd_attack(msg):
         f"📅 Started: <b>{ist_now()} IST</b>"
     )
 
-    chosen_pyf = get_random_pyf()
-    if chosen_pyf:
+    chosen_video = get_random_video()
+    if chosen_video:
         try:
-            bot.send_video(cid, chosen_pyf, caption=attack_caption, parse_mode="HTML")
+            bot.send_video(cid, chosen_video, caption=attack_caption, parse_mode="HTML")
         except Exception as e:
-            print(f"Pyf Video Error: {e}")
+            print(f"Video Error: {e}")
             bot.reply_to(msg, attack_caption, parse_mode="HTML")
     else:
         bot.reply_to(msg, attack_caption, parse_mode="HTML")
@@ -432,9 +450,19 @@ def cmd_attack(msg):
     def done():
         time.sleep(dur)
         with attack_lock: active_attacks.pop(aid, None)
-        try:
-            bot.send_message(cid, f"✅ <b>ATTACK COMPLETE</b>\n🎯 {ip}:{port} | {dur}s", parse_mode="HTML")
-        except: pass
+        complete_caption = f"✅ <b>ATTACK COMPLETE</b>\n🎯 {ip}:{port} | {dur}s"
+        chosen_video_done = get_random_video()
+        if chosen_video_done:
+            try:
+                bot.send_video(cid, chosen_video_done, caption=complete_caption, parse_mode="HTML")
+            except:
+                try:
+                    bot.send_message(cid, complete_caption, parse_mode="HTML")
+                except: pass
+        else:
+            try:
+                bot.send_message(cid, complete_caption, parse_mode="HTML")
+            except: pass
 
     threading.Thread(target=done, daemon=True).start()
 
@@ -572,7 +600,8 @@ def cmd_stats(msg):
         f"🔑 Keys: <b>{len(data['keys'])}</b>\n"
         f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
         f"❄ Stickers: <b>{len(data.get('stickers', []))}</b>\n"
-        f"📹 Pyf Videos: <b>{len(data.get('pyf_videos', []))}</b>\n"
+        f"📹 Videos: <b>{len(data.get('videos', []))}</b>\n"
+        f"🎬 PYF Videos: <b>{len(data.get('pyf_videos', []))}</b>\n"
         f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>"
     )
     bot.reply_to(msg, txt, parse_mode="HTML")
@@ -638,8 +667,7 @@ def cmd_maintenance(msg):
 # ============= STICKER COMMANDS =============
 @bot.message_handler(commands=['removesticker'])
 def cmd_removesticker(msg):
-    if not is_owner(msg.from_user.id):
-        return
+    if not is_owner(msg.from_user.id): return
     p = msg.text.split()
     if len(p) < 2:
         if not data["stickers"]:
@@ -664,8 +692,7 @@ def cmd_removesticker(msg):
 
 @bot.message_handler(commands=['liststickers'])
 def cmd_liststickers(msg):
-    if not is_owner(msg.from_user.id):
-        return
+    if not is_owner(msg.from_user.id): return
     if not data["stickers"]:
         bot.reply_to(msg, "❄ Koi sticker nahi hai.")
         return
@@ -675,21 +702,58 @@ def cmd_liststickers(msg):
     txt += f"\n🔹 𝗧𝗼𝘁𝗮𝗹 {len(data['stickers'])}"
     bot.reply_to(msg, txt)
 
+# ============= VIDEO COMMANDS (Attack wali) =============
+@bot.message_handler(commands=['listvideo'])
+def cmd_listvideo(msg):
+    if not is_owner(msg.from_user.id): return
+    if not data["videos"]:
+        bot.reply_to(msg, "📹 Koi video nahi hai.")
+        return
+    txt = "📹 🇻 🇮 🇩 🇪 🇴 🇸 ：\n"
+    for i, v in enumerate(data["videos"], 1):
+        txt += f"🛸{i} {v}\n"
+    txt += f"\n⎘ 丅ᗝ丅ᗩᒪ ： {len(data['videos'])}"
+    bot.reply_to(msg, txt)
+
+@bot.message_handler(commands=['delvideo'])
+def cmd_delvideo(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2:
+        if not data["videos"]:
+            bot.reply_to(msg, "📹 Koi video nahi hai.")
+            return
+        txt = "📹 <b>VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
+        for i, v in enumerate(data["videos"], 1):
+            txt += f"{i}. <code>{v}</code>\n"
+        txt += "\n❌ Delete: <code>/delvideo NUMBER</code>"
+        bot.reply_to(msg, txt, parse_mode="HTML")
+        return
+    try:
+        idx = int(p[1]) - 1
+        if 0 <= idx < len(data["videos"]):
+            data["videos"].pop(idx)
+            save_data(data)
+            bot.reply_to(msg, f"✅ Video #{p[1]} removed!\n📹 Total: <b>{len(data['videos'])}</b>", parse_mode="HTML")
+        else:
+            bot.reply_to(msg, "❌ Invalid number!")
+    except:
+        bot.reply_to(msg, "❌ Usage: <code>/delvideo NUMBER</code>", parse_mode="HTML")
+
 # ============= PYF VIDEO COMMANDS =============
 @bot.message_handler(commands=['addpyf'])
 def cmd_addpyf(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    bot.reply_to(msg, "📤 Ab ek <b>video</b> bhejo jo attack ke saath attach hoga.", parse_mode="HTML")
+    if not is_owner(msg.from_user.id): return
+    _pending_pyf[msg.from_user.id] = True
+    bot.reply_to(msg, "📤 Ab ek <b>video</b> forward karo jo /start ke saath attach hoga.", parse_mode="HTML")
 
 @bot.message_handler(commands=['listpyf'])
 def cmd_listpyf(msg):
-    if not is_owner(msg.from_user.id):
-        return
+    if not is_owner(msg.from_user.id): return
     if not data["pyf_videos"]:
-        bot.reply_to(msg, "📹 Koi PYF video nahi hai.")
+        bot.reply_to(msg, "🎬 Koi PYF video nahi hai.")
         return
-    txt = "📹 🇵 🇾 🇫 🇻 🇮 🇩 🇪 🇴 🇸 ：\n"
+    txt = "🎬 🇵 🇾 🇫 🇻 🇮 🇩 🇪 🇴 🇸 ：\n"
     for i, v in enumerate(data["pyf_videos"], 1):
         txt += f"🛸{i} {v}\n"
     txt += f"\n⎘ 丅ᗝ丅ᗩᒪ ： {len(data['pyf_videos'])}"
@@ -697,14 +761,13 @@ def cmd_listpyf(msg):
 
 @bot.message_handler(commands=['delpyf'])
 def cmd_delpyf(msg):
-    if not is_owner(msg.from_user.id):
-        return
+    if not is_owner(msg.from_user.id): return
     p = msg.text.split()
     if len(p) < 2:
         if not data["pyf_videos"]:
-            bot.reply_to(msg, "📹 Koi PYF video nahi hai.")
+            bot.reply_to(msg, "🎬 Koi PYF video nahi hai.")
             return
-        txt = "📹 <b>PYF VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
+        txt = "🎬 <b>PYF VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
         for i, v in enumerate(data["pyf_videos"], 1):
             txt += f"{i}. <code>{v}</code>\n"
         txt += "\n❌ Delete: <code>/delpyf NUMBER</code>"
@@ -715,18 +778,17 @@ def cmd_delpyf(msg):
         if 0 <= idx < len(data["pyf_videos"]):
             data["pyf_videos"].pop(idx)
             save_data(data)
-            bot.reply_to(msg, f"✅ PYF Video #{p[1]} removed!\n📹 Total: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
+            bot.reply_to(msg, f"✅ PYF Video #{p[1]} removed!\n🎬 Total: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "❌ Invalid number!")
     except:
         bot.reply_to(msg, "❌ Usage: <code>/delpyf NUMBER</code>", parse_mode="HTML")
 
-# ============= AUTO STICKER HANDLER =============
+# ============= AUTO STICKER =============
 @bot.message_handler(content_types=['sticker'])
 def auto_sticker(msg):
     uid = msg.from_user.id
-    if not is_owner(uid):
-        return
+    if not is_owner(uid): return
     file_id = msg.sticker.file_id
     if file_id not in data["stickers"]:
         data["stickers"].append(file_id)
@@ -735,36 +797,37 @@ def auto_sticker(msg):
     else:
         bot.reply_to(msg, "ℹ️ Yeh sticker already added hai.")
 
-# ============= PYF VIDEO HANDLER =============
+# ============= VIDEO HANDLER =============
 _pending_pyf = {}
 
-@bot.message_handler(commands=['addpyf'])
-def cmd_addpyf_prompt(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    _pending_pyf[msg.from_user.id] = True
-    bot.reply_to(msg, "📤 Ab ek <b>video</b> bhejo jo attack ke saath attach hoga.", parse_mode="HTML")
-
 @bot.message_handler(content_types=['video'])
-def handle_pyf_video(msg):
+def handle_video(msg):
     uid = msg.from_user.id
-    if not is_owner(uid):
-        return
+    if not is_owner(uid): return
+    file_id = msg.video.file_id
+
+    # Check agar /addpyf command diya tha
     if _pending_pyf.get(uid):
         _pending_pyf[uid] = False
-        file_id = msg.video.file_id
         if file_id not in data["pyf_videos"]:
             data["pyf_videos"].append(file_id)
             save_data(data)
-            bot.reply_to(msg, f"✅ PYF Video added!\n📹 Total: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
+            bot.reply_to(msg, f"✅ PYF Video added!\n🎬 Total: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
+        else:
+            bot.reply_to(msg, "ℹ️ Yeh PYF video already added hai.")
+    else:
+        # Normal video → auto add (attack wali)
+        if file_id not in data["videos"]:
+            data["videos"].append(file_id)
+            save_data(data)
+            bot.reply_to(msg, f"✅ Video auto-added!\n📹 Total: <b>{len(data['videos'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "ℹ️ Yeh video already added hai.")
 
 # ============= SETTINGS COMMAND =============
 @bot.message_handler(commands=['settings'])
 def cmd_settings(msg):
-    if not is_owner(msg.from_user.id):
-        return
+    if not is_owner(msg.from_user.id): return
     txt = (
         "⚙️ <b>ALL COMMANDS — OWNER ONLY</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -789,8 +852,12 @@ def cmd_settings(msg):
         "┣ Send sticker ➪ Auto Add\n"
         "┣ /removesticker NUMBER ➪ Remove Sticker\n"
         "┗ /liststickers ➪ List Stickers\n\n"
-        "📹 <b>PYF VIDEO (Attack ke saath)</b>\n"
-        "┣ /addpyf ➪ Add PYF Video\n"
+        "📹 <b>VIDEO (Attack ke saath)</b>\n"
+        "┣ Send video ➪ Auto Add\n"
+        "┣ /listvideo ➪ List Videos\n"
+        "┗ /delvideo NUMBER ➪ Delete Video\n\n"
+        "🎬 <b>PYF VIDEO (Start ke saath)</b>\n"
+        "┣ /addpyf ➪ Add PYF Video (fir video forward)\n"
         "┣ /listpyf ➪ List PYF Videos\n"
         "┗ /delpyf NUMBER ➪ Delete PYF Video\n\n"
         "━━━━━━━━━━━━━━━━━━━━━"
@@ -846,7 +913,8 @@ print("=" * 55)
 print(f"  👑 Owner: {BOT_OWNER}")
 print(f"  📡 API: {get_setting('api_url', DEFAULT_API_URL)}")
 print(f"  ❄ Stickers: {len(data.get('stickers', []))}")
-print(f"  📹 PYF Videos: {len(data.get('pyf_videos', []))}")
+print(f"  📹 Videos: {len(data.get('videos', []))}")
+print(f"  🎬 PYF Videos: {len(data.get('pyf_videos', []))}")
 print("=" * 55)
 print("  ✅ Bot running...")
 print("=" * 55)
