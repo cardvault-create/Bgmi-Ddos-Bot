@@ -26,7 +26,7 @@ from telegram.ext import (
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
 
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙽𝙸𝙓˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
@@ -147,7 +147,6 @@ def time_remaining(uid):
     except: return "Error"
 
 user_cooldown = {}
-attack_lock = asyncio.Lock()
 active_attacks = {}
 
 def get_cd_remaining(uid):
@@ -185,7 +184,7 @@ def api_attack(ip, port, dur):
 
 # ============= INLINE KEYBOARDS (COLORFUL) =============
 def ikb_main(uid):
-    m = InlineKeyboardMarkup([
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔥 ATTACK", callback_data="cmd_attack", style="danger"),
             InlineKeyboardButton("📊 STATUS", callback_data="cmd_status", style="success"),
@@ -195,10 +194,9 @@ def ikb_main(uid):
             InlineKeyboardButton("👑 OWNER PANEL", callback_data="cmd_panel", style="danger"),
         ],
     ])
-    return m
 
 def ikb_user(uid):
-    m = InlineKeyboardMarkup([
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔥 ATTACK", callback_data="cmd_attack", style="danger"),
             InlineKeyboardButton("📊 STATUS", callback_data="cmd_status", style="success"),
@@ -208,19 +206,17 @@ def ikb_user(uid):
             InlineKeyboardButton("👤 PROFILE", callback_data="cmd_profile", style="primary"),
         ],
     ])
-    return m
 
 def ikb_no_key():
-    m = InlineKeyboardMarkup([
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔑 REDEEM", callback_data="cmd_redeem", style="primary"),
             InlineKeyboardButton("👤 PROFILE", callback_data="cmd_profile", style="primary"),
         ],
     ])
-    return m
 
 def ikb_owner():
-    m = InlineKeyboardMarkup([
+    return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔑 GEN KEY", callback_data="cmd_genkey", style="primary"),
             InlineKeyboardButton("👥 USERS", callback_data="cmd_users", style="success"),
@@ -234,7 +230,6 @@ def ikb_owner():
             InlineKeyboardButton("❌ CLOSE", callback_data="cmd_close", style="danger"),
         ],
     ])
-    return m
 
 # ============= START COMMAND =============
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -391,8 +386,15 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         kb = ikb_no_key()
 
-    await context.bot.send_message(cid, text, reply_markup=kb, parse_mode="HTML")
+    # ⭐ SEND FINAL MESSAGE — YEH IMPORTANT HAI
+    try:
+        await context.bot.send_message(cid, text, reply_markup=kb, parse_mode="HTML")
+        print(f"✅ Final message sent to {cid}")
+    except Exception as e:
+        print(f"❌ Final message error: {e}")
+        await context.bot.send_message(cid, text, parse_mode="HTML")
 
+    # Delete sticker after 1 sec
     if sticker_msg:
         await asyncio.sleep(1)
         try:
@@ -936,13 +938,15 @@ def main():
     print(f"  {BOT_NAME}")
     print("=" * 55)
     print(f"  👑 Owner: {BOT_OWNER}")
+    print(f"  ❄ Stickers: {len(data.get('stickers', []))}")
+    print(f"  📹 Videos: {len(data.get('videos', []))}")
+    print(f"  🎬 PYF Videos: {len(data.get('pyf_videos', []))}")
     print("=" * 55)
     print("  ✅ Bot running...")
     print("=" * 55)
 
     app = Application.builder().token(BOT_TOKEN).build()
 
-    # Commands
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_start))
     app.add_handler(CommandHandler("attack", cmd_attack))
@@ -971,11 +975,9 @@ def main():
     app.add_handler(CommandHandler("delpyf", cmd_delpyf))
     app.add_handler(CommandHandler("settings", cmd_settings))
 
-    # Content
     app.add_handler(MessageHandler(filters.Sticker.ALL, handle_sticker))
     app.add_handler(MessageHandler(filters.VIDEO, handle_video))
 
-    # Callbacks
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     app.run_polling(drop_pending_updates=True)
