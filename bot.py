@@ -35,6 +35,19 @@ DEFAULT_API_GEOLOCATION = "ALL"
 
 DATA_FILE = "bot_data.json"
 
+# ============= DEVELOPER CONTACT BUTTON =============
+DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞"
+DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
+
+def dev_btn_kb():
+    """Return inline keyboard with developer contact button"""
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton(
+        DEV_BUTTON_TEXT,
+        url=f"https://t.me/{DEVELOPER_USERNAME}"
+    ))
+    return kb
+
 HEALTH = {
     "total_messages": 0, "total_commands": 0, "total_errors": 0,
     "total_attacks": 0, "api_success": 0, "api_failed": 0,
@@ -360,7 +373,7 @@ def check_ban(msg):
                 "║             🔒 𝗔𝗖𝗖𝗘𝗦𝗦 𝗕𝗟𝗢𝗖𝗞𝗘𝗗 🔒          ║\n"
                 "╚══════════════════════════╝"
             )
-            bot.reply_to(msg, ban_msg, parse_mode="HTML")
+            bot.reply_to(msg, ban_msg, parse_mode="HTML", reply_markup=dev_btn_kb())
             return True
     except Exception as e:
         print(f"check_ban error: {e}")
@@ -777,7 +790,7 @@ def handle_callbacks(call):
                     "║        🔒 𝗔𝗖𝗖𝗘𝗦𝗦 𝗕𝗟𝗢𝗖𝗞𝗘𝗗 🔒    ║\n"
                     "╚══════════════════════╝"
                 )
-                bot.send_message(int(target_uid), ban_notif, parse_mode="HTML")
+                bot.send_message(int(target_uid), ban_notif, parse_mode="HTML", reply_markup=dev_btn_kb())
             except Exception as e: print(f"Ban notif error: {e}")
 
             try: bot.answer_callback_query(call.id, f"✅ User {target_uid} banned!", show_alert=True)
