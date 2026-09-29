@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪
+˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙄𝙓˼ ♪
 Owner: 1987818347
 """
 
@@ -25,7 +25,7 @@ BOT_START_TIME = datetime.now()
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙄𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
@@ -132,16 +132,53 @@ def has_valid_key(uid):
     except: return False
 
 def time_remaining(uid):
+    """Precise time remaining with days, hours, minutes, seconds"""
     if is_owner(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
     if is_reseller(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
     u = data["users"].get(str(uid))
     if not u or not u.get('key_expiry'): return "❌ ɴᴏ ᴋᴇʏ"
     try:
         rem = datetime.fromisoformat(u['key_expiry']) - datetime.now()
-        if rem.total_seconds() <= 0: return "❌ ᴇxᴘɪʀᴇᴅ"
-        d = rem.days; h, r = divmod(rem.seconds, 3600); m, _ = divmod(r, 60)
-        return f"{d}ᴅ {h}ʜ {m}ᴍ"
+        total = int(rem.total_seconds())
+        if total <= 0: return "❌ ᴇxᴘɪʀᴇᴅ"
+        d = total // 86400
+        h = (total % 86400) // 3600
+        m = (total % 3600) // 60
+        s = total % 60
+        parts = []
+        if d > 0: parts.append(f"{d}ᴅ")
+        if h > 0: parts.append(f"{h}ʜ")
+        if m > 0: parts.append(f"{m}ᴍ")
+        parts.append(f"{s}ꜱ")
+        return " ".join(parts)
     except: return "❌ ᴇʀʀᴏʀ"
+
+def time_remaining_long(uid):
+    """Detailed time for profile"""
+    if is_owner(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
+    if is_reseller(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
+    u = data["users"].get(str(uid))
+    if not u or not u.get('key_expiry'): return "❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
+    try:
+        rem = datetime.fromisoformat(u['key_expiry']) - datetime.now()
+        total = int(rem.total_seconds())
+        if total <= 0: return "❌ ᴇxᴘɪʀᴇᴅ"
+        d = total // 86400
+        h = (total % 86400) // 3600
+        m = (total % 3600) // 60
+        s = total % 60
+        lines = []
+        if d > 0: lines.append(f"  ┣ 📅 ᴅᴀʏꜱ ➪ <b>{d}</b>")
+        if h > 0: lines.append(f"  ┣ 🕐 ʜᴏᴜʀꜱ ➪ <b>{h}</b>")
+        if m > 0: lines.append(f"  ┣ ⏱️ ᴍɪɴᴜᴛᴇꜱ ➪ <b>{m}</b>")
+        lines.append(f"  ┗ ⚡ ꜱᴇᴄᴏɴᴅꜱ ➪ <b>{s}</b>")
+        return "\n".join(lines)
+    except: return "❌ ᴇʀʀᴏʀ"
+
+def escape_html(text):
+    if text is None:
+        return "N/A"
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 user_cooldown = {}
 attack_lock = threading.Lock()
@@ -167,6 +204,50 @@ def is_attack_running():
 
 def ist_now():
     return (datetime.now() + timedelta(hours=5, minutes=30)).strftime('%H:%M:%S')
+
+# ============= BAN CHECK MIDDLEWARE =============
+def check_ban(msg):
+    """Returns True if user is banned, sends premium ban message"""
+    uid = msg.from_user.id
+    if is_banned(uid):
+        try:
+            ban_info = data["banned_users"].get(str(uid), {})
+            if isinstance(ban_info, dict):
+                reason = ban_info.get("reason", "ᴠɪᴏʟᴀᴛɪᴏɴ ᴏꜰ ᴛᴇʀᴍꜱ")
+                banned_at = ban_info.get("banned_at", "N/A")
+                try:
+                    dt = datetime.fromisoformat(banned_at)
+                    banned_at = dt.strftime("%d %b %Y %H:%M")
+                except: pass
+            else:
+                reason = "ᴠɪᴏʟᴀᴛɪᴏɴ ᴏꜰ ᴛᴇʀᴍꜱ"
+                banned_at = "N/A"
+            
+            ban_msg = (
+                "╔══════════════════════════════╗\n"
+                "║   🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫   ║\n"
+                "╚══════════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   ⛔ 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗕𝗔𝗡𝗡𝗘𝗗 ⛔\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                "🔒 <b>ᴀᴀᴘᴋᴏ ɪꜱ ʙᴏᴛ ꜱᴇ ʙᴀɴ ᴋᴀʀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ</b>\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🆔 <b>ʏᴏᴜʀ ɪᴅ:</b> <code>{uid}</code>\n"
+                f"📅 <b>ʙᴀɴɴᴇᴅ ᴀᴛ:</b> <code>{banned_at}</code>\n"
+                f"📝 <b>ʀᴇᴀꜱᴏɴ:</b> <i>{reason}</i>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "⚠️ <b>ᴀᴀᴘ ʙᴏᴛ ᴋᴀ ᴋᴏɪ ʙʜɪ ꜰᴇᴀᴛᴜʀᴇ ᴜꜱᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n\n"
+                "💬 <b>ᴜɴʙᴀɴ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ</b>\n"
+                f"👑 <b>ᴏᴡɴᴇʀ ɪᴅ:</b> <code>{BOT_OWNER}</code>\n\n"
+                "╔══════════════════════════════╗\n"
+                "║   🔒 𝗔𝗖𝗖𝗘𝗦𝗦 𝗕𝗟𝗢𝗖𝗞𝗘𝗗 🔒   ║\n"
+                "╚══════════════════════════════╝"
+            )
+            bot.reply_to(msg, ban_msg, parse_mode="HTML")
+        except Exception as e:
+            print(f"Ban msg error: {e}")
+        return True
+    return False
 
 # ============= API =============
 def api_attack(ip, port, dur):
@@ -205,11 +286,8 @@ def kb_owner():
 # ============= START =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
+    if check_ban(msg): return
     uid = msg.from_user.id
-    if is_banned(uid):
-        bot.reply_to(msg, "🚫 ʏᴏᴜ ᴀʀᴇ ʙᴀɴɴᴇᴅ ꜰʀᴏᴍ ᴛʜɪꜱ ʙᴏᴛ.")
-        return
-
     name = msg.from_user.first_name or "User"
     username = msg.from_user.username
     cid = msg.chat.id
@@ -363,8 +441,8 @@ def cmd_start(msg):
 # ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
+    if check_ban(msg): return
     uid = msg.from_user.id
-    if is_banned(uid): return
     cid = msg.chat.id
 
     if get_setting('maintenance_mode', False) and not is_owner(uid):
@@ -442,6 +520,8 @@ def cmd_attack(msg):
         'user_id': uid, 'username': name, 'target': ip, 'port': port,
         'duration': dur, 'timestamp': datetime.now().isoformat()
     })
+    if str(uid) in data["users"]:
+        data["users"][str(uid)]["total_attacks"] = data["users"][str(uid)].get("total_attacks", 0) + 1
     save_data(data)
 
     aid = f"{uid}_{time.time()}"
@@ -475,16 +555,11 @@ def cmd_attack(msg):
             except: pass
 
     threading.Thread(target=done, daemon=True).start()
-    
-# ============= LIVE STATUS (FIXED) =============
-def escape_html(text):
-    """HTML special characters escape karo"""
-    if text is None:
-        return "N/A"
-    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+# ============= LIVE STATUS =============
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
+    if check_ban(msg): return
     uid = msg.from_user.id
     cid = msg.chat.id
 
@@ -537,6 +612,9 @@ def cmd_status(msg):
                 target = escape_html(f"{atk.get('target', 'N/A')}:{atk.get('port', 'N/A')}")
                 uname = escape_html(atk.get('username', 'Unknown'))
 
+                rem_m = rem // 60
+                rem_s = rem % 60
+
                 txt += (
                     "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
                     "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
@@ -547,7 +625,7 @@ def cmd_status(msg):
                     "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
                     "╰━━━━━━━━━━━━━━━━━━━━╯\n"
                     f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
-                    f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem}ꜱ</b>\n"
+                    f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n"
                     f"┣ 🕐 ᴛᴏᴛᴀʟ ➪ <b>{dur}ꜱ</b>\n"
                     f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
                 )
@@ -592,74 +670,169 @@ def cmd_status(msg):
             print(f"Build Status Error: {e}")
             return "⚠️ <b>ꜱᴛᴀᴛᴜꜱ ʟᴏᴀᴅ ᴇʀʀᴏʀ</b>"
 
-    # Pehla update
     try:
         bot.edit_message_text(
-            chat_id=cid,
-            message_id=status_msg.message_id,
-            text=build_status(),
-            parse_mode="HTML"
+            chat_id=cid, message_id=status_msg.message_id,
+            text=build_status(), parse_mode="HTML"
         )
     except Exception as e:
         print(f"Status First Edit Error: {e}")
 
-    # Auto update thread
     def auto_update():
         last_text = None
-        for _ in range(400):  # 400 * 3s = 20 min max
+        for _ in range(400):
             time.sleep(3)
             try:
                 new_text = build_status()
                 if new_text != last_text:
                     bot.edit_message_text(
-                        chat_id=cid,
-                        message_id=status_msg.message_id,
-                        text=new_text,
-                        parse_mode="HTML"
+                        chat_id=cid, message_id=status_msg.message_id,
+                        text=new_text, parse_mode="HTML"
                     )
                     last_text = new_text
             except Exception as e:
                 err = str(e)
-                # Agar message not modified ya flood wait hai toh skip karo
-                if "message is not modified" in err.lower():
-                    continue
+                if "message is not modified" in err.lower(): continue
                 if "Too Many Requests" in err or "retry after" in err.lower():
-                    time.sleep(5)
-                    continue
-                # Agar message delete ho gaya ya koi aur permanent error hai toh break
+                    time.sleep(5); continue
                 print(f"Auto Update Error: {e}")
                 break
 
     threading.Thread(target=auto_update, daemon=True).start()
 
-# ============= PROFILE =============
+# ============= LIVE PROFILE (Auto-updating with precise time) =============
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
+    if check_ban(msg): return
     uid = msg.from_user.id
-    u = data["users"].get(str(uid), {})
-    role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
+    cid = msg.chat.id
 
-    txt = (
-        "╔══════════════════════════╗\n"
-        "║   👤 𝗬𝗢𝗨𝗥 𝗣𝗥𝗢𝗙𝗜𝗟𝗘 👤   ║\n"
-        "╚══════════════════════════╝\n\n"
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-        "┃  📋 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-        f"┣ 🆔 ɪᴅ ➪ <code>{uid}</code>\n"
-        f"┣ 📛 ɴᴀᴍᴇ ➪ <b>{msg.from_user.first_name}</b>\n"
-        f"┣ 🔗 ᴜꜱᴇʀɴᴀᴍᴇ ➪ @{msg.from_user.username or 'N/A'}\n"
-        f"┣ 🎭 ʀᴏʟᴇ ➪ {role}\n"
-        f"┣ ⏰ ᴛɪᴍᴇ ➪ <b>{time_remaining(uid)}</b>\n"
-        f"┗ 🎯 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{u.get('total_attacks', 0)}</b>\n\n"
-        "╔══════════════════════════╗\n"
-        "║   ⚡ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗔𝗖𝗧𝗜𝗩𝗘 ⚡   ║\n"
-        "╚══════════════════════════╝"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    try:
+        profile_msg = bot.send_message(cid, "👤 ʟᴏᴀᴅɪɴɢ ᴘʀᴏꜰɪʟᴇ...")
+    except Exception as e:
+        print(f"Profile send error: {e}")
+        return
 
+    def build_profile():
+        try:
+            now = datetime.now()
+            u = data["users"].get(str(uid), {})
+            role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
+            time_left = time_remaining(uid)
+            time_detail = time_remaining_long(uid)
+            
+            # Key expiry date
+            expiry_date = "N/A"
+            if u.get('key_expiry'):
+                try:
+                    dt = datetime.fromisoformat(u['key_expiry'])
+                    expiry_date = dt.strftime('%d %b %Y, %I:%M %p')
+                except: pass
+            
+            # Joined date
+            joined = "N/A"
+            if u.get('joined_at'):
+                try:
+                    dt = datetime.fromisoformat(u['joined_at'])
+                    joined = dt.strftime('%d %b %Y')
+                except: pass
+            
+            # Account age
+            age = "N/A"
+            if u.get('joined_at'):
+                try:
+                    dt = datetime.fromisoformat(u['joined_at'])
+                    delta = now - dt
+                    days = delta.days
+                    age = f"{days} ᴅᴀʏꜱ"
+                except: pass
+            
+            total_atk = u.get('total_attacks', 0)
+            username_display = msg.from_user.username or "N/A"
+            first_name = msg.from_user.first_name or "User"
+            
+            is_active = has_valid_key(uid)
+            status_icon = "🟢 ᴀᴄᴛɪᴠᴇ" if is_active else "🔴 ɪɴᴀᴄᴛɪᴠᴇ"
+            
+            txt = (
+                "╔══════════════════════════════╗\n"
+                "║   👤 𝗬𝗢𝗨𝗥 𝗣𝗥𝗢𝗙𝗜𝗟𝗘 👤   ║\n"
+                "╚══════════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   📋 𝗕𝗔𝗦𝗜𝗖 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 📋\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"┣ 🆔 ɪᴅ ➪ <code>{uid}</code>\n"
+                f"┣ 📛 ɴᴀᴍᴇ ➪ <b>{escape_html(first_name)}</b>\n"
+                f"┣ 🔗 ᴜꜱᴇʀɴᴀᴍᴇ ➪ @{escape_html(username_display)}\n"
+                f"┣ 🎭 ʀᴏʟᴇ ➪ {role}\n"
+                f"┗ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ {status_icon}\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   ⏰ 𝗧𝗜𝗠𝗘 𝗥𝗘𝗠𝗔𝗜𝗡𝗜𝗡𝗚 ⏰\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"┣ ⏳ ᴛᴏᴛᴀʟ ➪ <b>{time_left}</b>\n"
+                f"{time_detail}\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   📅 𝗞𝗘𝗬 𝗜𝗡𝗙𝗢 📅\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"┣ 📆 ᴇxᴘɪʀᴇꜱ ➪ <code>{expiry_date}</code>\n"
+                f"┗ 📥 ᴊᴏɪɴᴇᴅ ➪ <code>{joined}</code>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   📊 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗖𝗦 📊\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"┣ 💀 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_atk}</b>\n"
+                f"┗ 🕐 ᴀᴄᴄᴛ ᴀɢᴇ ➪ <b>{age}</b>\n\n"
+            )
+            
+            if is_active:
+                txt += (
+                    "╔══════════════════════════════╗\n"
+                    "║   ✅ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗔𝗖𝗧𝗜𝗩𝗘 ✅   ║\n"
+                    "╚══════════════════════════════╝\n"
+                    "┗➤ ᴀᴀᴘ ᴀᴛᴛᴀᴄᴋ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴏ 🔥"
+                )
+            else:
+                txt += (
+                    "╔══════════════════════════════╗\n"
+                    "║   ❌ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗜𝗡𝗔𝗖𝗧𝗜𝗩𝗘 ❌   ║\n"
+                    "╚══════════════════════════════╝\n"
+                    "┗➤ ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ: <code>/redeem KEY</code>"
+                )
+            
+            return txt
+        except Exception as e:
+            print(f"Build Profile Error: {e}")
+            return "⚠️ <b>ᴘʀᴏꜰɪʟᴇ ʟᴏᴀᴅ ᴇʀʀᴏʀ</b>"
 
-# ============= KEY SYSTEM (1d/1h/1m/1s + Custom Name) =============
+    try:
+        bot.edit_message_text(
+            chat_id=cid, message_id=profile_msg.message_id,
+            text=build_profile(), parse_mode="HTML"
+        )
+    except Exception as e:
+        print(f"Profile First Edit Error: {e}")
+
+    def auto_update_profile():
+        last_text = None
+        for _ in range(400):
+            time.sleep(3)
+            try:
+                new_text = build_profile()
+                if new_text != last_text:
+                    bot.edit_message_text(
+                        chat_id=cid, message_id=profile_msg.message_id,
+                        text=new_text, parse_mode="HTML"
+                    )
+                    last_text = new_text
+            except Exception as e:
+                err = str(e)
+                if "message is not modified" in err.lower(): continue
+                if "Too Many Requests" in err or "retry after" in err.lower():
+                    time.sleep(5); continue
+                break
+
+    threading.Thread(target=auto_update_profile, daemon=True).start()
+
+# ============= KEY SYSTEM =============
 def parse_duration(text):
     text = text.lower().strip()
     word_map = {
@@ -689,41 +862,67 @@ def human_readable(seconds):
     if seconds >= 60 and seconds % 60 == 0: return f"{seconds // 60} ᴍɪɴᴜᴛᴇ"
     return f"{seconds} ꜱᴇᴄᴏɴᴅ"
 
-
 @bot.message_handler(commands=['genkey', 'gen'])
 def cmd_gen(msg):
     if not is_owner(msg.from_user.id): return
     p = msg.text.split()
     if len(p) < 2:
-        bot.reply_to(msg,
-            "⚠️ <b>ɢᴇɴᴋᴇʏ ᴜꜱᴀɢᴇ</b>\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
-            "📝 <code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
-            "⏰ <b>ᴅᴜʀᴀᴛɪᴏɴ ꜰᴏʀᴍᴀᴛ:</b>\n"
-            "┣ <code>1d</code> ➪ 1 ᴅᴀʏ\n"
-            "┣ <code>2h</code> ➪ 2 ʜᴏᴜʀꜱ\n"
-            "┣ <code>30m</code> ➪ 30 ᴍɪɴᴜᴛᴇꜱ\n"
-            "┣ <code>60s</code> ➪ 60 ꜱᴇᴄᴏɴᴅꜱ\n"
-            "┣ <code>1month</code> ➪ 1 ᴍᴏɴᴛʜ\n"
-            "┗ <code>1week</code> ➪ 1 ᴡᴇᴇᴋ\n\n"
-            "📌 <b>ᴇxᴀᴍᴘʟᴇꜱ:</b>\n"
-            "┣ <code>/genkey 1d 5</code>\n"
-            "┣ <code>/genkey 1month 10 PREMIUM</code>\n"
-            "┗ <code>/genkey 30m 1 TEST</code>",
-            parse_mode="HTML")
+        txt = (
+            "╔══════════════════════════════╗\n"
+            "║   🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🔑   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   💎 𝗚𝗘𝗡𝗞𝗘𝗬 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 💎\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "📝 <b>ꜰᴏʀᴍᴀᴛ:</b>\n"
+            "<code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   ⏰ 𝗗𝗨𝗥𝗔𝗧𝗜𝗢𝗡 𝗢𝗣𝗧𝗜𝗢𝗡𝗦\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "⚡ <b>ꜱᴇᴄᴏɴᴅꜱ</b>  ➪  <code>10s</code>  <code>60s</code>\n"
+            "⏱️ <b>ᴍɪɴᴜᴛᴇꜱ</b>  ➪  <code>30m</code>  <code>45m</code>\n"
+            "🕐 <b>ʜᴏᴜʀꜱ</b>     ➪  <code>1h</code>  <code>12h</code>\n"
+            "📅 <b>ᴅᴀʏꜱ</b>      ➪  <code>1d</code>  <code>7d</code>  <code>30d</code>\n"
+            "🗓️ <b>ᴡᴇᴇᴋꜱ</b>    ➪  <code>1week</code>  <code>2weeks</code>\n"
+            "🌙 <b>ᴍᴏɴᴛʜꜱ</b>   ➪  <code>1month</code>  <code>6months</code>\n"
+            "🎆 <b>ʏᴇᴀʀꜱ</b>     ➪  <code>1year</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   ✨ 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "🔸 <code>/genkey 1d 5</code>\n"
+            "   └─ 5 ᴋᴇʏꜱ ᴏꜰ 1 ᴅᴀʏ ᴇᴀᴄʜ\n\n"
+            "🔸 <code>/genkey 1month 10 VIP</code>\n"
+            "   └─ 10 VIP ᴋᴇʏꜱ ᴏꜰ 1 ᴍᴏɴᴛʜ\n\n"
+            "🔸 <code>/genkey 30m 1 TEST</code>\n"
+            "   └─ 1 TEST ᴋᴇʏ ᴏꜰ 30 ᴍɪɴᴜᴛᴇꜱ\n\n"
+            "╔══════════════════════════════╗\n"
+            "║   💠 𝗖𝗨𝗦𝗧𝗢𝗠 𝗡𝗔𝗠𝗘 𝗦𝗨𝗣𝗣𝗢𝗥𝗧 💠   ║\n"
+            "╚══════════════════════════════╝\n"
+            "┗➤ ɴᴀᴍᴇ ᴅᴇɴᴇ ꜱᴇ ᴋᴇʏ ᴘʀᴇᴍɪᴜᴍ ʟᴀɢᴇɢɪ ✨"
+        )
+        bot.reply_to(msg, txt, parse_mode="HTML")
         return
 
     duration_str = p[1]
     secs = parse_duration(duration_str)
     if not secs or secs < 1:
-        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ!</b>\nᴜꜱᴇ: <code>1d</code> <code>1h</code> <code>1m</code> <code>1s</code> <code>1month</code>", parse_mode="HTML")
+        bot.reply_to(msg,
+            "❌ <b>ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ!</b>\n\n"
+            "✅ <b>ᴠᴀʟɪᴅ ꜰᴏʀᴍᴀᴛꜱ:</b>\n"
+            "┣ <code>1d</code> ➪ 1 ᴅᴀʏ\n"
+            "┣ <code>1h</code> ➪ 1 ʜᴏᴜʀ\n"
+            "┣ <code>1m</code> ➪ 1 ᴍɪɴᴜᴛᴇ\n"
+            "┣ <code>1s</code> ➪ 1 ꜱᴇᴄᴏɴᴅ\n"
+            "┗ <code>1month</code> ➪ 1 ᴍᴏɴᴛʜ",
+            parse_mode="HTML")
         return
 
     try:
         amt = int(p[2]) if len(p) > 2 else 1
         custom_name = p[3].upper() if len(p) > 3 else None
     except:
-        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ!</b>", parse_mode="HTML"); return
+        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ꜰᴏʀᴍᴀᴛ!</b>", parse_mode="HTML")
+        return
 
     keys = []
     for _ in range(amt):
@@ -743,22 +942,55 @@ def cmd_gen(msg):
         keys.append(formatted)
     save_data(data)
 
-    txt = f"✅ <b>ɢᴇɴᴇʀᴀᴛᴇᴅ {amt} ᴋᴇʏꜱ</b>\n"
-    txt += "━━━━━━━━━━━━━━━━━━━━━\n"
-    for k in keys:
-        txt += f"<code>{k}</code>\n"
-    txt += "━━━━━━━━━━━━━━━━━━━━━\n"
-    txt += f"⏰ ᴅᴜʀᴀᴛɪᴏɴ: <b>{human_readable(secs)}</b>"
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    dur_text = human_readable(secs)
 
+    txt = (
+        "╔══════════════════════════════╗\n"
+        "║   ✅ 𝗞𝗘𝗬𝗦 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘𝗗 ✅   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   💎 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 💎\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        f"🔢 <b>ᴛᴏᴛᴀʟ ᴋᴇʏꜱ:</b>  <code>{amt}</code>\n"
+        f"⏰ <b>ᴅᴜʀᴀᴛɪᴏɴ:</b>    <code>{dur_text}</code>\n"
+        f"🎭 <b>ᴛʏᴘᴇ:</b>        <code>{'ᴘʀᴇᴍɪᴜᴍ' if custom_name else 'ꜱᴛᴀɴᴅᴀʀᴅ'}</code>\n"
+    )
+    if custom_name:
+        txt += f"🏷️ <b>ɴᴀᴍᴇ ᴛᴀɢ:</b>   <code>{custom_name}</code>\n"
+
+    txt += "\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+    txt += "┃   🔑 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬𝗦 🔑\n"
+    txt += "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+
+    for i, k in enumerate(keys, 1):
+        txt += f"<b>{i:02d}.</b> <code>{k}</code>\n"
+
+    txt += (
+        "\n╔══════════════════════════════╗\n"
+        "║   💠 𝗥𝗘𝗗𝗘𝗘𝗠 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 💠   ║\n"
+        "╚══════════════════════════════╝\n"
+        "┗➤ <code>/redeem KEY</code>\n\n"
+        "✨ <i>ᴋᴇʏꜱ ᴄᴏᴘʏ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ ᴛᴀᴘ ᴋᴀʀᴏ</i>"
+    )
+
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
 @bot.message_handler(commands=['redeem'])
 def cmd_redeem(msg):
+    if check_ban(msg): return
     uid = msg.from_user.id
-    if is_banned(uid): return
     p = msg.text.split()
     if len(p) < 2:
-        bot.reply_to(msg, "⚠️ <code>/redeem KEY</code>", parse_mode="HTML"); return
+        bot.reply_to(msg,
+            "╔══════════════════════════════╗\n"
+            "║   🔑 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗘𝗬 🔑   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "📝 <b>ᴜꜱᴀɢᴇ:</b>\n"
+            "<code>/redeem YOUR-KEY</code>\n\n"
+            "📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+            "<code>/redeem VIP-A1B2-C3D4-E5F6</code>",
+            parse_mode="HTML")
+        return
     key = p[1].strip().upper()
     if key not in data["keys"]:
         bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴋᴇʏ!</b>", parse_mode="HTML"); return
@@ -783,14 +1015,19 @@ def cmd_redeem(msg):
     save_data(data)
 
     bot.reply_to(msg,
-        "╔══════════════════════════╗\n"
+        "╔══════════════════════════════╗\n"
         "║   ✅ 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠𝗘𝗗 ✅   ║\n"
-        "╚══════════════════════════╝\n\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🎉 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎉\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
         f"┣ ⏰ ᴀᴅᴅᴇᴅ ➪ <b>+{human_readable(secs)}</b>\n"
         f"┣ 📅 ᴇxᴘɪʀᴇꜱ ➪ <b>{expiry.strftime('%d %b %Y %H:%M')}</b>\n"
-        "┗ 🎯 ᴇɴᴊᴏʏ ʏᴏᴜʀ ᴀᴛᴛᴀᴄᴋꜱ!",
+        f"┗ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{time_remaining(uid)}</b>\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   🔥 𝗘𝗡𝗝𝗢𝗬 𝗔𝗧𝗧𝗔𝗖𝗞𝗦 🔥   ║\n"
+        "╚══════════════════════════════╝",
         parse_mode="HTML")
-
 
 # ============= OWNER PANEL =============
 @bot.message_handler(commands=['panel'])
@@ -805,7 +1042,7 @@ def cmd_panel(msg):
         "👥 /users ➪ ᴜꜱᴇʀꜱ ʟɪꜱᴛ\n"
         "📊 /stats ➪ ꜱᴛᴀᴛꜱ\n"
         "📢 /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-        "🚫 /ban ID ➪ ʙᴀɴ\n"
+        "🚫 /ban ID REASON ➪ ʙᴀɴ\n"
         "✅ /unban ID ➪ ᴜɴʙᴀɴ\n"
         "🔑 /genkey ➪ ɢᴇɴ ᴋᴇʏꜱ\n"
         "📡 /setapi ➪ ꜱᴇᴛ ᴀᴘɪ\n"
@@ -819,7 +1056,6 @@ def cmd_panel(msg):
         "╚══════════════════════════╝",
         parse_mode="HTML")
 
-
 @bot.message_handler(commands=['users'])
 def cmd_users(msg):
     if not is_owner(msg.from_user.id): return
@@ -831,21 +1067,143 @@ def cmd_users(msg):
     txt += f"\n━━━━━━━━━━━━━━━━━━━━━\n🔹 ᴛᴏᴛᴀʟ: <b>{len(data['users'])}</b>"
     bot.reply_to(msg, txt, parse_mode="HTML")
 
-
+# ============= PREMIUM BROADCAST =============
 @bot.message_handler(commands=['broadcast'])
 def cmd_broadcast(msg):
     if not is_owner(msg.from_user.id): return
     p = msg.text.split(maxsplit=1)
     if len(p) < 2:
-        bot.reply_to(msg, "⚠️ /broadcast MSG"); return
-    text = p[1]; sent = 0
-    for uid in data["users"]:
-        try:
-            bot.send_message(int(uid), f"📢 <b>ʙʀᴏᴀᴅᴄᴀꜱᴛ</b>\n\n{text}", parse_mode="HTML")
-            sent += 1
-        except: pass
-    bot.reply_to(msg, f"✅ ꜱᴇɴᴛ ᴛᴏ {sent} ᴜꜱᴇʀꜱ.")
+        txt = (
+            "╔══════════════════════════════╗\n"
+            "║   📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   💎 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 💎\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "📝 <b>ꜰᴏʀᴍᴀᴛ:</b>\n"
+            "<code>/broadcast YOUR MESSAGE</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   ✨ 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "🔸 <code>/broadcast Bot update ho gaya!</code>\n\n"
+            "🔸 <code>/broadcast New keys available - DM owner</code>\n\n"
+            "🔸 <code>/broadcast 🔥 Server is back online 🔥</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   📊 𝗜𝗡𝗙𝗢 📊\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <code>{len(data['users'])}</code>\n"
+            f"🚫 <b>ʙᴀɴɴᴇᴅ:</b> <code>{len(data.get('banned_users', {}))}</code>\n"
+            "📤 <b>ᴍᴇꜱꜱᴀɢᴇ ᴀʟʟ ᴀᴄᴛɪᴠᴇ ᴜꜱᴇʀꜱ ᴋᴏ ᴊᴀʏᴇɢᴀ\n\n"
+            "╔══════════════════════════════╗\n"
+            "║   💠 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗠𝗘𝗦𝗦𝗔𝗚𝗘 💠   ║\n"
+            "╚══════════════════════════════╝"
+        )
+        bot.reply_to(msg, txt, parse_mode="HTML")
+        return
 
+    text = p[1]
+    total = len(data["users"])
+    sent = 0
+    failed = 0
+    banned_skip = 0
+
+    # Premium broadcast message
+    broadcast_header = (
+        "╔══════════════════════════════╗\n"
+        "║   📢 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟 𝗔𝗡𝗡𝗢𝗨𝗡𝗖𝗘𝗠𝗘𝗡𝗧 📢   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   💎 𝗙𝗥𝗢𝗠 𝗢𝗪𝗡𝗘𝗥 💎\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+    )
+    broadcast_footer = (
+        "\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ⚡ 𝗕𝗢𝗧 𝗧𝗘𝗔𝗠 ⚡\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        f"┣ 👑 ᴏᴡɴᴇʀ ɪᴅ ➪ <code>{BOT_OWNER}</code>\n"
+        f"┗ 📅 ᴛɪᴍᴇ ➪ <code>{ist_now()} IST</code>\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   🔥 𝗧𝗛𝗔𝗡𝗞𝗦 𝗙𝗢𝗥 𝗨𝗦𝗜𝗡𝗚 🔥   ║\n"
+        "╚══════════════════════════════╝"
+    )
+
+    full_message = broadcast_header + text + broadcast_footer
+
+    status_msg = bot.reply_to(msg,
+        "╔══════════════════════════════╗\n"
+        "║   📤 𝗦𝗘𝗡𝗗𝗜𝗡𝗚 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📤   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        f"┣ 👥 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ ➪ <b>{total}</b>\n"
+        f"┣ ✅ ꜱᴇɴᴛ ➪ <b>0</b>\n"
+        f"┣ ❌ ꜰᴀɪʟᴇᴅ ➪ <b>0</b>\n"
+        f"┗ 🚫 ʙᴀɴɴᴇᴅ ꜱᴋɪᴘ ➪ <b>0</b>\n\n"
+        "⏳ <i>ᴘʀᴏᴄᴇꜱꜱɪɴɢ...</i>",
+        parse_mode="HTML")
+
+    def do_broadcast():
+        nonlocal sent, failed, banned_skip
+        for i, uid_str in enumerate(list(data["users"].keys()), 1):
+            # Skip banned users
+            if uid_str in data.get("banned_users", {}):
+                banned_skip += 1
+                continue
+            try:
+                bot.send_message(int(uid_str), full_message, parse_mode="HTML")
+                sent += 1
+            except Exception as e:
+                failed += 1
+                err = str(e)
+                # If user blocked bot, mark them
+                if "blocked" in err.lower() or "chat not found" in err.lower() or "user is deactivated" in err.lower():
+                    pass
+
+            # Update every 5 users
+            if i % 5 == 0 or i == total:
+                try:
+                    bot.edit_message_text(
+                        chat_id=status_msg.chat.id,
+                        message_id=status_msg.message_id,
+                        text=(
+                            "╔══════════════════════════════╗\n"
+                            "║   📤 𝗦𝗘𝗡𝗗𝗜𝗡𝗚 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📤   ║\n"
+                            "╚══════════════════════════════╝\n\n"
+                            f"┣ 👥 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ ➪ <b>{total}</b>\n"
+                            f"┣ ✅ ꜱᴇɴᴛ ➪ <b>{sent}</b>\n"
+                            f"┣ ❌ ꜰᴀɪʟᴇᴅ ➪ <b>{failed}</b>\n"
+                            f"┣ 🚫 ʙᴀɴɴᴇᴅ ꜱᴋɪᴘ ➪ <b>{banned_skip}</b>\n"
+                            f"┗ 📊 ᴘʀᴏɢʀᴇꜱꜱ ➪ <b>{i}/{total}</b>\n\n"
+                            "⏳ <i>ᴘʀᴏᴄᴇꜱꜱɪɴɢ...</i>"
+                        ),
+                        parse_mode="HTML"
+                    )
+                except: pass
+            time.sleep(0.05)  # Anti-flood
+
+        # Final report
+        try:
+            bot.edit_message_text(
+                chat_id=status_msg.chat.id,
+                message_id=status_msg.message_id,
+                text=(
+                    "╔══════════════════════════════╗\n"
+                    "║   ✅ 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ✅   ║\n"
+                    "╚══════════════════════════════╝\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃   📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                    f"┣ 👥 ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ ➪ <b>{total}</b>\n"
+                    f"┣ ✅ ꜱᴇɴᴛ ➪ <b>{sent}</b>\n"
+                    f"┣ ❌ ꜰᴀɪʟᴇᴅ ➪ <b>{failed}</b>\n"
+                    f"┗ 🚫 ʙᴀɴɴᴇᴅ ꜱᴋɪᴘ ➪ <b>{banned_skip}</b>\n\n"
+                    "╔══════════════════════════════╗\n"
+                    "║   🔥 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗗𝗢𝗡𝗘 🔥   ║\n"
+                    "╚══════════════════════════════╝"
+                ),
+                parse_mode="HTML"
+            )
+        except: pass
+
+    threading.Thread(target=do_broadcast, daemon=True).start()
 
 @bot.message_handler(commands=['stats'])
 def cmd_stats(msg):
@@ -853,63 +1211,147 @@ def cmd_stats(msg):
     used_keys = sum(1 for k, v in data['keys'].items() if v.get('used'))
     unused_keys = len(data['keys']) - used_keys
     txt = (
-        "╔══════════════════════════╗\n"
-        "║   📊 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦 📊   ║\n"
-        "╚══════════════════════════╝\n\n"
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-        "┃  👥 𝗨𝗦𝗘𝗥𝗦\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        "╔══════════════════════════════╗\n"
+        "║   📊 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦 📊   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   👥 𝗨𝗦𝗘𝗥𝗦 𝗗𝗔𝗧𝗔\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         f"┣ 👥 ᴛᴏᴛᴀʟ ➪ <b>{len(data['users'])}</b>\n"
         f"┣ 👑 ᴀᴅᴍɪɴꜱ ➪ <b>{len(data.get('admins', {}))}</b>\n"
         f"┣ 💼 ʀᴇꜱᴇʟʟᴇʀꜱ ➪ <b>{len(data.get('resellers', {}))}</b>\n"
         f"┗ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{len(data.get('banned_users', {}))}</b>\n\n"
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-        "┃  🔑 𝗞𝗘𝗬𝗦\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🔑 𝗞𝗘𝗬𝗦 𝗗𝗔𝗧𝗔\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         f"┣ 🔑 ᴛᴏᴛᴀʟ ➪ <b>{len(data['keys'])}</b>\n"
         f"┣ ✅ ᴜꜱᴇᴅ ➪ <b>{used_keys}</b>\n"
         f"┗ 🆓 ᴀᴠᴀɪʟᴀʙʟᴇ ➪ <b>{unused_keys}</b>\n\n"
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-        "┃  💀 𝗔𝗧𝗧𝗔𝗖𝗞𝗦\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   💀 𝗔𝗧𝗧𝗔𝗖𝗞𝗦 𝗗𝗔𝗧𝗔\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         f"┣ 💀 ᴛᴏᴛᴀʟ ➪ <b>{len(data['attack_logs'])}</b>\n"
         f"┣ ⏱️ ᴍᴀx ᴛɪᴍᴇ ➪ <b>{get_setting('max_attack_time', 300)}ꜱ</b>\n"
         f"┗ ⏸️ ᴄᴏᴏʟᴅᴏᴡɴ ➪ <b>{get_setting('user_cooldown', 5)}ꜱ</b>\n\n"
-        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-        "┃  🎨 𝗖𝗢𝗡𝗧𝗘𝗡𝗧\n"
-        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🎨 𝗖𝗢𝗡𝗧𝗘𝗡𝗧 𝗗𝗔𝗧𝗔\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{len(data.get('stickers', []))}</b>\n"
         f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{len(data.get('videos', []))}</b>\n"
         f"┗ 🎬 ᴘʏꜰ ➪ <b>{len(data.get('pyf_videos', []))}</b>\n\n"
-        f"⏱️ ᴜᴘᴛɪᴍᴇ: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n\n"
-        "╔══════════════════════════╗\n"
-        "║   🔥 𝗢𝗡𝗟𝗜𝗡𝗘 🔥   ║\n"
-        "╚══════════════════════════╝"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ⚙️ 𝗦𝗬𝗦𝗧𝗘𝗠 𝗗𝗔𝗧𝗔\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        f"┣ ⏱️ ᴜᴘᴛɪᴍᴇ ➪ <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
+        f"┣ 🔧 ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ➪ <b>{'🟢 ᴏɴ' if get_setting('maintenance_mode', False) else '🔴 ᴏꜰꜰ'}</b>\n"
+        f"┗ 📡 ᴍᴇᴛʜᴏᴅ ➪ <code>{get_setting('api_method', 'UDP-BIG')}</code>\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   🔥 𝗕𝗢𝗧 𝗢𝗡𝗟𝗜𝗡𝗘 🔥   ║\n"
+        "╚══════════════════════════════╝"
     )
     bot.reply_to(msg, txt, parse_mode="HTML")
-
 
 @bot.message_handler(commands=['ban'])
 def cmd_ban(msg):
     if not is_owner(msg.from_user.id): return
-    p = msg.text.split()
-    if len(p) < 2: bot.reply_to(msg, "⚠️ /ban ID"); return
-    data["banned_users"][p[1]] = datetime.now().isoformat()
+    p = msg.text.split(maxsplit=2)
+    if len(p) < 2:
+        bot.reply_to(msg,
+            "╔══════════════════════════════╗\n"
+            "║   🚫 𝗕𝗔𝗡 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 🚫   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "📝 <b>ꜰᴏʀᴍᴀᴛ:</b>\n"
+            "<code>/ban USER_ID [REASON]</code>\n\n"
+            "📌 <b>ᴇxᴀᴍᴘʟᴇꜱ:</b>\n"
+            "┣ <code>/ban 123456789</code>\n"
+            "┗ <code>/ban 123456789 Spam kar raha tha</code>",
+            parse_mode="HTML")
+        return
+    target_id = p[1]
+    reason = p[2] if len(p) > 2 else "ᴠɪᴏʟᴀᴛɪᴏɴ ᴏꜰ ᴛᴇʀᴍꜱ"
+    
+    data["banned_users"][target_id] = {
+        "banned_at": datetime.now().isoformat(),
+        "banned_by": msg.from_user.id,
+        "reason": reason
+    }
     save_data(data)
-    bot.reply_to(msg, f"🚫 <b>ʙᴀɴɴᴇᴅ</b> <code>{p[1]}</code>", parse_mode="HTML")
 
+    # Notify the banned user
+    try:
+        ban_notification = (
+            "╔══════════════════════════════╗\n"
+            "║   🚫 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗕𝗔𝗡𝗡𝗘𝗗 🚫   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃   ⛔ 𝗔𝗖𝗖𝗘𝗦𝗦 𝗥𝗘𝗩𝗢𝗞𝗘𝗗 ⛔\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+            "🔒 <b>ᴀᴀᴘᴋᴏ ɪꜱ ʙᴏᴛ ꜱᴇ ʙᴀɴ ᴋᴀʀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ</b>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📝 <b>ʀᴇᴀꜱᴏɴ:</b> <i>{escape_html(reason)}</i>\n"
+            f"📅 <b>ᴛɪᴍᴇ:</b> <code>{ist_now()} IST</code>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "⚠️ <b>ᴀᴀᴘ ᴀʙ ʙᴏᴛ ᴋᴀ ᴋᴏɪ ʙʜɪ ꜰᴇᴀᴛᴜʀᴇ ᴜꜱᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n\n"
+            "💬 <b>ᴜɴʙᴀɴ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ</b>\n"
+            f"👑 <b>ᴏᴡɴᴇʀ:</b> <code>{BOT_OWNER}</code>\n\n"
+            "╔══════════════════════════════╗\n"
+            "║   🔒 𝗔𝗖𝗖𝗘𝗦𝗦 𝗕𝗟𝗢𝗖𝗞𝗘𝗗 🔒   ║\n"
+            "╚══════════════════════════════╝"
+        )
+        bot.send_message(int(target_id), ban_notification, parse_mode="HTML")
+    except Exception as e:
+        print(f"Ban notification failed: {e}")
+
+    bot.reply_to(msg,
+        "╔══════════════════════════════╗\n"
+        "║   ✅ 𝗨𝗦𝗘𝗥 𝗕𝗔𝗡𝗡𝗘𝗗 ✅   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        f"┣ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_id}</code>\n"
+        f"┣ 📝 ʀᴇᴀꜱᴏɴ ➪ <i>{escape_html(reason)}</i>\n"
+        f"┣ 📅 ᴛɪᴍᴇ ➪ <code>{ist_now()} IST</code>\n"
+        f"┗ 📢 ɴᴏᴛɪꜰɪᴇᴅ ➪ ✅",
+        parse_mode="HTML")
 
 @bot.message_handler(commands=['unban'])
 def cmd_unban(msg):
     if not is_owner(msg.from_user.id): return
     p = msg.text.split()
-    if len(p) < 2: bot.reply_to(msg, "⚠️ /unban ID"); return
-    if p[1] in data["banned_users"]:
-        del data["banned_users"][p[1]]; save_data(data)
-        bot.reply_to(msg, f"✅ <b>ᴜɴʙᴀɴɴᴇᴅ</b> <code>{p[1]}</code>", parse_mode="HTML")
-    else:
-        bot.reply_to(msg, "❌ ɴᴏᴛ ʙᴀɴɴᴇᴅ")
+    if len(p) < 2:
+        bot.reply_to(msg, "⚠️ <code>/unban USER_ID</code>", parse_mode="HTML"); return
+    target_id = p[1]
+    if target_id in data["banned_users"]:
+        del data["banned_users"][target_id]; save_data(data)
 
+        # Notify unbanned user
+        try:
+            unban_notification = (
+                "╔══════════════════════════════╗\n"
+                "║   ✅ 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗨𝗡𝗕𝗔𝗡𝗡𝗘𝗗 ✅   ║\n"
+                "╚══════════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃   🎉 𝗔𝗖𝗖𝗘𝗦𝗦 𝗥𝗘𝗦𝗧𝗢𝗥𝗘𝗗 🎉\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                "🔓 <b>ᴀᴀᴘᴋᴀ ʙᴀɴ ʜᴀᴛᴀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ</b>\n\n"
+                f"📅 <b>ᴛɪᴍᴇ:</b> <code>{ist_now()} IST</code>\n\n"
+                "✅ <b>ᴀᴀᴘ ᴀʙ ʙᴏᴛ ᴜꜱᴇ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n"
+                "🚀 <b>ꜱᴛᴀʀᴛ ᴋᴀʀᴏ:</b> /start\n\n"
+                "╔══════════════════════════════╗\n"
+                "║   🔥 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗕𝗔𝗖𝗞 🔥   ║\n"
+                "╚══════════════════════════════╝"
+            )
+            bot.send_message(int(target_id), unban_notification, parse_mode="HTML")
+        except: pass
+
+        bot.reply_to(msg,
+            "╔══════════════════════════════╗\n"
+            "║   ✅ 𝗨𝗡𝗕𝗔𝗡𝗡𝗘𝗗 ✅   ║\n"
+            "╚══════════════════════════════╝\n\n"
+            f"┣ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_id}</code>\n"
+            f"┣ 📅 ᴛɪᴍᴇ ➪ <code>{ist_now()} IST</code>\n"
+            f"┗ 📢 ɴᴏᴛɪꜰɪᴇᴅ ➪ ✅",
+            parse_mode="HTML")
+    else:
+        bot.reply_to(msg, "❌ <b>ᴜꜱᴇʀ ɴᴏᴛ ʙᴀɴɴᴇᴅ!</b>", parse_mode="HTML")
 
 @bot.message_handler(commands=['setapi'])
 def cmd_setapi(msg):
@@ -921,14 +1363,12 @@ def cmd_setapi(msg):
     if len(p) > 4: set_setting("api_geolocation", p[4])
     bot.reply_to(msg, "✅ <b>ᴀᴘɪ ᴜᴘᴅᴀᴛᴇᴅ!</b>", parse_mode="HTML")
 
-
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
     if not is_owner(msg.from_user.id): return
     ok, r = api_attack("1.1.1.1", 80, 5)
     if ok: bot.reply_to(msg, f"✅ <b>ᴀᴘɪ ᴏᴋ</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
     else: bot.reply_to(msg, f"❌ <b>ᴀᴘɪ ꜰᴀɪʟᴇᴅ</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
-
 
 @bot.message_handler(commands=['setmaxtime'])
 def cmd_setmaxtime(msg):
@@ -940,7 +1380,6 @@ def cmd_setmaxtime(msg):
         bot.reply_to(msg, f"✅ <b>ᴍᴀx ᴛɪᴍᴇ:</b> {p[1]}ꜱ", parse_mode="HTML")
     except: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
 
-
 @bot.message_handler(commands=['setcooldown'])
 def cmd_setcooldown(msg):
     if not is_owner(msg.from_user.id): return
@@ -951,14 +1390,12 @@ def cmd_setcooldown(msg):
         bot.reply_to(msg, f"✅ <b>ᴄᴏᴏʟᴅᴏᴡɴ:</b> {p[1]}ꜱ", parse_mode="HTML")
     except: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
 
-
 @bot.message_handler(commands=['maintenance'])
 def cmd_maintenance(msg):
     if not is_owner(msg.from_user.id): return
     cur = get_setting('maintenance_mode', False)
     set_setting("maintenance_mode", not cur)
     bot.reply_to(msg, f"✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ:</b> {'ᴏɴ' if not cur else 'ᴏꜰꜰ'}", parse_mode="HTML")
-
 
 # ============= STICKER COMMANDS =============
 @bot.message_handler(commands=['removesticker'])
@@ -981,7 +1418,6 @@ def cmd_removesticker(msg):
         else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
     except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/removesticker NUMBER</code>", parse_mode="HTML")
 
-
 @bot.message_handler(commands=['liststickers'])
 def cmd_liststickers(msg):
     if not is_owner(msg.from_user.id): return
@@ -992,7 +1428,6 @@ def cmd_liststickers(msg):
         txt += f"{i}. {s}\n"
     txt += f"\n🔹 ᴛᴏᴛᴀʟ {len(data['stickers'])}"
     bot.reply_to(msg, txt)
-
 
 # ============= VIDEO COMMANDS =============
 @bot.message_handler(commands=['listvideo'])
@@ -1005,7 +1440,6 @@ def cmd_listvideo(msg):
         txt += f"🛸{i} {v}\n"
     txt += f"\n⎘ ᴛᴏᴛᴀʟ ： {len(data['videos'])}"
     bot.reply_to(msg, txt)
-
 
 @bot.message_handler(commands=['delvideo'])
 def cmd_delvideo(msg):
@@ -1027,14 +1461,12 @@ def cmd_delvideo(msg):
         else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
     except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delvideo NUMBER</code>", parse_mode="HTML")
 
-
 # ============= PYF VIDEO COMMANDS =============
 @bot.message_handler(commands=['addpyf'])
 def cmd_addpyf(msg):
     if not is_owner(msg.from_user.id): return
     _pending_pyf[msg.from_user.id] = True
     bot.reply_to(msg, "📤 <b>ᴀʙ ᴇᴋ ᴠɪᴅᴇᴏ ꜰᴏʀᴡᴀʀᴅ ᴋᴀʀᴏ.</b>", parse_mode="HTML")
-
 
 @bot.message_handler(commands=['listpyf'])
 def cmd_listpyf(msg):
@@ -1046,7 +1478,6 @@ def cmd_listpyf(msg):
         txt += f"🛸{i} {v}\n"
     txt += f"\n⎘ ᴛᴏᴛᴀʟ ： {len(data['pyf_videos'])}"
     bot.reply_to(msg, txt)
-
 
 @bot.message_handler(commands=['delpyf'])
 def cmd_delpyf(msg):
@@ -1068,7 +1499,6 @@ def cmd_delpyf(msg):
         else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
     except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delpyf NUMBER</code>", parse_mode="HTML")
 
-
 # ============= AUTO STICKER =============
 @bot.message_handler(content_types=['sticker'])
 def auto_sticker(msg):
@@ -1080,7 +1510,6 @@ def auto_sticker(msg):
         bot.reply_to(msg, f"✅ <b>ꜱᴛɪᴄᴋᴇʀ ᴀᴅᴅᴇᴅ!</b>\n❄ ᴛᴏᴛᴀʟ: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
     else:
         bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
-
 
 # ============= VIDEO HANDLER =============
 _pending_pyf = {}
@@ -1105,52 +1534,69 @@ def handle_video(msg):
         else:
             bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
 
-
 # ============= SETTINGS =============
 @bot.message_handler(commands=['settings'])
 def cmd_settings(msg):
     if not is_owner(msg.from_user.id): return
     txt = (
-        "⚙️ <b>ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅꜱ</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👑 <b>ᴏᴡɴᴇʀ</b>\n"
+        "╔══════════════════════════════╗\n"
+        "║   ⚙️ 𝗔𝗟𝗟 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 ⚙️   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   👑 𝗢𝗪𝗡𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         "┣ /panel ➪ ᴏᴡɴᴇʀ ᴘᴀɴᴇʟ\n"
-        "┣ /users ➪ ᴜꜱᴇʀꜱ\n"
-        "┣ /stats ➪ ꜱᴛᴀᴛꜱ\n"
-        "┣ /broadcast MSG\n"
-        "┣ /ban ID\n"
-        "┗ /unban ID\n\n"
-        "🔑 <b>ᴋᴇʏ</b>\n"
-        "┣ /genkey 1d 5 → 5 ᴋᴇʏꜱ 1 ᴅᴀʏ\n"
-        "┣ /genkey 1month 10 PREMIUM\n"
-        "┗ /redeem KEY\n\n"
-        "📡 <b>ᴀᴘɪ</b>\n"
+        "┣ /users ➪ ᴜꜱᴇʀꜱ ʟɪꜱᴛ\n"
+        "┣ /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+        "┣ /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+        "┣ /ban ID REASON ➪ ʙᴀɴ ᴜꜱᴇʀ\n"
+        "┗ /unban ID ➪ ᴜɴʙᴀɴ ᴜꜱᴇʀ\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🔑 𝗞𝗘𝗬 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "┣ /genkey 1d 5 ➪ 5 ᴋᴇʏꜱ 1 ᴅᴀʏ\n"
+        "┣ /genkey 1month 10 VIP ➪ ᴘʀᴇᴍɪᴜᴍ\n"
+        "┗ /redeem KEY ➪ ʀᴇᴅᴇᴇᴍ ᴋᴇʏ\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   📡 𝗔𝗣𝗜 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         "┣ /setapi URL TOKEN\n"
         "┣ /testapi\n"
         "┣ /setmaxtime SEC\n"
         "┗ /setcooldown SEC\n\n"
-        "🔧 <b>ʙᴏᴛ</b>\n"
-        "┗ /maintenance\n\n"
-        "❄ <b>ꜱᴛɪᴄᴋᴇʀ</b>\n"
-        "┣ ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ\n"
-        "┣ /removesticker NUMBER\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🔧 𝗕𝗢𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "┣ /maintenance ➪ ᴛᴏɢɢʟᴇ\n"
+        "┗ /status ➪ ʟɪᴠᴇ ꜱᴛᴀᴛᴜꜱ\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "┣ ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ ➪ ᴀᴅᴅ\n"
+        "┣ /removesticker NUM\n"
         "┗ /liststickers\n\n"
-        "📹 <b>ᴠɪᴅᴇᴏ</b>\n"
-        "┣ ꜱᴇɴᴅ ᴠɪᴅᴇᴏ\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   📹 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "┣ ꜱᴇɴᴅ ᴠɪᴅᴇᴏ ➪ ᴀᴅᴅ\n"
         "┣ /listvideo\n"
-        "┗ /delvideo NUMBER\n\n"
-        "🎬 <b>ᴘʏꜰ ᴠɪᴅᴇᴏ</b>\n"
-        "┣ /addpyf\n"
-        "┣ /listpyf\n"
-        "┗ /delpyf NUMBER\n"
-        "━━━━━━━━━━━━━━━━━━━━━"
+        "┗ /delvideo NUM\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   🎬 𝗣𝗬𝗙 𝗩𝗜𝗗𝗘𝗢\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "┣ /addpyf ➪ ᴀᴅᴅ ᴘʏꜰ\n"
+        "┣ /listpyf ➪ ʟɪꜱᴛ\n"
+        "┗ /delpyf NUM ➪ ᴅᴇʟᴇᴛᴇ\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   💎 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 💎   ║\n"
+        "╚══════════════════════════════╝"
     )
     bot.reply_to(msg, txt, parse_mode="HTML")
-
 
 # ============= BUTTONS =============
 @bot.message_handler(func=lambda m: m.text == "🔥 𝐀𝐓𝐓𝐀𝐂𝐊")
 def btn_attack(msg):
+    if check_ban(msg): return
     bot.reply_to(msg,
         "╔══════════════════════════╗\n"
         "║   🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 🎯   ║\n"
@@ -1179,29 +1625,108 @@ def btn_owner(msg):
 
 @bot.message_handler(func=lambda m: m.text == "🔑 𝐑𝐄𝐃𝐄𝐄𝐌")
 def btn_redeem(msg):
+    if check_ban(msg): return
     bot.reply_to(msg, "🔑 <code>/redeem KEY</code>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "🔑 𝐆𝐄𝐍 𝐊𝐄𝐘")
 def btn_genkey(msg):
-    bot.reply_to(msg, "🔑 <code>/genkey 1d 5 [NAME]</code>", parse_mode="HTML")
+    if not is_owner(msg.from_user.id): return
+    txt = (
+        "╔══════════════════════════════╗\n"
+        "║   🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🔑   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   💎 𝗚𝗘𝗡𝗞𝗘𝗬 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 💎\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        "📝 <b>ꜰᴏʀᴍᴀᴛ:</b>\n"
+        "<code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ⏰ 𝗗𝗨𝗥𝗔𝗧𝗜𝗢𝗡 𝗢𝗣𝗧𝗜𝗢𝗡𝗦\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        "⚡ <b>ꜱᴇᴄᴏɴᴅꜱ</b>  ➪  <code>10s</code>  <code>60s</code>\n"
+        "⏱️ <b>ᴍɪɴᴜᴛᴇꜱ</b>  ➪  <code>30m</code>  <code>45m</code>\n"
+        "🕐 <b>ʜᴏᴜʀꜱ</b>     ➪  <code>1h</code>  <code>12h</code>\n"
+        "📅 <b>ᴅᴀʏꜱ</b>      ➪  <code>1d</code>  <code>7d</code>  <code>30d</code>\n"
+        "🗓️ <b>ᴡᴇᴇᴋꜱ</b>    ➪  <code>1week</code>  <code>2weeks</code>\n"
+        "🌙 <b>ᴍᴏɴᴛʜꜱ</b>   ➪  <code>1month</code>  <code>6months</code>\n"
+        "🎆 <b>ʏᴇᴀʀꜱ</b>     ➪  <code>1year</code>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ✨ 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        "🔸 <code>/genkey 1d 5</code>\n"
+        "   └─ 5 ᴋᴇʏꜱ ᴏꜰ 1 ᴅᴀʏ ᴇᴀᴄʜ\n\n"
+        "🔸 <code>/genkey 1month 10 VIP</code>\n"
+        "   └─ 10 VIP ᴋᴇʏꜱ ᴏꜰ 1 ᴍᴏɴᴛʜ\n\n"
+        "🔸 <code>/genkey 30m 1 TEST</code>\n"
+        "   └─ 1 TEST ᴋᴇʏ ᴏꜰ 30 ᴍɪɴᴜᴛᴇꜱ\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   💠 𝗖𝗨𝗦𝗧𝗢𝗠 𝗡𝗔𝗠𝗘 𝗦𝗨𝗣𝗣𝗢𝗥𝗧 💠   ║\n"
+        "╚══════════════════════════════╝\n"
+        "┗➤ ɴᴀᴍᴇ ᴅᴇɴᴇ ꜱᴇ ᴋᴇʏ ᴘʀᴇᴍɪᴜᴍ ʟᴀɢᴇɢɪ ✨"
+    )
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "📊 𝐒𝐓𝐀𝐓𝐒")
-def btn_stats(msg): cmd_stats(msg)
+def btn_stats(msg):
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ!</b>", parse_mode="HTML")
+        return
+    cmd_stats(msg)
 
 @bot.message_handler(func=lambda m: m.text == "👥 𝐔𝐒𝐄𝐑𝐒")
-def btn_users(msg): cmd_users(msg)
+def btn_users(msg):
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ!</b>", parse_mode="HTML")
+        return
+    cmd_users(msg)
 
 @bot.message_handler(func=lambda m: m.text == "📢 𝐁𝐑𝐎𝐀𝐃𝐂𝐀𝐒𝐓")
 def btn_broadcast(msg):
-    bot.reply_to(msg, "📢 <code>/broadcast MSG</code>", parse_mode="HTML")
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ!</b>", parse_mode="HTML")
+        return
+    # Show broadcast instructions
+    txt = (
+        "╔══════════════════════════════╗\n"
+        "║   📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   💎 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 💎\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        "📝 <b>ꜰᴏʀᴍᴀᴛ:</b>\n"
+        "<code>/broadcast YOUR MESSAGE</code>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   ✨ 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        "🔸 <code>/broadcast Bot update ho gaya!</code>\n\n"
+        "🔸 <code>/broadcast New keys available</code>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃   📊 𝗜𝗡𝗙𝗢 📊\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <code>{len(data['users'])}</code>\n"
+        f"🚫 <b>ʙᴀɴɴᴇᴅ:</b> <code>{len(data.get('banned_users', {}))}</code>\n\n"
+        "╔══════════════════════════════╗\n"
+        "║   💠 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗠𝗘𝗦𝗦𝗔𝗚𝗘 💠   ║\n"
+        "╚══════════════════════════════╝"
+    )
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "⚙️ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒")
-def btn_settings(msg): cmd_settings(msg)
+def btn_settings(msg):
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ!</b>", parse_mode="HTML")
+        return
+    cmd_settings(msg)
 
 @bot.message_handler(func=lambda m: m.text == "❌ 𝐂𝐋𝐎𝐒𝐄")
 def btn_close(msg):
     bot.reply_to(msg, "❌ <b>ᴄʟᴏꜱᴇᴅ.</b>", reply_markup=kb_main(msg.from_user.id), parse_mode="HTML")
 
+# ============= FALLBACK (Catches non-command messages from banned users) =============
+@bot.message_handler(func=lambda m: True, content_types=['text'])
+def fallback(msg):
+    if is_banned(msg.from_user.id):
+        check_ban(msg)
 
 # ============= MAIN =============
 print("=" * 55)
