@@ -300,18 +300,18 @@ def cmd_start(msg):
     except: pass
 
     # ============================================================
-    # ⭐ STICKER → 3 SEC → FINAL MSG → 1 SEC → STICKER DELETE
+    # ⭐ STICKER → 4 SEC → FINAL MSG → 1 SEC → STICKER DELETE
     # ============================================================
     sticker_msg = None
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
         try:
             sticker_msg = bot.send_sticker(cid, chosen_sticker)
-            time.sleep(3)  # ← 3 second pura sticker dikhega
+            time.sleep(4)  # ← 4 second pura sticker dikhega
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE (sticker ke 3 sec baad aayega) =====
+    # ===== FINAL MESSAGE (sticker ke 4 sec baad aayega) =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -384,7 +384,7 @@ def cmd_start(msg):
     # ===== STICKER DELETE (final msg ke 1 sec baad) =====
     if sticker_msg:
         def delete_sticker():
-            time.sleep(1)  # ← 1 second baad delete
+            time.sleep(1)  # ← 1 second baad delete (total 5 sec)
             try:
                 bot.delete_message(cid, sticker_msg.message_id)
             except:
