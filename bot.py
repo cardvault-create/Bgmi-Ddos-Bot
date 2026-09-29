@@ -79,6 +79,30 @@ def save_data(d):
 data = load_data()
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
+# ============= RANDOM ROTATION (No Repeat) =============
+_sticker_pool = []
+_video_pool = []
+
+def get_random_sticker():
+    global _sticker_pool
+    stickers = data.get("stickers", [])
+    if not stickers:
+        return None
+    if not _sticker_pool:
+        _sticker_pool = stickers.copy()
+        random.shuffle(_sticker_pool)
+    return _sticker_pool.pop()
+
+def get_random_video():
+    global _video_pool
+    videos = data.get("videos", [])
+    if not videos:
+        return None
+    if not _video_pool:
+        _video_pool = videos.copy()
+        random.shuffle(_video_pool)
+    return _video_pool.pop()
+
 # ============= HELPERS =============
 def is_owner(uid): return uid == BOT_OWNER or str(uid) in data["admins"]
 def is_reseller(uid):
@@ -240,14 +264,23 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER (Random) =====
-    if data.get("stickers"):
+    # ===== STICKER (Random Rotation) =====
+    chosen_sticker = get_random_sticker()
+    if chosen_sticker:
         try:
-            chosen_sticker = random.choice(data["stickers"])
             bot.send_sticker(cid, chosen_sticker)
             time.sleep(3)
         except Exception as e:
             print(f"Sticker Error: {e}")
+
+    # ===== VIDEO (Random Rotation) =====
+    chosen_video = get_random_video()
+    if chosen_video:
+        try:
+            bot.send_video(cid, chosen_video)
+            time.sleep(1)
+        except Exception as e:
+            print(f"Video Error: {e}")
 
     # ===== FINAL MESSAGE =====
     header = (
@@ -367,10 +400,10 @@ def cmd_attack(msg):
     if not ok:
         bot.reply_to(msg, f"❌ <b>FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
-    # ===== VIDEO (Random) =====
-    if data.get("videos"):
+    # ===== VIDEO (Random Rotation) =====
+    chosen_video = get_random_video()
+    if chosen_video:
         try:
-            chosen_video = random.choice(data["videos"])
             bot.send_video(cid, chosen_video)
         except Exception as e:
             print(f"Video Error: {e}")
@@ -618,7 +651,7 @@ def cmd_removesticker(msg):
             return
         txt = "❄ <b>STICKERS LIST:</b>\n━━━━━━━━━━━━━\n"
         for i, s in enumerate(data["stickers"], 1):
-            txt += f"{i}. <code>{s[:40]}...</code>\n"
+            txt += f"{i}. <code>{s}</code>\n"
         txt += "\n❌ Remove: <code>/removesticker NUMBER</code>"
         bot.reply_to(msg, txt, parse_mode="HTML")
         return
@@ -627,7 +660,7 @@ def cmd_removesticker(msg):
         if 0 <= idx < len(data["stickers"]):
             data["stickers"].pop(idx)
             save_data(data)
-            bot.reply_to(msg, f"✅ Sticker removed!\nTotal: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
+            bot.reply_to(msg, f"✅ Sticker #{p[1]} removed!\n❄ Total: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "❌ Invalid number!")
     except:
@@ -658,7 +691,7 @@ def cmd_delvideo(msg):
             return
         txt = "📹 <b>VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
         for i, v in enumerate(data["videos"], 1):
-            txt += f"{i}. <code>{v[:40]}...</code>\n"
+            txt += f"{i}. <code>{v}</code>\n"
         txt += "\n❌ Delete: <code>/delvideo NUMBER</code>"
         bot.reply_to(msg, txt, parse_mode="HTML")
         return
@@ -667,7 +700,7 @@ def cmd_delvideo(msg):
         if 0 <= idx < len(data["videos"]):
             data["videos"].pop(idx)
             save_data(data)
-            bot.reply_to(msg, f"✅ Video removed!\nTotal: <b>{len(data['videos'])}</b>", parse_mode="HTML")
+            bot.reply_to(msg, f"✅ Video #{p[1]} removed!\n📹 Total: <b>{len(data['videos'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "❌ Invalid number!")
     except:
@@ -697,7 +730,6 @@ def cmd_clearvideos(msg):
 # ============= AUTO STICKER / VIDEO HANDLER =============
 @bot.message_handler(content_types=['sticker'])
 def auto_sticker(msg):
-    """Owner jab sticker bheje, automatically add ho jaye"""
     uid = msg.from_user.id
     if not is_owner(uid):
         return
@@ -711,7 +743,6 @@ def auto_sticker(msg):
 
 @bot.message_handler(content_types=['video'])
 def auto_video(msg):
-    """Owner jab video bheje, automatically add ho jaye"""
     uid = msg.from_user.id
     if not is_owner(uid):
         return
