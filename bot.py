@@ -5,7 +5,7 @@ Owner: 1987818347
 """
 
 import telebot
-from telebot.types import ReplyKeyboardMarkup
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import threading
 import os
 import re
@@ -187,24 +187,47 @@ def api_attack(ip, port, dur):
     except Exception as e:
         return False, str(e)
 
-# ============= KEYBOARDS =============
-def kb_main(uid):
-    m = ReplyKeyboardMarkup(resize_keyboard=True)
+# ============= INLINE KEYBOARDS (COLORFUL) =============
+def ikb_main(uid):
+    """Main menu with colorful inline buttons"""
+    m = InlineKeyboardMarkup(row_width=2)
+    
     if is_owner(uid):
-        m.row("🔥 ATTACK", "📊 STATUS")
-        m.row("👤 PROFILE", "👑 OWNER PANEL")
+        btn_attack = InlineKeyboardButton("🔥 ATTACK", callback_data="cmd_attack", style="danger")
+        btn_status = InlineKeyboardButton("📊 STATUS", callback_data="cmd_status", style="success")
+        btn_profile = InlineKeyboardButton("👤 PROFILE", callback_data="cmd_profile", style="primary")
+        btn_panel = InlineKeyboardButton("👑 OWNER PANEL", callback_data="cmd_panel", style="danger")
+        m.add(btn_attack, btn_status)
+        m.add(btn_profile, btn_panel)
     elif is_reseller(uid) or has_valid_key(uid):
-        m.row("🔥 ATTACK", "📊 STATUS")
-        m.row("🔑 REDEEM", "👤 PROFILE")
+        btn_attack = InlineKeyboardButton("🔥 ATTACK", callback_data="cmd_attack", style="danger")
+        btn_status = InlineKeyboardButton("📊 STATUS", callback_data="cmd_status", style="success")
+        btn_redeem = InlineKeyboardButton("🔑 REDEEM", callback_data="cmd_redeem", style="primary")
+        btn_profile = InlineKeyboardButton("👤 PROFILE", callback_data="cmd_profile", style="primary")
+        m.add(btn_attack, btn_status)
+        m.add(btn_redeem, btn_profile)
     else:
-        m.row("🔑 REDEEM", "👤 PROFILE")
+        btn_redeem = InlineKeyboardButton("🔑 REDEEM", callback_data="cmd_redeem", style="primary")
+        btn_profile = InlineKeyboardButton("👤 PROFILE", callback_data="cmd_profile", style="primary")
+        m.add(btn_redeem, btn_profile)
+    
     return m
 
-def kb_owner():
-    m = ReplyKeyboardMarkup(resize_keyboard=True)
-    m.row("🔑 GEN KEY", "👥 USERS")
-    m.row("📊 STATS", "📢 BROADCAST")
-    m.row("⚙️ SETTINGS", "❌ CLOSE")
+def ikb_owner():
+    """Owner panel with colorful inline buttons"""
+    m = InlineKeyboardMarkup(row_width=2)
+    m.add(
+        InlineKeyboardButton("🔑 GEN KEY", callback_data="cmd_genkey", style="primary"),
+        InlineKeyboardButton("👥 USERS", callback_data="cmd_users", style="success"),
+    )
+    m.add(
+        InlineKeyboardButton("📊 STATS", callback_data="cmd_stats", style="primary"),
+        InlineKeyboardButton("📢 BROADCAST", callback_data="cmd_broadcast", style="danger"),
+    )
+    m.add(
+        InlineKeyboardButton("⚙️ SETTINGS", callback_data="cmd_settings", style="primary"),
+        InlineKeyboardButton("❌ CLOSE", callback_data="cmd_close", style="danger"),
+    )
     return m
 
 # ============= START COMMAND =============
@@ -299,19 +322,17 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ============================================================
-    # ⭐ STICKER → 5 SEC → FINAL MSG → 1 SEC → STICKER DELETE
-    # ============================================================
+    # ===== STICKER → 5 SEC → FINAL MSG → 1 SEC → DELETE =====
     sticker_msg = None
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
         try:
             sticker_msg = bot.send_sticker(cid, chosen_sticker)
-            time.sleep(5)  # ← 5 second pura sticker dikhega
+            time.sleep(5)
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE (sticker ke 5 sec baad aayega) =====
+    # ===== FINAL MESSAGE =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -337,8 +358,7 @@ def cmd_start(msg):
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "⚠️ <b>Bina key ke attack nahi lagega!</b>\n"
             "🔑 Key lene ke liye owner se contact karo.\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "👇 <b>Neeche buttons se start karo</b>"
+            "━━━━━━━━━━━━━━━━━━━━━"
         )
     elif has_key:
         u = data["users"].get(str(uid), {})
@@ -354,12 +374,6 @@ def cmd_start(msg):
             f"⏰ <b>Time Left:</b> <b>{time_left}</b>\n"
             f"🎯 <b>Total Attacks:</b> {total_attacks}\n"
             "━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "📌 <b>Available Commands:</b>\n"
-            "➤ <code>/attack IP PORT TIME</code>\n"
-            "➤ <code>/profile</code>\n"
-            "➤ <code>/status</code>\n"
-            "➤ <code>/redeem KEY</code>\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n"
             "🔥 <b>Ready to launch attack?</b>"
         )
     else:
@@ -375,23 +389,208 @@ def cmd_start(msg):
             "📌 <b>Key Redeem Karo:</b>\n"
             "➤ <code>/redeem YOUR-KEY</code>\n\n"
             "🔑 Naya key lene ke liye owner se contact karo.\n"
-            "━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "👇 <b>Neeche buttons se start karo</b>"
+            "━━━━━━━━━━━━━━━━━━━━━"
         )
 
-    bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+    bot.send_message(cid, text, reply_markup=ikb_main(uid), parse_mode="HTML")
 
-    # ===== STICKER DELETE (final msg ke 1 sec baad) =====
+    # ===== STICKER DELETE (1 sec baad) =====
     if sticker_msg:
         def delete_sticker():
-            time.sleep(1)  # ← 1 second baad delete (total 6 sec)
+            time.sleep(1)
             try:
                 bot.delete_message(cid, sticker_msg.message_id)
             except:
                 pass
         threading.Thread(target=delete_sticker, daemon=True).start()
 
-# ============= ATTACK =============
+# ============= CALLBACK HANDLER (INLINE BUTTONS) =============
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
+    uid = call.from_user.id
+    cid = call.message.chat.id
+    msg_id = call.message.message_id
+
+    if call.data == "cmd_attack":
+        bot.answer_callback_query(call.id, "🎯 Use: /attack IP PORT TIME")
+    
+    elif call.data == "cmd_status":
+        bot.answer_callback_query(call.id, "📊 Status loaded!")
+        cmd_status_inline(cid, msg_id)
+    
+    elif call.data == "cmd_profile":
+        bot.answer_callback_query(call.id, "👤 Profile loaded!")
+        cmd_profile_inline(cid, msg_id, uid)
+    
+    elif call.data == "cmd_panel":
+        if not is_owner(uid):
+            bot.answer_callback_query(call.id, "❌ Owner only!")
+            return
+        bot.answer_callback_query(call.id, "👑 Panel opened!")
+        bot.edit_message_reply_markup(cid, msg_id, reply_markup=ikb_owner())
+    
+    elif call.data == "cmd_redeem":
+        bot.answer_callback_query(call.id, "🔑 Use: /redeem YOUR-KEY")
+    
+    elif call.data == "cmd_genkey":
+        bot.answer_callback_query(call.id, "🔑 Use: /genkey DAYS AMOUNT")
+    
+    elif call.data == "cmd_users":
+        if not is_owner(uid):
+            bot.answer_callback_query(call.id, "❌ Owner only!")
+            return
+        bot.answer_callback_query(call.id, "👥 Users loaded!")
+        cmd_users_inline(cid, uid)
+    
+    elif call.data == "cmd_stats":
+        if not is_owner(uid):
+            bot.answer_callback_query(call.id, "❌ Owner only!")
+            return
+        bot.answer_callback_query(call.id, "📊 Stats loaded!")
+        cmd_stats_inline(cid, uid)
+    
+    elif call.data == "cmd_broadcast":
+        bot.answer_callback_query(call.id, "📢 Use: /broadcast MESSAGE")
+    
+    elif call.data == "cmd_settings":
+        if not is_owner(uid):
+            bot.answer_callback_query(call.id, "❌ Owner only!")
+            return
+        bot.answer_callback_query(call.id, "⚙️ Settings loaded!")
+        cmd_settings_inline(cid, uid)
+    
+    elif call.data == "cmd_close":
+        bot.answer_callback_query(call.id, "❌ Closed!")
+        try:
+            bot.delete_message(cid, msg_id)
+        except: pass
+    
+    elif call.data.startswith("delsticker_"):
+        if not is_owner(uid): return
+        try:
+            idx = int(call.data.split("_")[1])
+            data["stickers"].pop(idx)
+            save_data(data)
+            bot.answer_callback_query(call.id, f"✅ Sticker removed! Total: {len(data['stickers'])}")
+        except:
+            bot.answer_callback_query(call.id, "❌ Error!")
+    
+    elif call.data.startswith("delvideo_"):
+        if not is_owner(uid): return
+        try:
+            idx = int(call.data.split("_")[1])
+            data["videos"].pop(idx)
+            save_data(data)
+            bot.answer_callback_query(call.id, f"✅ Video removed! Total: {len(data['videos'])}")
+        except:
+            bot.answer_callback_query(call.id, "❌ Error!")
+    
+    elif call.data.startswith("delpyf_"):
+        if not is_owner(uid): return
+        try:
+            idx = int(call.data.split("_")[1])
+            data["pyf_videos"].pop(idx)
+            save_data(data)
+            bot.answer_callback_query(call.id, f"✅ PYF Video removed! Total: {len(data['pyf_videos'])}")
+        except:
+            bot.answer_callback_query(call.id, "❌ Error!")
+
+# ============= INLINE COMMAND FUNCTIONS =============
+def cmd_status_inline(cid, msg_id):
+    with attack_lock:
+        now = datetime.now()
+        running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+    txt = (
+        f"📊 <b>STATUS</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🤖 Bot: <b>ONLINE</b>\n"
+        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
+        f"👥 Users: <b>{len(data['users'])}</b>\n"
+        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
+    )
+    if running:
+        for a, atk in running:
+            rem = int((atk['end_time'] - now).total_seconds())
+            txt += f"⚔️ {atk['target']}:{atk['port']} ({rem}s)\n"
+    else:
+        txt += "💤 No active attacks"
+    try:
+        bot.send_message(cid, txt, parse_mode="HTML")
+    except: pass
+
+def cmd_profile_inline(cid, msg_id, uid):
+    u = data["users"].get(str(uid), {})
+    txt = (
+        f"👤 <b>PROFILE</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🆔 ID: <code>{uid}</code>\n"
+        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
+        f"🎯 Attacks: <b>{u.get('total_attacks', 0)}</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━"
+    )
+    try:
+        bot.send_message(cid, txt, parse_mode="HTML")
+    except: pass
+
+def cmd_users_inline(cid, uid):
+    if not data["users"]:
+        bot.send_message(cid, "📂 No users.")
+        return
+    txt = "👥 <b>USERS</b>\n━━━━━━━━━━━━━\n"
+    for i, (u_id, u) in enumerate(list(data["users"].items())[:50], 1):
+        txt += f"{i}. <code>{u_id}</code> | {u.get('total_attacks', 0)} attacks\n"
+    bot.send_message(cid, txt, parse_mode="HTML")
+
+def cmd_stats_inline(cid, uid):
+    txt = (
+        f"📊 <b>STATS</b>\n"
+        f"👥 Users: <b>{len(data['users'])}</b>\n"
+        f"🔑 Keys: <b>{len(data['keys'])}</b>\n"
+        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
+        f"❄ Stickers: <b>{len(data.get('stickers', []))}</b>\n"
+        f"📹 Videos: <b>{len(data.get('videos', []))}</b>\n"
+        f"🎬 PYF Videos: <b>{len(data.get('pyf_videos', []))}</b>\n"
+        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>"
+    )
+    bot.send_message(cid, txt, parse_mode="HTML")
+
+def cmd_settings_inline(cid, uid):
+    txt = (
+        "⚙️ <b>ALL COMMANDS — OWNER ONLY</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "👑 <b>OWNER</b>\n"
+        "┣ /panel ➪ Owner Panel\n"
+        "┣ /users ➪ Users List\n"
+        "┣ /stats ➪ Stats\n"
+        "┣ /broadcast MSG ➪ Broadcast\n"
+        "┣ /ban ID ➪ Ban User\n"
+        "┗ /unban ID ➪ Unban User\n\n"
+        "🔑 <b>KEY</b>\n"
+        "┣ /genkey DAYS [AMOUNT]\n"
+        "┗ /redeem KEY\n\n"
+        "📡 <b>API</b>\n"
+        "┣ /setapi URL TOKEN [method] [geo]\n"
+        "┣ /testapi\n"
+        "┣ /setmaxtime SEC\n"
+        "┗ /setcooldown SEC\n\n"
+        "🔧 <b>BOT</b>\n"
+        "┗ /maintenance\n\n"
+        "❄ <b>STICKER</b>\n"
+        "┣ Send sticker ➪ Auto Add\n"
+        "┣ /removesticker NUMBER\n"
+        "┗ /liststickers\n\n"
+        "📹 <b>VIDEO</b>\n"
+        "┣ Send video ➪ Auto Add\n"
+        "┣ /listvideo\n"
+        "┗ /delvideo NUMBER\n\n"
+        "🎬 <b>PYF VIDEO</b>\n"
+        "┣ /addpyf\n"
+        "┣ /listpyf\n"
+        "┗ /delpyf NUMBER"
+    )
+    bot.send_message(cid, txt, parse_mode="HTML")
+
+# ============= ATTACK (same as before) =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
     uid = msg.from_user.id
@@ -439,7 +638,6 @@ def cmd_attack(msg):
     if not ok:
         bot.reply_to(msg, f"❌ <b>FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
-    # ===== ATTACK LAUNCHED (with video attached) =====
     attack_caption = (
         f"💀 <b>ATTACK LAUNCHED</b> 💀\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
@@ -550,58 +748,25 @@ def cmd_redeem(msg):
     save_data(data)
     bot.reply_to(msg, f"✅ <b>KEY REDEEMED!</b>\n⏰ +{days} days\n📅 Expires: <b>{expiry.strftime('%d %b %Y')}</b>", parse_mode="HTML")
 
-# ============= PROFILE / STATUS =============
+# ============= PROFILE / STATUS (Commands) =============
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
-    uid = msg.from_user.id
-    u = data["users"].get(str(uid), {})
-    txt = (
-        f"👤 <b>PROFILE</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🆔 ID: <code>{uid}</code>\n"
-        f"📛 Name: <b>{msg.from_user.first_name}</b>\n"
-        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
-        f"🎯 Attacks: <b>{u.get('total_attacks', 0)}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    cmd_profile_inline(msg.chat.id, msg.message_id, msg.from_user.id)
 
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
-    with attack_lock:
-        now = datetime.now()
-        running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
-    txt = (
-        f"📊 <b>STATUS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🤖 Bot: <b>ONLINE</b>\n"
-        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
-        f"👥 Users: <b>{len(data['users'])}</b>\n"
-        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
-    )
-    if running:
-        for a, atk in running:
-            rem = int((atk['end_time'] - now).total_seconds())
-            txt += f"⚔️ {atk['target']}:{atk['port']} ({rem}s)\n"
-    else:
-        txt += "💤 No active attacks"
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    cmd_status_inline(msg.chat.id, msg.message_id)
 
 # ============= OWNER PANEL =============
 @bot.message_handler(commands=['panel'])
 def cmd_panel(msg):
     if not is_owner(msg.from_user.id): return
-    bot.reply_to(msg, "👑 <b>OWNER PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
+    bot.reply_to(msg, "👑 <b>OWNER PANEL</b>", reply_markup=ikb_owner(), parse_mode="HTML")
 
 @bot.message_handler(commands=['users'])
 def cmd_users(msg):
     if not is_owner(msg.from_user.id): return
-    if not data["users"]:
-        bot.reply_to(msg, "📂 No users."); return
-    txt = "👥 <b>USERS</b>\n━━━━━━━━━━━━━\n"
-    for i, (uid, u) in enumerate(list(data["users"].items())[:50], 1):
-        txt += f"{i}. <code>{uid}</code> | {u.get('total_attacks', 0)} attacks\n"
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    cmd_users_inline(msg.chat.id, msg.from_user.id)
 
 @bot.message_handler(commands=['broadcast'])
 def cmd_broadcast(msg):
@@ -620,17 +785,7 @@ def cmd_broadcast(msg):
 @bot.message_handler(commands=['stats'])
 def cmd_stats(msg):
     if not is_owner(msg.from_user.id): return
-    txt = (
-        f"📊 <b>STATS</b>\n"
-        f"👥 Users: <b>{len(data['users'])}</b>\n"
-        f"🔑 Keys: <b>{len(data['keys'])}</b>\n"
-        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
-        f"❄ Stickers: <b>{len(data.get('stickers', []))}</b>\n"
-        f"📹 Videos: <b>{len(data.get('videos', []))}</b>\n"
-        f"🎬 PYF Videos: <b>{len(data.get('pyf_videos', []))}</b>\n"
-        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    cmd_stats_inline(msg.chat.id, msg.from_user.id)
 
 @bot.message_handler(commands=['ban'])
 def cmd_ban(msg):
@@ -694,27 +849,15 @@ def cmd_maintenance(msg):
 @bot.message_handler(commands=['removesticker'])
 def cmd_removesticker(msg):
     if not is_owner(msg.from_user.id): return
-    p = msg.text.split()
-    if len(p) < 2:
-        if not data["stickers"]:
-            bot.reply_to(msg, "❄ Koi sticker nahi hai.")
-            return
-        txt = "❄ <b>STICKERS LIST:</b>\n━━━━━━━━━━━━━\n"
-        for i, s in enumerate(data["stickers"], 1):
-            txt += f"{i}. <code>{s}</code>\n"
-        txt += "\n❌ Remove: <code>/removesticker NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
+    if not data["stickers"]:
+        bot.reply_to(msg, "❄ Koi sticker nahi hai.")
         return
-    try:
-        idx = int(p[1]) - 1
-        if 0 <= idx < len(data["stickers"]):
-            data["stickers"].pop(idx)
-            save_data(data)
-            bot.reply_to(msg, f"✅ Sticker #{p[1]} removed!\n❄ Total: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ Invalid number!")
-    except:
-        bot.reply_to(msg, "❌ Usage: <code>/removesticker NUMBER</code>", parse_mode="HTML")
+    m = InlineKeyboardMarkup(row_width=3)
+    btns = []
+    for i, s in enumerate(data["stickers"], 1):
+        btns.append(InlineKeyboardButton(f"❌ {i}", callback_data=f"delsticker_{i-1}", style="danger"))
+    m.add(*btns)
+    bot.reply_to(msg, "❄ <b>STICKERS — Click to remove:</b>", reply_markup=m, parse_mode="HTML")
 
 @bot.message_handler(commands=['liststickers'])
 def cmd_liststickers(msg):
@@ -728,7 +871,7 @@ def cmd_liststickers(msg):
     txt += f"\n🔹 𝗧𝗼𝘁𝗮𝗹 {len(data['stickers'])}"
     bot.reply_to(msg, txt)
 
-# ============= VIDEO COMMANDS (Attack wali) =============
+# ============= VIDEO COMMANDS =============
 @bot.message_handler(commands=['listvideo'])
 def cmd_listvideo(msg):
     if not is_owner(msg.from_user.id): return
@@ -744,27 +887,15 @@ def cmd_listvideo(msg):
 @bot.message_handler(commands=['delvideo'])
 def cmd_delvideo(msg):
     if not is_owner(msg.from_user.id): return
-    p = msg.text.split()
-    if len(p) < 2:
-        if not data["videos"]:
-            bot.reply_to(msg, "📹 Koi video nahi hai.")
-            return
-        txt = "📹 <b>VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
-        for i, v in enumerate(data["videos"], 1):
-            txt += f"{i}. <code>{v}</code>\n"
-        txt += "\n❌ Delete: <code>/delvideo NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
+    if not data["videos"]:
+        bot.reply_to(msg, "📹 Koi video nahi hai.")
         return
-    try:
-        idx = int(p[1]) - 1
-        if 0 <= idx < len(data["videos"]):
-            data["videos"].pop(idx)
-            save_data(data)
-            bot.reply_to(msg, f"✅ Video #{p[1]} removed!\n📹 Total: <b>{len(data['videos'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ Invalid number!")
-    except:
-        bot.reply_to(msg, "❌ Usage: <code>/delvideo NUMBER</code>", parse_mode="HTML")
+    m = InlineKeyboardMarkup(row_width=3)
+    btns = []
+    for i, v in enumerate(data["videos"], 1):
+        btns.append(InlineKeyboardButton(f"❌ {i}", callback_data=f"delvideo_{i-1}", style="danger"))
+    m.add(*btns)
+    bot.reply_to(msg, "📹 <b>VIDEOS — Click to remove:</b>", reply_markup=m, parse_mode="HTML")
 
 # ============= PYF VIDEO COMMANDS =============
 @bot.message_handler(commands=['addpyf'])
@@ -788,27 +919,15 @@ def cmd_listpyf(msg):
 @bot.message_handler(commands=['delpyf'])
 def cmd_delpyf(msg):
     if not is_owner(msg.from_user.id): return
-    p = msg.text.split()
-    if len(p) < 2:
-        if not data["pyf_videos"]:
-            bot.reply_to(msg, "🎬 Koi PYF video nahi hai.")
-            return
-        txt = "🎬 <b>PYF VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
-        for i, v in enumerate(data["pyf_videos"], 1):
-            txt += f"{i}. <code>{v}</code>\n"
-        txt += "\n❌ Delete: <code>/delpyf NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
+    if not data["pyf_videos"]:
+        bot.reply_to(msg, "🎬 Koi PYF video nahi hai.")
         return
-    try:
-        idx = int(p[1]) - 1
-        if 0 <= idx < len(data["pyf_videos"]):
-            data["pyf_videos"].pop(idx)
-            save_data(data)
-            bot.reply_to(msg, f"✅ PYF Video #{p[1]} removed!\n🎬 Total: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ Invalid number!")
-    except:
-        bot.reply_to(msg, "❌ Usage: <code>/delpyf NUMBER</code>", parse_mode="HTML")
+    m = InlineKeyboardMarkup(row_width=3)
+    btns = []
+    for i, v in enumerate(data["pyf_videos"], 1):
+        btns.append(InlineKeyboardButton(f"❌ {i}", callback_data=f"delpyf_{i-1}", style="danger"))
+    m.add(*btns)
+    bot.reply_to(msg, "🎬 <b>PYF VIDEOS — Click to remove:</b>", reply_markup=m, parse_mode="HTML")
 
 # ============= AUTO STICKER =============
 @bot.message_handler(content_types=['sticker'])
@@ -852,83 +971,7 @@ def handle_video(msg):
 @bot.message_handler(commands=['settings'])
 def cmd_settings(msg):
     if not is_owner(msg.from_user.id): return
-    txt = (
-        "⚙️ <b>ALL COMMANDS — OWNER ONLY</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👑 <b>OWNER COMMANDS</b>\n"
-        "┣ /panel ➪ Owner Panel\n"
-        "┣ /users ➪ Users List\n"
-        "┣ /stats ➪ Stats\n"
-        "┣ /broadcast MSG ➪ Broadcast\n"
-        "┣ /ban ID ➪ Ban User\n"
-        "┗ /unban ID ➪ Unban User\n\n"
-        "🔑 <b>KEY MANAGEMENT</b>\n"
-        "┣ /genkey DAYS [AMOUNT] ➪ Generate Keys\n"
-        "┗ /redeem KEY ➪ Redeem Key\n\n"
-        "📡 <b>API MANAGEMENT</b>\n"
-        "┣ /setapi URL TOKEN [method] [geo] ➪ Set API\n"
-        "┣ /testapi ➪ Test API\n"
-        "┣ /setmaxtime SEC ➪ Max Attack Time\n"
-        "┗ /setcooldown SEC ➪ Cooldown\n\n"
-        "🔧 <b>BOT SETTINGS</b>\n"
-        "┗ /maintenance ➪ ON/OFF Maintenance\n\n"
-        "❄ <b>STICKER</b>\n"
-        "┣ Send sticker ➪ Auto Add\n"
-        "┣ /removesticker NUMBER ➪ Remove Sticker\n"
-        "┗ /liststickers ➪ List Stickers\n\n"
-        "📹 <b>VIDEO (Attack ke saath)</b>\n"
-        "┣ Send video ➪ Auto Add\n"
-        "┣ /listvideo ➪ List Videos\n"
-        "┗ /delvideo NUMBER ➪ Delete Video\n\n"
-        "🎬 <b>PYF VIDEO (Start ke saath)</b>\n"
-        "┣ /addpyf ➪ Add PYF Video (fir video forward)\n"
-        "┣ /listpyf ➪ List PYF Videos\n"
-        "┗ /delpyf NUMBER ➪ Delete PYF Video\n\n"
-        "━━━━━━━━━━━━━━━━━━━━━"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
-
-# ============= BUTTONS =============
-@bot.message_handler(func=lambda m: m.text == "🔥 ATTACK")
-def btn_attack(msg):
-    bot.reply_to(msg, "🎯 <code>/attack IP PORT TIME</code>", parse_mode="HTML")
-
-@bot.message_handler(func=lambda m: m.text == "📊 STATUS")
-def btn_status(msg): cmd_status(msg)
-
-@bot.message_handler(func=lambda m: m.text == "👤 PROFILE")
-def btn_profile(msg): cmd_profile(msg)
-
-@bot.message_handler(func=lambda m: m.text == "👑 OWNER PANEL")
-def btn_owner(msg):
-    if not is_owner(msg.from_user.id): return
-    bot.reply_to(msg, "👑 <b>PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
-
-@bot.message_handler(func=lambda m: m.text == "🔑 REDEEM")
-def btn_redeem(msg):
-    bot.reply_to(msg, "🔑 <code>/redeem KEY</code>", parse_mode="HTML")
-
-@bot.message_handler(func=lambda m: m.text == "🔑 GEN KEY")
-def btn_genkey(msg):
-    bot.reply_to(msg, "🔑 <code>/genkey DAYS AMOUNT</code>", parse_mode="HTML")
-
-@bot.message_handler(func=lambda m: m.text == "📊 STATS")
-def btn_stats(msg): cmd_stats(msg)
-
-@bot.message_handler(func=lambda m: m.text == "👥 USERS")
-def btn_users(msg): cmd_users(msg)
-
-@bot.message_handler(func=lambda m: m.text == "📢 BROADCAST")
-def btn_broadcast(msg):
-    bot.reply_to(msg, "📢 <code>/broadcast MSG</code>", parse_mode="HTML")
-
-@bot.message_handler(func=lambda m: m.text == "⚙️ SETTINGS")
-def btn_settings(msg):
-    cmd_settings(msg)
-
-@bot.message_handler(func=lambda m: m.text == "❌ CLOSE")
-def btn_close(msg):
-    bot.reply_to(msg, "❌ Closed.", reply_markup=kb_main(msg.from_user.id))
+    cmd_settings_inline(msg.chat.id, msg.from_user.id)
 
 # ============= MAIN =============
 print("=" * 55)
