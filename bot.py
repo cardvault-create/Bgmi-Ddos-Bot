@@ -219,16 +219,23 @@ def cmd_start(msg):
     username = msg.from_user.username
     cid = msg.chat.id
 
-    # ===== CHECKING ANIMATION =====
-    check = bot.send_message(
-        cid,
+    # ===== CHECKING ANIMATION (with PYF video attached) =====
+    check_text = (
         "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
         "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡                ▐\n"
         "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
         "▱▱▱▱▱▱▱▱▱▱ 0%\n"
-        "⏳ Starting...",
-        parse_mode="HTML"
+        "⏳ Starting..."
     )
+
+    chosen_pyf_start = get_random_pyf()
+    if chosen_pyf_start:
+        try:
+            check = bot.send_video(cid, chosen_pyf_start, caption=check_text, parse_mode="HTML")
+        except:
+            check = bot.send_message(cid, check_text, parse_mode="HTML")
+    else:
+        check = bot.send_message(cid, check_text, parse_mode="HTML")
 
     steps = [
         ("▰▱▱▱▱▱▱▱▱▱", "10%", "📡 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗶𝗻𝗴 𝘁𝗼 𝘀𝗲𝗿𝘃𝗲𝗿..."),
@@ -242,15 +249,34 @@ def cmd_start(msg):
     for bar, pct, status in steps:
         time.sleep(0.7)
         try:
-            bot.edit_message_text(
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡                ▐\n"
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                f"{bar} {pct}\n"
-                f"{status}",
-                cid, check.message_id, parse_mode="HTML"
+            bot.edit_message_caption(
+                chat_id=cid,
+                message_id=check.message_id,
+                caption=(
+                    "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                    "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡                ▐\n"
+                    "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                    f"{bar} {pct}\n"
+                    f"{status}"
+                ),
+                parse_mode="HTML"
             )
-        except: pass
+        except:
+            try:
+                bot.edit_message_text(
+                    chat_id=cid,
+                    message_id=check.message_id,
+                    text=(
+                        "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                        "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡                ▐\n"
+                        "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                        f"{bar} {pct}\n"
+                        f"{status}"
+                    ),
+                    parse_mode="HTML"
+                )
+            except:
+                pass
 
     time.sleep(0.8)
 
@@ -273,12 +299,12 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER (Random) → 3 sec → DELETE =====
+    # ===== STICKER (Random) → 8 sec → DELETE =====
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
         try:
             sticker_msg = bot.send_sticker(cid, chosen_sticker)
-            time.sleep(3)
+            time.sleep(8)
             try:
                 bot.delete_message(cid, sticker_msg.message_id)
             except:
@@ -286,7 +312,7 @@ def cmd_start(msg):
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE (with PYF VIDEO if available) =====
+    # ===== FINAL MESSAGE =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -354,16 +380,7 @@ def cmd_start(msg):
             "👇 <b>Neeche buttons se start karo</b>"
         )
 
-    # ===== SEND WITH PYF VIDEO (attached) =====
-    chosen_pyf = get_random_pyf()
-    if chosen_pyf:
-        try:
-            bot.send_video(cid, chosen_pyf, caption=text, parse_mode="HTML", reply_markup=kb_main(uid))
-        except Exception as e:
-            print(f"Pyf Send Error: {e}")
-            bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-    else:
-        bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+    bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
 
 # ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
@@ -806,7 +823,6 @@ def handle_video(msg):
     if not is_owner(uid): return
     file_id = msg.video.file_id
 
-    # Check agar /addpyf command diya tha
     if _pending_pyf.get(uid):
         _pending_pyf[uid] = False
         if file_id not in data["pyf_videos"]:
@@ -816,7 +832,6 @@ def handle_video(msg):
         else:
             bot.reply_to(msg, "ℹ️ Yeh PYF video already added hai.")
     else:
-        # Normal video → auto add (attack wali)
         if file_id not in data["videos"]:
             data["videos"].append(file_id)
             save_data(data)
