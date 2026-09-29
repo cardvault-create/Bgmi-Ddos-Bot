@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-APROLX ELITE V22 - TELEGRAM BOT
-Fixed: get_setting() default argument
+TG BOT PREMIUM V1 - TELEGRAM BOT
+Owner: 1987818347
 """
 
 import telebot
@@ -31,7 +31,7 @@ DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e
 DEFAULT_API_METHOD = "UDP-BIG"
 DEFAULT_API_GEOLOCATION = "ALL"
 
-DATA_FILE = "bot_data_v22.json"
+DATA_FILE = "bot_data.json"
 
 # ============= DATA =============
 def load_data():
@@ -170,25 +170,147 @@ def kb_owner():
     m.row("⚙️ SETTINGS", "❌ CLOSE")
     return m
 
-# ============= COMMANDS =============
+# ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
     uid = msg.from_user.id
     if is_banned(uid):
-        bot.reply_to(msg, "🚫 Banned."); return
-    name = msg.from_user.username or msg.from_user.first_name
-    txt = (
-        f"🔥 <b>APROLX ELITE V22</b> 🔥\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👋 Welcome, <b>{name}</b>!\n\n"
-        f"🎯 Method: <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
-        f"⚡ Status: <b>ONLINE</b>\n"
-        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📌 /attack IP PORT TIME"
-    )
-    bot.send_message(msg.chat.id, txt, reply_markup=kb_main(uid), parse_mode="HTML")
+        bot.reply_to(msg, "🚫 You are banned from using this bot.")
+        return
 
+    name = msg.from_user.first_name or "User"
+    username = msg.from_user.username
+    cid = msg.chat.id
+
+    # ===== CHECKING ANIMATION =====
+    check = bot.send_message(
+        cid,
+        "╔══════════════════════════╗\n"
+        "║   🔍 <b>CHECKING...</b>    ║\n"
+        "╚══════════════════════════╝\n\n"
+        "▱▱▱▱▱▱▱▱▱▱ <b>0%</b>\n"
+        "⏳ Starting check...",
+        parse_mode="HTML"
+    )
+
+    steps = [
+        ("▰▱▱▱▱▱▱▱▱▱", "10%", "📡 Connecting to server..."),
+        ("▰▰▰▱▱▱▱▱▱▱", "30%", "👤 Verifying user..."),
+        ("▰▰▰▰▰▱▱▱▱▱", "50%", "⚙️ Loading profile..."),
+        ("▰▰▰▰▰▰▰▱▱▱", "70%", "🔑 Checking key status..."),
+        ("▰▰▰▰▰▰▰▰▰▱", "90%", "⏳ Finalizing..."),
+        ("▰▰▰▰▰▰▰▰▰▰", "100%", "✅ Account verified!"),
+    ]
+
+    for bar, pct, status in steps:
+        time.sleep(0.7)
+        try:
+            bot.edit_message_text(
+                "╔══════════════════════════╗\n"
+                "║   🔍 <b>CHECKING...</b>    ║\n"
+                "╚══════════════════════════╝\n\n"
+                f"{bar} <b>{pct}</b>\n"
+                f"{status}",
+                cid, check.message_id, parse_mode="HTML"
+            )
+        except: pass
+
+    time.sleep(0.8)
+
+    # ===== CHECK USER STATUS =====
+    is_new = str(uid) not in data["users"]
+
+    if is_new:
+        data["users"][str(uid)] = {
+            "username": username or name,
+            "joined_at": datetime.now().isoformat(),
+            "total_attacks": 0,
+            "key_expiry": None
+        }
+        save_data(data)
+
+    has_key = has_valid_key(uid)
+    time_left = time_remaining(uid)
+
+    try:
+        bot.delete_message(cid, check.message_id)
+    except: pass
+
+    # ===== FINAL MESSAGE =====
+    if is_new and not has_key:
+        text = (
+            "╔══════════════════════════╗\n"
+            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"👋 <b>Welcome, {name}!</b>\n\n"
+            "🎉 Aapka account successfully create ho gaya!\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "❌ <b>Status:</b> No Active Key\n"
+            f"🎯 <b>Method:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+            "⚡ <b>Bot:</b> 🟢 ONLINE\n"
+            "🚀 <b>Version:</b> V1.0 Premium\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "📌 <b>Kaise Start Kare?</b>\n\n"
+            "1️⃣ <b>Redeem Key</b>\n"
+            "   ➤ <code>/redeem YOUR-KEY</code>\n\n"
+            "2️⃣ <b>Launch Attack</b>\n"
+            "   ➤ <code>/attack IP PORT TIME</code>\n\n"
+            "3️⃣ <b>Check Profile</b>\n"
+            "   ➤ <code>/profile</code>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "⚠️ <b>Bina key ke attack nahi lagega!</b>\n"
+            "🔑 Key lene ke liye owner se contact karo.\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "👇 <b>Neeche buttons se start karo</b>"
+        )
+    elif has_key:
+        u = data["users"].get(str(uid), {})
+        total_attacks = u.get("total_attacks", 0)
+        role = "👑 OWNER" if is_owner(uid) else ("💼 RESELLER" if is_reseller(uid) else "👤 USER")
+
+        text = (
+            "╔══════════════════════════╗\n"
+            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"👋 <b>Welcome back, {name}!</b>\n\n"
+            "✅ <b>Key Verified Successfully</b>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 <b>Role:</b> {role}\n"
+            f"🆔 <b>ID:</b> <code>{uid}</code>\n"
+            f"⏰ <b>Time Left:</b> <b>{time_left}</b>\n"
+            f"🎯 <b>Total Attacks:</b> {total_attacks}\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "📌 <b>Available Commands:</b>\n"
+            "➤ <code>/attack IP PORT TIME</code>\n"
+            "➤ <code>/profile</code>\n"
+            "➤ <code>/status</code>\n"
+            "➤ <code>/redeem KEY</code>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "🔥 <b>Ready to launch attack?</b>"
+        )
+    else:
+        text = (
+            "╔══════════════════════════╗\n"
+            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"👋 <b>Welcome back, {name}!</b>\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "❌ <b>Status:</b> No Active Key\n"
+            f"🎯 <b>Method:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+            "⚡ <b>Bot:</b> 🟢 ONLINE\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "⚠️ <b>Aapki key expire ho gayi hai</b>\n"
+            "ya abhi tak redeem nahi ki!\n\n"
+            "📌 <b>Key Redeem Karo:</b>\n"
+            "➤ <code>/redeem YOUR-KEY</code>\n\n"
+            "🔑 Naya key lene ke liye owner se contact karo.\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "👇 <b>Neeche buttons se start karo</b>"
+        )
+
+    bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+
+# ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
     uid = msg.from_user.id
@@ -270,6 +392,7 @@ def cmd_attack(msg):
 
     threading.Thread(target=done, daemon=True).start()
 
+# ============= KEY MANAGEMENT =============
 @bot.message_handler(commands=['genkey', 'gen'])
 def cmd_gen(msg):
     if not is_owner(msg.from_user.id): return
@@ -327,6 +450,7 @@ def cmd_redeem(msg):
     save_data(data)
     bot.reply_to(msg, f"✅ <b>KEY REDEEMED!</b>\n⏰ +{days} days\n📅 Expires: <b>{expiry.strftime('%d %b %Y')}</b>", parse_mode="HTML")
 
+# ============= PROFILE / STATUS =============
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
     uid = msg.from_user.id
@@ -363,6 +487,7 @@ def cmd_status(msg):
         txt += "💤 No active attacks"
     bot.reply_to(msg, txt, parse_mode="HTML")
 
+# ============= OWNER PANEL =============
 @bot.message_handler(commands=['panel'])
 def cmd_panel(msg):
     if not is_owner(msg.from_user.id): return
@@ -506,7 +631,7 @@ def btn_close(msg):
 
 # ============= MAIN =============
 print("=" * 55)
-print("  🔥 APROLX ELITE V22 - POLLING MODE")
+print("  🔥 TG BOT PREMIUM - POLLING MODE")
 print("=" * 55)
 print(f"  👑 Owner: {BOT_OWNER}")
 print(f"  📡 API: {get_setting('api_url', DEFAULT_API_URL)}")
