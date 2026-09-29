@@ -2,7 +2,6 @@
 """
 ˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪
 Owner: 1987818347
-Library: python-telegram-bot (COLORFUL BUTTONS)
 """
 
 import logging
@@ -182,7 +181,7 @@ def api_attack(ip, port, dur):
     except Exception as e:
         return False, str(e)
 
-# ============= INLINE KEYBOARDS (COLORFUL) =============
+# ============= INLINE KEYBOARDS =============
 def ikb_main(uid):
     return InlineKeyboardMarkup([
         [
@@ -236,7 +235,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     uid = msg.from_user.id
     if is_banned(uid):
-        await msg.reply_text("🚫 You are banned from using this bot.")
+        await msg.reply_text("🚫 You are banned.")
         return
 
     name = msg.from_user.first_name or "User"
@@ -386,15 +385,12 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         kb = ikb_no_key()
 
-    # ⭐ SEND FINAL MESSAGE — YEH IMPORTANT HAI
     try:
         await context.bot.send_message(cid, text, reply_markup=kb, parse_mode="HTML")
-        print(f"✅ Final message sent to {cid}")
     except Exception as e:
         print(f"❌ Final message error: {e}")
         await context.bot.send_message(cid, text, parse_mode="HTML")
 
-    # Delete sticker after 1 sec
     if sticker_msg:
         await asyncio.sleep(1)
         try:
@@ -975,6 +971,7 @@ def main():
     app.add_handler(CommandHandler("delpyf", cmd_delpyf))
     app.add_handler(CommandHandler("settings", cmd_settings))
 
+    # Content handlers — sticker aur video reply ke liye
     app.add_handler(MessageHandler(filters.Sticker.ALL, handle_sticker))
     app.add_handler(MessageHandler(filters.VIDEO, handle_video))
 
