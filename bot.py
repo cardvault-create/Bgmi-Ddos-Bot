@@ -5,7 +5,7 @@ Owner: 1987818347
 """
 
 import telebot
-from telebot.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telebot.types import ReplyKeyboardMarkup
 import threading
 import os
 import re
@@ -26,7 +26,7 @@ BOT_START_TIME = datetime.now()
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
 
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝚇˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
@@ -280,9 +280,7 @@ def cmd_start(msg):
 
     time.sleep(0.8)
 
-    # ===== CHECK USER STATUS =====
     is_new = str(uid) not in data["users"]
-
     if is_new:
         data["users"][str(uid)] = {
             "username": username or name,
@@ -309,7 +307,7 @@ def cmd_start(msg):
         except Exception as e:
             print(f"Sticker Error: {e}")
 
-    # ===== FINAL MESSAGE (WITH KEYBOARD BUTTONS) =====
+    # ===== FINAL MESSAGE =====
     header = (
         "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         f"┊         {BOT_NAME}              ┊\n"
@@ -377,10 +375,8 @@ def cmd_start(msg):
             "👇 <b>Neeche buttons se start karo</b>"
         )
 
-    # ⭐ FINAL MESSAGE WITH KEYBOARD BUTTONS
     bot.send_message(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
 
-    # ===== STICKER DELETE (final msg ke 1 sec baad) =====
     if sticker_msg:
         def delete_sticker():
             time.sleep(1)
@@ -543,41 +539,180 @@ def cmd_redeem(msg):
     save_data(data)
     bot.reply_to(msg, f"✅ <b>KEY REDEEMED!</b>\n⏰ +{days} days\n📅 Expires: <b>{expiry.strftime('%d %b %Y')}</b>", parse_mode="HTML")
 
-# ============= PROFILE / STATUS =============
+# ============= STATUS (LIVE AUTO-UPDATE) =============
+@bot.message_handler(commands=['status'])
+def cmd_status(msg):
+    uid = msg.from_user.id
+    cid = msg.chat.id
+    status_msg = bot.send_message(cid, "📊 <b>Loading...</b>", parse_mode="HTML")
+
+    def build_attack_box():
+        with attack_lock:
+            now = datetime.now()
+            running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+
+        if not running:
+            return None, 0
+
+        atk = running[0][1]
+        rem = int((atk['end_time'] - now).total_seconds())
+        dur = atk.get('duration', 60)
+        pct = int(((dur - rem) / dur) * 100) if dur > 0 else 0
+
+        # Progress bar
+        filled = int(pct / 10)
+        bar = "▰" * filled + "▱" * (10 - filled)
+
+        # Status text based on %
+        if pct < 20:
+            status = "🔴 𝗔𝗧𝗧𝗔𝗖𝗞 𝗝𝗨𝗦𝗧 𝗦𝗧𝗔𝗥𝗧𝗘𝗗"
+        elif pct < 50:
+            status = "🟠 𝗔𝗧𝗧𝗔𝗖𝗞 𝗜𝗡 𝗣𝗥𝗢𝗚𝗥𝗘𝗦𝗦"
+        elif pct < 80:
+            status = "🟡 𝗔𝗧𝗧𝗔𝗖𝗞 𝗠𝗢𝗥𝗘 𝗧𝗛𝗔𝗡 𝗛𝗔𝗟𝗙"
+        elif pct < 100:
+            status = "🟢 𝗔𝗧𝗧𝗔𝗖𝗞 𝗔𝗟𝗠𝗢𝗦𝗧 𝗗𝗢𝗡𝗘"
+        else:
+            status = "✅ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘𝗗"
+
+        box = (
+            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+            "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
+            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+            f"{bar} {pct}%\n"
+            f"{status}\n\n"
+            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+            "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+            f"┣ 🎯 𝗧𝗮𝗿𝗴𝗲𝘁 ➪ <code>{atk['target']}:{atk['port']}</code>\n"
+            f"┣ ⏱️ 𝗥𝗲𝗺𝗮𝗶𝗻𝗶𝗻𝗴 ➪ <b>{rem}s</b>\n"
+            f"┣ 🕐 𝗧𝗼𝘁𝗮𝗹 ➪ <b>{dur}s</b>\n"
+            f"┗ 👤 𝗨𝘀𝗲𝗿 ➪ <b>@{atk.get('username', 'Unknown')}</b>\n"
+        )
+        return box, rem
+
+    def get_full_status():
+        with attack_lock:
+            now = datetime.now()
+            running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+
+        uptime = str(datetime.now() - BOT_START_TIME).split('.')[0]
+        total_users = len(data['users'])
+        total_attacks = len(data['attack_logs'])
+        total_keys = len(data['keys'])
+        user_attacks = data['users'].get(str(uid), {}).get('total_attacks', 0)
+        time_left = time_remaining(uid)
+        role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
+
+        # Top section
+        txt = ""
+
+        # Attack box (if attack running)
+        if running:
+            attack_box, _ = build_attack_box()
+            if attack_box:
+                txt += attack_box + "\n"
+
+        txt += (
+            "╔══════════════════════════╗\n"
+            "║   📊 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 📊   ║\n"
+            "╚══════════════════════════╝\n\n"
+
+            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+            "┃  🤖 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎\n"
+            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+            f"┣ ⚡ 𝗦𝘁𝗮𝘁𝘂𝘀 ➪ 🟢 <b>ONLINE</b>\n"
+            f"┣ ⏱️ 𝗨𝗽𝘁𝗶𝗺𝗲 ➪ <b>{uptime}</b>\n"
+            f"┣ 🎯 𝗠𝗲𝘁𝗵𝗼𝗱 ➪ <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+            f"┗ 🌍 𝗚𝗲𝗼 ➪ <code>{get_setting('api_geolocation', 'ALL')}</code>\n\n"
+
+            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+            "┃  📈 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗖𝗦\n"
+            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+            f"┣ 👥 𝗨𝘀𝗲𝗿𝘀 ➪ <b>{total_users}</b>\n"
+            f"┣ 🔑 𝗞𝗲𝘆𝘀 ➪ <b>{total_keys}</b>\n"
+            f"┣ 💀 𝗔𝘁𝘁𝗮𝗰𝗸𝘀 ➪ <b>{total_attacks}</b>\n"
+            f"┗ ⚡ 𝗔𝗰𝘁𝗶𝘃𝗲 ➪ <b>{len(running)}</b>\n\n"
+
+            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+            "┃  👤 𝗬𝗢𝗨𝗥 𝗜𝗡𝗙𝗢\n"
+            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+            f"┣ 🎭 𝗥𝗼𝗹𝗲 ➪ {role}\n"
+            f"┣ 🎯 𝗬𝗼𝘂𝗿 𝗔𝘁𝘁𝗮𝗰𝗸𝘀 ➪ <b>{user_attacks}</b>\n"
+            f"┗ ⏰ 𝗧𝗶𝗺𝗲 ➪ <b>{time_left}</b>\n\n"
+
+            "╔══════════════════════════╗\n"
+            "║   🔥 𝗥𝗘𝗔𝗗𝗬 𝗧𝗢 𝗔𝗧𝗧𝗔𝗖𝗞 🔥   ║\n"
+            "╚══════════════════════════╝"
+        )
+
+        return txt
+
+    # Send initial status
+    try:
+        bot.edit_message_text(
+            chat_id=cid,
+            message_id=status_msg.message_id,
+            text=get_full_status(),
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        print(f"Status Error: {e}")
+
+    # Auto-update loop (3 sec)
+    def auto_update():
+        while True:
+            time.sleep(3)
+            with attack_lock:
+                now = datetime.now()
+                running_check = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+            if not running_check:
+                # Final update once attack is done
+                try:
+                    bot.edit_message_text(
+                        chat_id=cid,
+                        message_id=status_msg.message_id,
+                        text=get_full_status(),
+                        parse_mode="HTML"
+                    )
+                except:
+                    pass
+                break
+            try:
+                bot.edit_message_text(
+                    chat_id=cid,
+                    message_id=status_msg.message_id,
+                    text=get_full_status(),
+                    parse_mode="HTML"
+                )
+            except:
+                break
+
+    threading.Thread(target=auto_update, daemon=True).start()
+
+# ============= PROFILE =============
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
     uid = msg.from_user.id
     u = data["users"].get(str(uid), {})
-    txt = (
-        f"👤 <b>PROFILE</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🆔 ID: <code>{uid}</code>\n"
-        f"📛 Name: <b>{msg.from_user.first_name}</b>\n"
-        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
-        f"🎯 Attacks: <b>{u.get('total_attacks', 0)}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
+    role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
 
-@bot.message_handler(commands=['status'])
-def cmd_status(msg):
-    with attack_lock:
-        now = datetime.now()
-        running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
     txt = (
-        f"📊 <b>STATUS</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🤖 Bot: <b>ONLINE</b>\n"
-        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
-        f"👥 Users: <b>{len(data['users'])}</b>\n"
-        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
+        "╔══════════════════════════╗\n"
+        "║   👤 𝗬𝗢𝗨𝗥 𝗣𝗥𝗢𝗙𝗜𝗟𝗘 👤   ║\n"
+        "╚══════════════════════════╝\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  📋 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ 🆔 𝗜𝗗 ➪ <code>{uid}</code>\n"
+        f"┣ 📛 𝗡𝗮𝗺𝗲 ➪ <b>{msg.from_user.first_name}</b>\n"
+        f"┣ 🎭 𝗥𝗼𝗹𝗲 ➪ {role}\n"
+        f"┣ ⏰ 𝗧𝗶𝗺𝗲 ➪ <b>{time_remaining(uid)}</b>\n"
+        f"┗ 🎯 𝗔𝘁𝘁𝗮𝗰𝗸𝘀 ➪ <b>{u.get('total_attacks', 0)}</b>\n\n"
+        "╔══════════════════════════╗\n"
+        "║   ⚡ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗔𝗖𝗧𝗜𝗩𝗘 ⚡   ║\n"
+        "╚══════════════════════════╝"
     )
-    if running:
-        for a, atk in running:
-            rem = int((atk['end_time'] - now).total_seconds())
-            txt += f"⚔️ {atk['target']}:{atk['port']} ({rem}s)\n"
-    else:
-        txt += "💤 No active attacks"
     bot.reply_to(msg, txt, parse_mode="HTML")
 
 # ============= OWNER COMMANDS =============
