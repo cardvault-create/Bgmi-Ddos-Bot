@@ -282,8 +282,7 @@ def cmd_start(msg):
     has_key = has_valid_key(uid)
     time_left = time_remaining(uid)
 
-    try:
-        bot.delete_message(cid, check.message_id)
+    try: bot.delete_message(cid, check.message_id)
     except: pass
 
     sticker_msg = None
@@ -376,7 +375,15 @@ def cmd_attack(msg):
 
     parts = msg.text.split()[1:]
     if len(parts) != 3:
-        bot.reply_to(msg, "❌ <b>ᴜꜱᴀɢᴇ:</b> <code>/attack IP PORT TIME</code>", parse_mode="HTML"); return
+        bot.reply_to(msg,
+            "❌ <b>ᴜꜱᴀɢᴇ:</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "📌 <code>/attack IP PORT TIME</code>\n\n"
+            "📝 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+            "<code>/attack 1.2.3.4 80 60</code>\n"
+            "━━━━━━━━━━━━━━━━━━━━━",
+            parse_mode="HTML")
+        return
 
     ip, ps, ds = parts
     if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
@@ -469,13 +476,13 @@ def cmd_attack(msg):
 
     threading.Thread(target=done, daemon=True).start()
     
-# ============= LIVE STATUS (AUTO-UPDATE FIXED) =============
+# ============= LIVE STATUS (FIXED) =============
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
     uid = msg.from_user.id
     cid = msg.chat.id
 
-    status_msg = bot.send_message(cid, "📊 <b>ʟᴏᴀᴅɪɴɢ ꜱᴛᴀᴛᴜꜱ...</b>", parse_mode="HTML")
+    status_msg = bot.send_message(cid, "📊 ʟᴏᴀᴅɪɴɢ...")
 
     def build_status():
         with attack_lock:
@@ -562,8 +569,10 @@ def cmd_status(msg):
         bot.edit_message_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
     except Exception as e:
         print(f"Status Error: {e}")
+        try:
+            bot.edit_message_text(cid, status_msg.message_id, build_status())
+        except: pass
 
-    # Auto-update thread
     def auto_update():
         for _ in range(400):
             time.sleep(3)
@@ -571,10 +580,6 @@ def cmd_status(msg):
                 bot.edit_message_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
             except:
                 break
-            with attack_lock:
-                if not active_attacks:
-                    # Continue a few more cycles then stop
-                    pass
 
     threading.Thread(target=auto_update, daemon=True).start()
 
@@ -606,13 +611,9 @@ def cmd_profile(msg):
     bot.reply_to(msg, txt, parse_mode="HTML")
 
 
-# ============= KEY SYSTEM (CUSTOM NAME + 1d/1h/1m/1s) =============
-_pending_key = {}
-
+# ============= KEY SYSTEM (1d/1h/1m/1s + Custom Name) =============
 def parse_duration(text):
-    """Parse duration like 1d, 2h, 30m, 60s, 7d, 1month"""
     text = text.lower().strip()
-    # word-based
     word_map = {
         "second": 1, "seconds": 1, "sec": 1, "s": 1,
         "minute": 60, "minutes": 60, "min": 60, "m": 60,
@@ -622,35 +623,22 @@ def parse_duration(text):
         "month": 2592000, "months": 2592000, "mo": 2592000,
         "year": 31536000, "years": 31536000, "y": 31536000,
     }
-    # number + suffix
     m = re.match(r'^(\d+)\s*([a-z]+)$', text)
     if m:
-        num = int(m.group(1))
-        suf = m.group(2)
-        if suf in word_map:
-            return num * word_map[suf]
+        num = int(m.group(1)); suf = m.group(2)
+        if suf in word_map: return num * word_map[suf]
         return None
-    # only number = days default
-    if text.isdigit():
-        return int(text) * 86400
-    # word only (e.g. "day")
-    if text in word_map:
-        return word_map[text]
+    if text.isdigit(): return int(text) * 86400
+    if text in word_map: return word_map[text]
     return None
 
 def human_readable(seconds):
-    if seconds >= 31536000 and seconds % 31536000 == 0:
-        return f"{seconds // 31536000} ʏᴇᴀʀ"
-    if seconds >= 2592000 and seconds % 2592000 == 0:
-        return f"{seconds // 2592000} ᴍᴏɴᴛʜ"
-    if seconds >= 604800 and seconds % 604800 == 0:
-        return f"{seconds // 604800} ᴡᴇᴇᴋ"
-    if seconds >= 86400 and seconds % 86400 == 0:
-        return f"{seconds // 86400} ᴅᴀʏ"
-    if seconds >= 3600 and seconds % 3600 == 0:
-        return f"{seconds // 3600} ʜᴏᴜʀ"
-    if seconds >= 60 and seconds % 60 == 0:
-        return f"{seconds // 60} ᴍɪɴᴜᴛᴇ"
+    if seconds >= 31536000 and seconds % 31536000 == 0: return f"{seconds // 31536000} ʏᴇᴀʀ"
+    if seconds >= 2592000 and seconds % 2592000 == 0: return f"{seconds // 2592000} ᴍᴏɴᴛʜ"
+    if seconds >= 604800 and seconds % 604800 == 0: return f"{seconds // 604800} ᴡᴇᴇᴋ"
+    if seconds >= 86400 and seconds % 86400 == 0: return f"{seconds // 86400} ᴅᴀʏ"
+    if seconds >= 3600 and seconds % 3600 == 0: return f"{seconds // 3600} ʜᴏᴜʀ"
+    if seconds >= 60 and seconds % 60 == 0: return f"{seconds // 60} ᴍɪɴᴜᴛᴇ"
     return f"{seconds} ꜱᴇᴄᴏɴᴅ"
 
 
@@ -671,7 +659,7 @@ def cmd_gen(msg):
             "┣ <code>1month</code> ➪ 1 ᴍᴏɴᴛʜ\n"
             "┗ <code>1week</code> ➪ 1 ᴡᴇᴇᴋ\n\n"
             "📌 <b>ᴇxᴀᴍᴘʟᴇꜱ:</b>\n"
-            "┣ <code>/genkey 1d 5</code> ➪ 5 ᴋᴇʏꜱ 1 ᴅᴀʏ\n"
+            "┣ <code>/genkey 1d 5</code>\n"
             "┣ <code>/genkey 1month 10 PREMIUM</code>\n"
             "┗ <code>/genkey 30m 1 TEST</code>",
             parse_mode="HTML")
@@ -680,7 +668,7 @@ def cmd_gen(msg):
     duration_str = p[1]
     secs = parse_duration(duration_str)
     if not secs or secs < 1:
-        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ!</b> ᴜꜱᴇ 1ᴅ / 1ʜ / 1ᴍ / 1ꜱ / 1ᴍᴏɴᴛʜ", parse_mode="HTML")
+        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ!</b>\nᴜꜱᴇ: <code>1d</code> <code>1h</code> <code>1m</code> <code>1s</code> <code>1month</code>", parse_mode="HTML")
         return
 
     try:
@@ -1115,7 +1103,20 @@ def cmd_settings(msg):
 # ============= BUTTONS =============
 @bot.message_handler(func=lambda m: m.text == "🔥 𝐀𝐓𝐓𝐀𝐂𝐊")
 def btn_attack(msg):
-    bot.reply_to(msg, "🎯 <code>/attack IP PORT TIME</code>", parse_mode="HTML")
+    bot.reply_to(msg,
+        "╔══════════════════════════╗\n"
+        "║   🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 🎯   ║\n"
+        "╚══════════════════════════╝\n\n"
+        "📌 <b>ᴜꜱᴀɢᴇ:</b>\n"
+        "<code>/attack IP PORT TIME</code>\n\n"
+        "📝 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+        "<code>/attack 1.2.3.4 80 60</code>\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n"
+        "🎯 <b>ɪᴘ:</b> ᴛᴀʀɢᴇᴛ ɪᴘ ᴀᴅᴅʀᴇꜱꜱ\n"
+        "🔌 <b>ᴘᴏʀᴛ:</b> ᴛᴀʀɢᴇᴛ ᴘᴏʀᴛ (1-65535)\n"
+        "⏱️ <b>ᴛɪᴍᴇ:</b> ᴛɪᴍᴇ ɪɴ ꜱᴇᴄᴏɴᴅꜱ\n"
+        "━━━━━━━━━━━━━━━━━━━━━",
+        parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "📊 𝐒𝐓𝐀𝐓𝐔𝐒")
 def btn_status(msg): cmd_status(msg)
