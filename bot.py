@@ -241,9 +241,9 @@ def cmd_start(msg):
 
     # ===== FINAL MESSAGE =====
     header = (
-        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
-      f"┊         {BOT_NAME}          ┊\n"
-        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+      f"┊         {BOT_NAME}        ┊\n"
+        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
     )
 
     if is_new and not has_key:
