@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝚇˼ ♪
+˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪
 Owner: 1987818347
 """
 
 import telebot
+from telebot.types import ReplyKeyboardRemove
 import threading
 import os
 import re
@@ -198,7 +199,14 @@ def cmd_start(msg):
     username = msg.from_user.username
     cid = msg.chat.id
 
-    # ===== CHECKING ANIMATION =====
+    # ⭐ PURANE KEYBOARD BUTTONS REMOVE KARNE KE LIYE
+    try:
+        bot.send_message(cid, "🔄 Removing old keyboard...", reply_markup=ReplyKeyboardRemove())
+        time.sleep(0.3)
+    except: pass
+    # ⭐ AB PURANE BUTTONS GAYAB HO JAYENGE
+
+    # ===== CHECKING ANIMATION (with PYF video attached) =====
     check_text = (
         "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
         "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
@@ -278,7 +286,9 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER → 5 SEC → FINAL MSG → 1 SEC → DELETE =====
+    # ============================================================
+    # ⭐ STICKER → 5 SEC → FINAL MSG → 1 SEC → STICKER DELETE
+    # ============================================================
     sticker_msg = None
     chosen_sticker = get_random_sticker()
     if chosen_sticker:
