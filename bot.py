@@ -26,7 +26,7 @@ BOT_START_TIME = datetime.now()
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙄𝚇˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "a05d4ed492744534ab9307b8d9930c2f6a3a8ffa6eea85d07825ec150215747a"
@@ -282,32 +282,69 @@ def safe_send(cid, text, **kwargs):
     except Exception as e:
         print(f"❌ Safe send error: {e}"); return None
 
-# ============= BUTTON MATCHING (FIXED PRIORITY) =============
+# ============================================================
+# ============= BUTTON MATCHING (FULLY FIXED) ================
+# ============================================================
 def normalize_text(text):
+    """Remove invisible unicode chars and normalize for matching"""
     if not text: return ""
     try:
-        text = text.replace('\u200b', '').replace('\u200c', '').replace('\u200d', '').replace('\ufeff', '')
+        # Remove all zero-width and invisible characters
+        for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0', '\u2028', '\u2029']:
+            text = text.replace(ch, '')
         return text.strip().upper()
     except: return ""
 
 def get_button_type(text):
-    """Return button type string based on priority matching"""
+    """
+    Robust button type detection using keyword matching.
+    Order matters: specific first, generic last.
+    """
     if not text: return None
     t = normalize_text(text)
-    
-    # ORDER MATTERS - specific first, generic last
-    if "OWNER" in t and "PANEL" in t: return "OWNER_PANEL"
-    if "GEN" in t and "KEY" in t: return "GEN_KEY"
+
+    # Helper: check if all keywords present
+    def has(*kws):
+        return all(k in t for k in kws)
+
+    # ====== OWNER PANEL (most specific) ======
+    if has("OWNER", "PANEL"): return "OWNER_PANEL"
+    if has("ᴏᴡɴᴇʀ", "ᴘᴀɴᴇʟ"): return "OWNER_PANEL"
+
+    # ====== GENERATE KEY ======
+    if has("GEN", "KEY"): return "GEN_KEY"
+
+    # ====== BROADCAST ======
     if "BROADCAST" in t: return "BROADCAST"
+
+    # ====== SETTINGS ======
     if "SETTINGS" in t: return "SETTINGS"
+
+    # ====== PROFILE ======
     if "PROFILE" in t: return "PROFILE"
+
+    # ====== STATUS ======
     if "STATUS" in t: return "STATUS"
+
+    # ====== STATS ======
     if "STATS" in t: return "STATS"
+
+    # ====== USERS ======
     if "USERS" in t: return "USERS"
-    if "ATTACK" in t and "STAT" not in t: return "ATTACK"
+
+    # ====== ATTACK (must NOT contain STATS) ======
+    if "ATTACK" in t and "STATS" not in t: return "ATTACK"
+
+    # ====== REDEEM ======
     if "REDEEM" in t: return "REDEEM"
+
+    # ====== CLOSE ======
     if "CLOSE" in t: return "CLOSE"
+
     return None
+
+# Global set to track recently handled button messages (anti double-fire)
+_handled_button_msgs = set()
 
 # ============= HEALTH MONITOR =============
 def api_health_check():
@@ -352,7 +389,7 @@ def check_ban(msg):
                     banned_at = "N/A"
             else:
                 reason = "ᴠɪᴏʟᴀᴛɪᴏɴ ᴏꜰ ᴛᴇʀᴍꜱ"; banned_at = "N/A"
-            
+
             ban_msg = (
                 "╔══════════════════════════╗\n"
                 "║             🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 ⛔              ║\n"
@@ -470,7 +507,7 @@ threading.Thread(target=check_key_expiry_notifications, daemon=True).start()
 user_cooldown = {}
 attack_lock = threading.Lock()
 active_attacks = {}
-_stop_flags = {}  # attack_id -> bool
+_stop_flags = {}
 
 def get_cd_remaining(uid):
     if uid in user_cooldown:
@@ -684,11 +721,10 @@ def cmd_start(msg):
 @bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_")))
 def handle_callbacks(call):
     try:
-        # STOP ATTACK
         if call.data.startswith("stopatk_"):
             attack_id = call.data.replace("stopatk_", "", 1)
             caller_uid = call.from_user.id
-            
+
             with attack_lock:
                 atk = active_attacks.get(attack_id)
                 if not atk:
@@ -698,21 +734,20 @@ def handle_callbacks(call):
                         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
                     except: pass
                     return
-                
+
                 owner_uid = atk.get('user_id')
                 if caller_uid != owner_uid and not is_owner(caller_uid):
                     try: bot.answer_callback_query(call.id, "🚫 Yeh tumhara attack nahi hai!", show_alert=True)
                     except: pass
                     return
-                
+
                 _stop_flags[attack_id] = True
                 active_attacks.pop(attack_id, None)
-            
+
             try:
                 bot.answer_callback_query(call.id, "⛔ ATTACK STOPPED", show_alert=True)
             except: pass
-            
-            # Edit original message to show stopped
+
             try:
                 stop_text = (
                     "╔══════════════════════════╗\n"
@@ -744,8 +779,7 @@ def handle_callbacks(call):
                     except: pass
             except: pass
             return
-        
-        # BAN / GIVE KEY
+
         if not is_owner(call.from_user.id):
             try: bot.answer_callback_query(call.id, "🚫 Owner only!", show_alert=True)
             except: pass
@@ -755,7 +789,7 @@ def handle_callbacks(call):
         action = data_parts[0]
         target_uid = data_parts[1] if len(data_parts) > 1 else None
 
-        if not target_uid: 
+        if not target_uid:
             try: bot.answer_callback_query(call.id, "❌ Invalid")
             except: pass
             return
@@ -996,7 +1030,6 @@ def cmd_attack(msg):
                 )
             except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
 
-        # STOP BUTTON inline keyboard
         stop_kb = InlineKeyboardMarkup()
         stop_kb.add(InlineKeyboardButton("⛔ 𝐒𝐓𝐎𝐏 𝐀𝐓𝐓𝐀𝐂𝐊 ⛔", callback_data=f"stopatk_{attack_id}"))
 
@@ -1141,7 +1174,7 @@ def do_status(msg):
                 total_videos = len(ensure_list(data.get('videos', [])))
                 total_pyf = len(ensure_list(data.get('pyf_videos', [])))
                 total_banned = len(ensure_dict(data.get('banned_users', {})))
-                
+
                 user_data = ensure_dict(data.get('users', {})).get(str(uid), {})
                 if not isinstance(user_data, dict): user_data = {}
                 user_attacks = safe_int(user_data.get('total_attacks', 0))
@@ -1193,7 +1226,7 @@ def do_status(msg):
 
                 method = escape_html(get_setting('api_method', 'UDP-BIG'))
                 geo = escape_html(get_setting('api_geolocation', 'ALL'))
-                
+
                 api_status = HEALTH.get("api_status", "🟡 ᴜɴᴋɴᴏᴡɴ")
                 api_ping = safe_int(HEALTH.get("last_api_ping_ms", 0))
                 api_success = safe_int(HEALTH.get("api_success", 0))
@@ -1312,14 +1345,14 @@ def do_profile(msg):
                 role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
                 time_left = time_remaining(uid)
                 time_detail = time_remaining_lines(uid)
-                
+
                 expiry_date = "N/A"
                 if u.get('key_expiry'):
                     exp = safe_parse_dt(u['key_expiry'])
                     if exp:
                         ist = exp + timedelta(hours=5, minutes=30)
                         expiry_date = ist.strftime('%d %b %Y, %I:%M:%S %p')
-                
+
                 joined_full = "N/A"
                 if u.get('joined_ist'): joined_full = str(u['joined_ist']) + " IST"
                 elif u.get('joined_at'):
@@ -1327,7 +1360,7 @@ def do_profile(msg):
                     if jt:
                         ist = jt + timedelta(hours=5, minutes=30)
                         joined_full = ist.strftime('%d %b %Y, %I:%M:%S %p') + " IST"
-                
+
                 account_age = "N/A"
                 if u.get('joined_at'):
                     jt = safe_parse_dt(u['joined_at'])
@@ -1344,13 +1377,13 @@ def do_profile(msg):
                         if mins > 0: parts.append(f"{mins}ᴍ")
                         parts.append(f"{secs}ꜱ")
                         account_age = " ".join(parts)
-                
+
                 total_atk = safe_int(u.get('total_attacks', 0))
                 username_display = msg.from_user.username or "N/A"
                 first_name = msg.from_user.first_name or "User"
                 is_active = has_valid_key(uid)
                 status_icon = "🟢 ᴀᴄᴛɪᴠᴇ" if is_active else "🔴 ɪɴᴀᴄᴛɪᴠᴇ"
-                
+
                 txt = (
                     "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
                     "▰             🐮 𝕐𝕆𝕌ℝ ℙℝ𝕆𝔽𝕀𝕃𝔼 🐞              ▰\n"
@@ -1380,12 +1413,12 @@ def do_profile(msg):
                     f"┣ 💀 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_atk}</b>\n"
                     f"┗ 🕐 ᴄᴜʀʀᴇɴᴛ ➪ <code>{ist_full_str()} IST</code>\n\n"
                 )
-                
+
                 if is_active:
                     txt += "╔══════════════════════════════╗\n║   ✅ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗔𝗖𝗧𝗜𝗩𝗘 ✅   ║\n╚══════════════════════════════╝"
                 else:
                     txt += "╔══════════════════════════════╗\n║   ❌ 𝗦𝗧𝗔𝗧𝗨𝗦: 𝗜𝗡𝗔𝗖𝗧𝗜𝗩𝗘 ❌   ║\n╚══════════════════════════════╝"
-                
+
                 return txt
             except Exception as e:
                 print(f"Build Profile Error: {e}"); traceback.print_exc()
@@ -1607,7 +1640,7 @@ def do_users(msg):
         if not is_owner(msg.from_user.id): return
         if not ensure_dict(data.get("users", {})):
             safe_reply(msg, "📂 <b>ɴᴏ ᴜꜱᴇʀꜱ.</b>", parse_mode="HTML"); return
-        
+
         users_msg = safe_send(msg.chat.id, "👥 ʟᴏᴀᴅɪɴɢ ʟɪᴠᴇ ᴜꜱᴇʀꜱ...")
         if not users_msg: return
 
@@ -1642,7 +1675,7 @@ def do_users(msg):
                             time_str = "❌ ɴᴏ ᴋᴇʏ"; status = "🔴"
                     else:
                         time_str = "❌ ɴᴏ ᴋᴇʏ"; status = "🔴"
-                    
+
                     uname = escape_html(u.get('username', 'N/A'))
                     atks = safe_int(u.get('total_attacks', 0))
                     txt += f"{status} <code>{u_id}</code>\n"
@@ -1777,7 +1810,7 @@ def do_stats(msg):
         days = uptime_sec // 86400; hrs = (uptime_sec % 86400) // 3600
         mins = (uptime_sec % 3600) // 60; secs = uptime_sec % 60
         uptime_str = f"{days:02d}ᴅ {hrs:02d}ʜ {mins:02d}ᴍ {secs:02d}ꜱ"
-        
+
         api_status = HEALTH.get("api_status", "🟡 ᴜɴᴋɴᴏᴡɴ")
         api_ping = safe_int(HEALTH.get("last_api_ping_ms", 0))
         api_success = safe_int(HEALTH.get("api_success", 0))
@@ -2145,19 +2178,37 @@ def cmd_settings(msg):
         safe_reply(msg, txt, parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
-# ============= UNIVERSAL BUTTON HANDLER (FIXED) =============
-@bot.message_handler(func=lambda m: m.text and get_button_type(m.text) is not None, content_types=['text'])
+# ============================================================
+# ========== UNIVERSAL BUTTON HANDLER (BUG FIXED) ============
+# ============================================================
+@bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
     try:
         HEALTH["total_messages"] += 1
         uid = msg.from_user.id
-        text = normalize_text(msg.text)
-        btype = get_button_type(text)
-        print(f"🔘 Button: '{text}' → type={btype} by {uid}")
+        raw_text = msg.text or ""
+        btype = get_button_type(raw_text)
 
+        if not btype:
+            return  # Should not happen since func filter, but safety
+
+        # Anti double-fire
+        msg_key = (msg.chat.id, msg.message_id)
+        if msg_key in _handled_button_msgs:
+            return
+        _handled_button_msgs.add(msg_key)
+        # Keep set small
+        if len(_handled_button_msgs) > 500:
+            _handled_button_msgs.clear()
+
+        print(f"🔘 BUTTON CLICKED: uid={uid} type={btype}")
+
+        # Banned check
         if is_banned(uid):
-            check_ban(msg); return
+            check_ban(msg)
+            return
 
+        # ==== ATTACK ====
         if btype == "ATTACK":
             safe_reply(msg,
                 "┌┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┐\n"
@@ -2170,15 +2221,21 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
+        # ==== STATUS ====
         if btype == "STATUS":
-            do_status(msg); return
+            do_status(msg)
+            return
 
+        # ==== PROFILE ====
         if btype == "PROFILE":
-            do_profile(msg); return
+            do_profile(msg)
+            return
 
+        # ==== OWNER PANEL ====
         if btype == "OWNER_PANEL":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║        📊 🅾︎🆆︎🅽︎🅴︎🆁︎ 🅿︎🅰︎🅽︎🅴︎🅻︎ 🔓           ║\n"
@@ -2190,6 +2247,7 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
+        # ==== REDEEM ====
         if btype == "REDEEM":
             safe_reply(msg,
                 "╔══════════════════════════════╗\n"
@@ -2199,9 +2257,11 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
+        # ==== GEN KEY ====
         if btype == "GEN_KEY":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║       🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🎛️         ║\n"
@@ -2215,19 +2275,27 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
+        # ==== STATS ====
         if btype == "STATS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
-            do_stats(msg); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
+            do_stats(msg)
+            return
 
+        # ==== USERS ====
         if btype == "USERS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
-            do_users(msg); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
+            do_users(msg)
+            return
 
+        # ==== BROADCAST ====
         if btype == "BROADCAST":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║       📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢        ║\n"
@@ -2237,11 +2305,15 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
+        # ==== SETTINGS ====
         if btype == "SETTINGS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
-            cmd_settings(msg); return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
+                return
+            cmd_settings(msg)
+            return
 
+        # ==== CLOSE ====
         if btype == "CLOSE":
             safe_reply(msg, "❌ ᴄʟᴏꜱᴇᴅ.", reply_markup=kb_main(uid))
             return
@@ -2253,7 +2325,7 @@ def universal_button_handler(msg):
         try: safe_reply(msg, "❌ ᴇʀʀᴏʀ, ᴛʀʏ ᴀɢᴀɪɴ")
         except: pass
 
-# ============= FALLBACK =============
+# ============= BANNED FALLBACK =============
 @bot.message_handler(func=lambda m: is_banned(m.from_user.id), content_types=['text'])
 def banned_fallback(msg):
     try: check_ban(msg)
