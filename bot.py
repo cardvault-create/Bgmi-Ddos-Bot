@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TG BOT PREMIUM V1 - TELEGRAM BOT
+˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪
 Owner: 1987818347
 """
 
@@ -25,6 +25,8 @@ BOT_START_TIME = datetime.now()
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
+
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "c9b483cfafaa99e8f8800d197df24ccc73b9498398b5301c890cc12cb5e39563"
@@ -185,31 +187,32 @@ def cmd_start(msg):
     # ===== CHECKING ANIMATION =====
     check = bot.send_message(
         cid,
-        "╔══════════════════════════╗\n"
-        "║   🔍 <b>CHECKING...</b>    ║\n"
-        "╚══════════════════════════╝\n\n"
-        "▱▱▱▱▱▱▱▱▱▱ <b>0%</b>\n"
-        "⏳ Starting check...",
+        "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+        "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡   ▐\n"
+        "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+        "▱▱▱▱▱▱▱▱▱▱ 0%\n"
+        "⏳ Starting...",
         parse_mode="HTML"
     )
 
+    # Mixed font styles per step
     steps = [
-        ("▰▱▱▱▱▱▱▱▱▱", "10%", "📡 Connecting to server..."),
-        ("▰▰▰▱▱▱▱▱▱▱", "30%", "👤 Verifying user..."),
-        ("▰▰▰▰▰▱▱▱▱▱", "50%", "⚙️ Loading profile..."),
-        ("▰▰▰▰▰▰▰▱▱▱", "70%", "🔑 Checking key status..."),
-        ("▰▰▰▰▰▰▰▰▰▱", "90%", "⏳ Finalizing..."),
-        ("▰▰▰▰▰▰▰▰▰▰", "100%", "✅ Account verified!"),
+        ("▰▱▱▱▱▱▱▱▱▱", "10%", "📡 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗶𝗻𝗴 𝘁𝗼 𝘀𝗲𝗿𝘃𝗲𝗿..."),
+        ("▰▰▰▱▱▱▱▱▱▱", "30%", "👤 𝐕𝐞𝐫𝐢𝐟𝐲𝐢𝐧𝐠 𝐮𝐬𝐞𝐫..."),
+        ("▰▰▰▰▰▱▱▱▱▱", "50%", "⚙️ 𝙇𝙤𝙖𝙙𝙞𝙣𝙜 𝙥𝙧𝙤𝙛𝙞𝙡𝙚..."),
+        ("▰▰▰▰▰▰▰▱▱▱", "70%", "🔑 ᴄʜᴇᴄᴋɪɴɢ ᴋᴇʏ ꜱᴛᴀᴛᴜꜱ..."),
+        ("▰▰▰▰▰▰▰▰▰▱", "90%", "⏳ 𝘍𝘪𝘯𝘢𝘭𝘪𝘻𝘪𝘯𝘨..."),
+        ("▰▰▰▰▰▰▰▰▰▰", "100%", "✅ Ｖｅｒｉｆｉｅｄ!"),
     ]
 
     for bar, pct, status in steps:
         time.sleep(0.7)
         try:
             bot.edit_message_text(
-                "╔══════════════════════════╗\n"
-                "║   🔍 <b>CHECKING...</b>    ║\n"
-                "╚══════════════════════════╝\n\n"
-                f"{bar} <b>{pct}</b>\n"
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡   ▐\n"
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                f"{bar} {pct}\n"
                 f"{status}",
                 cid, check.message_id, parse_mode="HTML"
             )
@@ -237,18 +240,20 @@ def cmd_start(msg):
     except: pass
 
     # ===== FINAL MESSAGE =====
+    header = (
+        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+      f"┊         {BOT_NAME}          ┊\n"
+        "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+    )
+
     if is_new and not has_key:
-        text = (
-            "╔══════════════════════════╗\n"
-            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
-            "╚══════════════════════════╝\n\n"
-            f"👋 <b>Welcome, {name}!</b>\n\n"
+        text = header + (
+            f"\n👋 <b>Welcome, {name}!</b>\n\n"
             "🎉 Aapka account successfully create ho gaya!\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "❌ <b>Status:</b> No Active Key\n"
             f"🎯 <b>Method:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
             "⚡ <b>Bot:</b> 🟢 ONLINE\n"
-            "🚀 <b>Version:</b> V1.0 Premium\n"
             "━━━━━━━━━━━━━━━━━━━━━\n\n"
             "📌 <b>Kaise Start Kare?</b>\n\n"
             "1️⃣ <b>Redeem Key</b>\n"
@@ -268,11 +273,8 @@ def cmd_start(msg):
         total_attacks = u.get("total_attacks", 0)
         role = "👑 OWNER" if is_owner(uid) else ("💼 RESELLER" if is_reseller(uid) else "👤 USER")
 
-        text = (
-            "╔══════════════════════════╗\n"
-            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
-            "╚══════════════════════════╝\n\n"
-            f"👋 <b>Welcome back, {name}!</b>\n\n"
+        text = header + (
+            f"\n👋 <b>Welcome back, {name}!</b>\n\n"
             "✅ <b>Key Verified Successfully</b>\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             f"👤 <b>Role:</b> {role}\n"
@@ -289,11 +291,8 @@ def cmd_start(msg):
             "🔥 <b>Ready to launch attack?</b>"
         )
     else:
-        text = (
-            "╔══════════════════════════╗\n"
-            "║   🔥 <b>TG BOT PREMIUM</b> 🔥   ║\n"
-            "╚══════════════════════════╝\n\n"
-            f"👋 <b>Welcome back, {name}!</b>\n\n"
+        text = header + (
+            f"\n👋 <b>Welcome back, {name}!</b>\n\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
             "❌ <b>Status:</b> No Active Key\n"
             f"🎯 <b>Method:</b> <code>{get_setting('api_method', 'UDP-BIG')}</code>\n"
@@ -631,7 +630,7 @@ def btn_close(msg):
 
 # ============= MAIN =============
 print("=" * 55)
-print("  🔥 TG BOT PREMIUM - POLLING MODE")
+print(f"  {BOT_NAME}")
 print("=" * 55)
 print(f"  👑 Owner: {BOT_OWNER}")
 print(f"  📡 API: {get_setting('api_url', DEFAULT_API_URL)}")
