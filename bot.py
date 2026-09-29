@@ -24,7 +24,7 @@ sys.stderr.reconfigure(line_buffering=True)
 BOT_START_TIME = datetime.now()
 
 # ============= CONFIGURATION =============
-BOT_TOKEN = "8771905727:AAGTorho7yvW8i0tivjwDb_6AtAbq9LMDkA"
+BOT_TOKEN = "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY"
 BOT_OWNER = 1987818347
 
 # Stresser.works API config
