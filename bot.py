@@ -240,7 +240,7 @@ def cmd_start(msg):
         bot.delete_message(cid, check.message_id)
     except: pass
 
-    # ===== STICKER (Owner ki taraf se, random) =====
+    # ===== STICKER (Random) =====
     if data.get("stickers"):
         try:
             chosen_sticker = random.choice(data["stickers"])
@@ -367,7 +367,7 @@ def cmd_attack(msg):
     if not ok:
         bot.reply_to(msg, f"❌ <b>FAILED</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
-    # ===== VIDEO (Owner ki taraf se, random) =====
+    # ===== VIDEO (Random) =====
     if data.get("videos"):
         try:
             chosen_video = random.choice(data["videos"])
@@ -466,181 +466,6 @@ def cmd_redeem(msg):
     kinfo["used_at"] = datetime.now().isoformat()
     save_data(data)
     bot.reply_to(msg, f"✅ <b>KEY REDEEMED!</b>\n⏰ +{days} days\n📅 Expires: <b>{expiry.strftime('%d %b %Y')}</b>", parse_mode="HTML")
-
-# ============= STICKER COMMANDS =============
-@bot.message_handler(commands=['addsticker'])
-def cmd_addsticker(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    bot.reply_to(msg, "📤 Ab ek <b>sticker</b> bhejo jo add karna hai.", parse_mode="HTML")
-
-@bot.message_handler(commands=['removesticker'])
-def cmd_removesticker(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    p = msg.text.split()
-    if len(p) < 2:
-        if not data["stickers"]:
-            bot.reply_to(msg, "❌ Koi sticker nahi hai.")
-            return
-        txt = "❄ <b>STICKERS LIST:</b>\n━━━━━━━━━━━━━\n"
-        for i, s in enumerate(data["stickers"], 1):
-            txt += f"{i}. <code>{s[:40]}...</code>\n"
-        txt += "\n❌ Remove karne ke liye: <code>/removesticker NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
-        return
-    try:
-        idx = int(p[1]) - 1
-        if 0 <= idx < len(data["stickers"]):
-            removed = data["stickers"].pop(idx)
-            save_data(data)
-            bot.reply_to(msg, f"✅ Sticker removed!\nTotal: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ Invalid number!")
-    except:
-        bot.reply_to(msg, "❌ Usage: <code>/removesticker NUMBER</code>", parse_mode="HTML")
-
-@bot.message_handler(commands=['liststickers'])
-def cmd_liststickers(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    if not data["stickers"]:
-        bot.reply_to(msg, "❄ Koi sticker nahi hai.")
-        return
-    txt = f"❄ <b>STICKERS ({len(data['stickers'])})</b>\n━━━━━━━━━━━━━\n"
-    for i, s in enumerate(data["stickers"], 1):
-        txt += f"{i}. <code>{s[:50]}...</code>\n"
-    bot.reply_to(msg, txt, parse_mode="HTML")
-
-# ============= VIDEO COMMANDS =============
-@bot.message_handler(commands=['addvideo'])
-def cmd_addvideo(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    bot.reply_to(msg, "📤 Ab ek <b>video</b> bhejo jo add karna hai.", parse_mode="HTML")
-
-@bot.message_handler(commands=['delvideo'])
-def cmd_delvideo(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    p = msg.text.split()
-    if len(p) < 2:
-        if not data["videos"]:
-            bot.reply_to(msg, "❌ Koi video nahi hai.")
-            return
-        txt = "📹 <b>VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
-        for i, v in enumerate(data["videos"], 1):
-            txt += f"{i}. <code>{v[:40]}...</code>\n"
-        txt += "\n❌ Delete karne ke liye: <code>/delvideo NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
-        return
-    try:
-        idx = int(p[1]) - 1
-        if 0 <= idx < len(data["videos"]):
-            removed = data["videos"].pop(idx)
-            save_data(data)
-            bot.reply_to(msg, f"✅ Video removed!\nTotal: <b>{len(data['videos'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ Invalid number!")
-    except:
-        bot.reply_to(msg, "❌ Usage: <code>/delvideo NUMBER</code>", parse_mode="HTML")
-
-@bot.message_handler(commands=['videos'])
-def cmd_videos(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    if not data["videos"]:
-        bot.reply_to(msg, "📹 Koi video nahi hai.")
-        return
-    txt = f"📹 <b>VIDEOS ({len(data['videos'])})</b>\n━━━━━━━━━━━━━\n"
-    for i, v in enumerate(data["videos"], 1):
-        txt += f"{i}. <code>{v[:50]}...</code>\n"
-    bot.reply_to(msg, txt, parse_mode="HTML")
-
-@bot.message_handler(commands=['clearvideos'])
-def cmd_clearvideos(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    data["videos"] = []
-    save_data(data)
-    bot.reply_to(msg, "✅ Saari videos clear ho gayi!")
-
-# ============= CONTENT HANDLER (Sticker/Video Save) =============
-pending_sticker = {}
-pending_video = {}
-
-@bot.message_handler(commands=['addsticker'])
-def cmd_addsticker_prompt(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    pending_sticker[msg.from_user.id] = True
-    bot.reply_to(msg, "📤 Ab ek <b>sticker</b> bhejo jo add karna hai.", parse_mode="HTML")
-
-@bot.message_handler(content_types=['sticker'])
-def handle_sticker(msg):
-    uid = msg.from_user.id
-    if not is_owner(uid):
-        return
-    if pending_sticker.get(uid):
-        pending_sticker[uid] = False
-        file_id = msg.sticker.file_id
-        data["stickers"].append(file_id)
-        save_data(data)
-        bot.reply_to(msg, f"✅ Sticker added!\nTotal stickers: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
-    else:
-        bot.reply_to(msg, "💡 Sticker add karne ke liye: /addsticker")
-
-@bot.message_handler(content_types=['video'])
-def handle_video(msg):
-    uid = msg.from_user.id
-    if not is_owner(uid):
-        return
-    if pending_video.get(uid):
-        pending_video[uid] = False
-        file_id = msg.video.file_id
-        data["videos"].append(file_id)
-        save_data(data)
-        bot.reply_to(msg, f"✅ Video added!\nTotal videos: <b>{len(data['videos'])}</b>", parse_mode="HTML")
-    else:
-        bot.reply_to(msg, "💡 Video add karne ke liye: /addvideo")
-
-# ============= SETTINGS COMMAND =============
-@bot.message_handler(commands=['settings'])
-def cmd_settings(msg):
-    if not is_owner(msg.from_user.id):
-        return
-    txt = (
-        "⚙️ <b>ALL COMMANDS — OWNER ONLY</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "👑 <b>OWNER COMMANDS</b>\n"
-        "┣ /panel ➪ Owner Panel\n"
-        "┣ /users ➪ Users List\n"
-        "┣ /stats ➪ Stats\n"
-        "┣ /broadcast MSG ➪ Broadcast\n"
-        "┣ /ban ID ➪ Ban User\n"
-        "┗ /unban ID ➪ Unban User\n\n"
-        "🔑 <b>KEY MANAGEMENT</b>\n"
-        "┣ /genkey DAYS [AMOUNT] ➪ Generate Keys\n"
-        "┗ /redeem KEY ➪ Redeem Key\n\n"
-        "📡 <b>API MANAGEMENT</b>\n"
-        "┣ /setapi URL TOKEN [method] [geo] ➪ Set API\n"
-        "┣ /testapi ➪ Test API\n"
-        "┣ /setmaxtime SEC ➪ Max Attack Time\n"
-        "┗ /setcooldown SEC ➪ Cooldown\n\n"
-        "🔧 <b>BOT SETTINGS</b>\n"
-        "┗ /maintenance ➪ ON/OFF Maintenance\n\n"
-        "❄ <b>STICKER</b>\n"
-        "┣ /addsticker ➪ Add Sticker\n"
-        "┣ /removesticker ➪ Remove Sticker\n"
-        "┗ /liststickers ➪ List Stickers\n\n"
-        "📹 <b>VIDEO</b>\n"
-        "┣ /addvideo ➪ Add Video\n"
-        "┣ /delvideo ➪ Delete Video\n"
-        "┣ /videos ➪ List Videos\n"
-        "┗ /clearvideos ➪ Clear All Videos\n\n"
-        "━━━━━━━━━━━━━━━━━━━━━"
-    )
-    bot.reply_to(msg, txt, parse_mode="HTML")
 
 # ============= PROFILE / STATUS =============
 @bot.message_handler(commands=['profile'])
@@ -780,6 +605,161 @@ def cmd_maintenance(msg):
     cur = get_setting('maintenance_mode', False)
     set_setting("maintenance_mode", not cur)
     bot.reply_to(msg, f"✅ Maintenance: {'ON' if not cur else 'OFF'}")
+
+# ============= STICKER COMMANDS =============
+@bot.message_handler(commands=['removesticker'])
+def cmd_removesticker(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    p = msg.text.split()
+    if len(p) < 2:
+        if not data["stickers"]:
+            bot.reply_to(msg, "❄ Koi sticker nahi hai.")
+            return
+        txt = "❄ <b>STICKERS LIST:</b>\n━━━━━━━━━━━━━\n"
+        for i, s in enumerate(data["stickers"], 1):
+            txt += f"{i}. <code>{s[:40]}...</code>\n"
+        txt += "\n❌ Remove: <code>/removesticker NUMBER</code>"
+        bot.reply_to(msg, txt, parse_mode="HTML")
+        return
+    try:
+        idx = int(p[1]) - 1
+        if 0 <= idx < len(data["stickers"]):
+            data["stickers"].pop(idx)
+            save_data(data)
+            bot.reply_to(msg, f"✅ Sticker removed!\nTotal: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
+        else:
+            bot.reply_to(msg, "❌ Invalid number!")
+    except:
+        bot.reply_to(msg, "❌ Usage: <code>/removesticker NUMBER</code>", parse_mode="HTML")
+
+@bot.message_handler(commands=['liststickers'])
+def cmd_liststickers(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    if not data["stickers"]:
+        bot.reply_to(msg, "❄ Koi sticker nahi hai.")
+        return
+    txt = "❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥𝗦\n"
+    for i, s in enumerate(data["stickers"], 1):
+        txt += f"{i}. {s}\n"
+    txt += f"\n🔹 𝗧𝗼𝘁𝗮𝗹 {len(data['stickers'])}"
+    bot.reply_to(msg, txt)
+
+# ============= VIDEO COMMANDS =============
+@bot.message_handler(commands=['delvideo'])
+def cmd_delvideo(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    p = msg.text.split()
+    if len(p) < 2:
+        if not data["videos"]:
+            bot.reply_to(msg, "📹 Koi video nahi hai.")
+            return
+        txt = "📹 <b>VIDEOS LIST:</b>\n━━━━━━━━━━━━━\n"
+        for i, v in enumerate(data["videos"], 1):
+            txt += f"{i}. <code>{v[:40]}...</code>\n"
+        txt += "\n❌ Delete: <code>/delvideo NUMBER</code>"
+        bot.reply_to(msg, txt, parse_mode="HTML")
+        return
+    try:
+        idx = int(p[1]) - 1
+        if 0 <= idx < len(data["videos"]):
+            data["videos"].pop(idx)
+            save_data(data)
+            bot.reply_to(msg, f"✅ Video removed!\nTotal: <b>{len(data['videos'])}</b>", parse_mode="HTML")
+        else:
+            bot.reply_to(msg, "❌ Invalid number!")
+    except:
+        bot.reply_to(msg, "❌ Usage: <code>/delvideo NUMBER</code>", parse_mode="HTML")
+
+@bot.message_handler(commands=['videos'])
+def cmd_videos(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    if not data["videos"]:
+        bot.reply_to(msg, "📹 Koi video nahi hai.")
+        return
+    txt = "📹 🇻 🇮 🇩 🇪 🇴 🇸 ：\n"
+    for i, v in enumerate(data["videos"], 1):
+        txt += f"🛸{i} {v[:35]}.mp4\n"
+    txt += f"\n⎘ 丅ᗝ丅ᗩᒪ ： {len(data['videos'])}"
+    bot.reply_to(msg, txt)
+
+@bot.message_handler(commands=['clearvideos'])
+def cmd_clearvideos(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    data["videos"] = []
+    save_data(data)
+    bot.reply_to(msg, "✅ Saari videos clear ho gayi!")
+
+# ============= AUTO STICKER / VIDEO HANDLER =============
+@bot.message_handler(content_types=['sticker'])
+def auto_sticker(msg):
+    """Owner jab sticker bheje, automatically add ho jaye"""
+    uid = msg.from_user.id
+    if not is_owner(uid):
+        return
+    file_id = msg.sticker.file_id
+    if file_id not in data["stickers"]:
+        data["stickers"].append(file_id)
+        save_data(data)
+        bot.reply_to(msg, f"✅ Sticker auto-added!\n❄ Total: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
+    else:
+        bot.reply_to(msg, "ℹ️ Yeh sticker already added hai.")
+
+@bot.message_handler(content_types=['video'])
+def auto_video(msg):
+    """Owner jab video bheje, automatically add ho jaye"""
+    uid = msg.from_user.id
+    if not is_owner(uid):
+        return
+    file_id = msg.video.file_id
+    if file_id not in data["videos"]:
+        data["videos"].append(file_id)
+        save_data(data)
+        bot.reply_to(msg, f"✅ Video auto-added!\n📹 Total: <b>{len(data['videos'])}</b>", parse_mode="HTML")
+    else:
+        bot.reply_to(msg, "ℹ️ Yeh video already added hai.")
+
+# ============= SETTINGS COMMAND =============
+@bot.message_handler(commands=['settings'])
+def cmd_settings(msg):
+    if not is_owner(msg.from_user.id):
+        return
+    txt = (
+        "⚙️ <b>ALL COMMANDS — OWNER ONLY</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "👑 <b>OWNER COMMANDS</b>\n"
+        "┣ /panel ➪ Owner Panel\n"
+        "┣ /users ➪ Users List\n"
+        "┣ /stats ➪ Stats\n"
+        "┣ /broadcast MSG ➪ Broadcast\n"
+        "┣ /ban ID ➪ Ban User\n"
+        "┗ /unban ID ➪ Unban User\n\n"
+        "🔑 <b>KEY MANAGEMENT</b>\n"
+        "┣ /genkey DAYS [AMOUNT] ➪ Generate Keys\n"
+        "┗ /redeem KEY ➪ Redeem Key\n\n"
+        "📡 <b>API MANAGEMENT</b>\n"
+        "┣ /setapi URL TOKEN [method] [geo] ➪ Set API\n"
+        "┣ /testapi ➪ Test API\n"
+        "┣ /setmaxtime SEC ➪ Max Attack Time\n"
+        "┗ /setcooldown SEC ➪ Cooldown\n\n"
+        "🔧 <b>BOT SETTINGS</b>\n"
+        "┗ /maintenance ➪ ON/OFF Maintenance\n\n"
+        "❄ <b>STICKER</b>\n"
+        "┣ Send sticker ➪ Auto Add\n"
+        "┣ /removesticker NUMBER ➪ Remove Sticker\n"
+        "┗ /liststickers ➪ List Stickers\n\n"
+        "📹 <b>VIDEO</b>\n"
+        "┣ Send video ➪ Auto Add\n"
+        "┣ /delvideo NUMBER ➪ Delete Video\n"
+        "┣ /videos ➪ List Videos\n"
+        "┗ /clearvideos ➪ Clear All Videos\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━"
+    )
+    bot.reply_to(msg, txt, parse_mode="HTML")
 
 # ============= BUTTONS =============
 @bot.message_handler(func=lambda m: m.text == "🔥 ATTACK")
