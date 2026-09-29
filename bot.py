@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙉𝙸𝙓˼ ♪
+˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪
 Owner: 1987818347
 """
 
@@ -25,7 +25,6 @@ BOT_START_TIME = datetime.now()
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHgWlvO3Jx6po3OVD5f4QHt-_C3tJDm0JY")
 BOT_OWNER = 1987818347
-
 BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝐒 𝙾𝙽𝙸𝙓˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
@@ -64,16 +63,14 @@ def load_data():
                     for sk, sv in default["settings"].items():
                         d["settings"].setdefault(sk, sv)
                     return d
-        except:
-            pass
+        except: pass
     return default
 
 def save_data(d):
     try:
         with open(DATA_FILE, 'w') as f:
             json.dump(d, f, indent=2, default=str)
-    except:
-        pass
+    except: pass
 
 data = load_data()
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
@@ -205,7 +202,7 @@ def kb_owner():
     m.row("⚙️ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒", "❌ 𝐂𝐋𝐎𝐒𝐄")
     return m
 
-# ============= START COMMAND =============
+# ============= START =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
     uid = msg.from_user.id
@@ -268,8 +265,7 @@ def cmd_start(msg):
                     ),
                     parse_mode="HTML"
                 )
-            except:
-                pass
+            except: pass
 
     time.sleep(0.8)
 
@@ -328,7 +324,6 @@ def cmd_start(msg):
         u = data["users"].get(str(uid), {})
         total_attacks = u.get("total_attacks", 0)
         role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
-
         text = header + (
             f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {name}!</b>\n\n"
             "✅ <b>ᴋᴇʏ ᴠᴇʀɪꜰɪᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ</b>\n\n"
@@ -362,10 +357,8 @@ def cmd_start(msg):
     if sticker_msg:
         def delete_sticker():
             time.sleep(1)
-            try:
-                bot.delete_message(cid, sticker_msg.message_id)
-            except:
-                pass
+            try: bot.delete_message(cid, sticker_msg.message_id)
+            except: pass
         threading.Thread(target=delete_sticker, daemon=True).start()
 
 # ============= ATTACK =============
@@ -413,13 +406,20 @@ def cmd_attack(msg):
         bot.reply_to(msg, f"❌ <b>ꜰᴀɪʟᴇᴅ</b>\n<code>{r[:300]}</code>", parse_mode="HTML"); return
 
     attack_caption = (
-        f"💀 <b>ᴀᴛᴛᴀᴄᴋ ʟᴀᴜɴᴄʜᴇᴅ</b> 💀\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 ᴜꜱᴇʀ: <b>@{name}</b>\n"
-        f"🎯 ᴛᴀʀɢᴇᴛ: <code>{ip}:{port}</code>\n"
-        f"⏱️ ᴅᴜʀᴀᴛɪᴏɴ: <b>{dur}ꜱ</b>\n"
-        f"🚀 ᴍᴇᴛʜᴏᴅ: <b>{get_setting('api_method', 'UDP-BIG')}</b>\n"
-        f"📅 ꜱᴛᴀʀᴛᴇᴅ: <b>{ist_now()} IST</b>"
+        "╔══════════════════════════╗\n"
+        "║   💀 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 💀   ║\n"
+        "╚══════════════════════════╝\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ 👤 ᴜꜱᴇʀ ➪ <b>@{name}</b>\n"
+        f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
+        f"┣ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+        f"┣ 🚀 ᴍᴇᴛʜᴏᴅ ➪ <b>{get_setting('api_method', 'UDP-BIG')}</b>\n"
+        f"┗ 📅 ꜱᴛᴀʀᴛᴇᴅ ➪ <b>{ist_now()} IST</b>\n\n"
+        "╔══════════════════════════╗\n"
+        "║   🔥 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🔥   ║\n"
+        "╚══════════════════════════╝"
     )
 
     chosen_video = get_random_video()
@@ -448,7 +448,14 @@ def cmd_attack(msg):
     def done():
         time.sleep(dur)
         with attack_lock: active_attacks.pop(aid, None)
-        complete_caption = f"✅ <b>ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴘʟᴇᴛᴇ</b>\n🎯 {ip}:{port} | {dur}ꜱ"
+        complete_caption = (
+            "╔══════════════════════════╗\n"
+            "║   ✅ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ✅   ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
+            f"┣ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+            f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{name}</b>"
+        )
         chosen_video_done = get_random_video()
         if chosen_video_done:
             try:
@@ -462,54 +469,13 @@ def cmd_attack(msg):
 
     threading.Thread(target=done, daemon=True).start()
     
-# ============= LIVE STATUS (AUTO-UPDATE 3 SEC) =============
+# ============= LIVE STATUS (AUTO-UPDATE FIXED) =============
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
     uid = msg.from_user.id
     cid = msg.chat.id
 
     status_msg = bot.send_message(cid, "📊 <b>ʟᴏᴀᴅɪɴɢ ꜱᴛᴀᴛᴜꜱ...</b>", parse_mode="HTML")
-
-    def get_attack_box():
-        with attack_lock:
-            now = datetime.now()
-            running = [(a, atk) for a, atk in active_attacks.items() if atk['end_time'] > now]
-
-        if not running:
-            return None
-
-        atk = running[0][1]
-        rem = int((atk['end_time'] - now).total_seconds())
-        dur = atk.get('duration', 60)
-        pct = int(((dur - rem) / dur) * 100) if dur > 0 else 0
-        filled = int(pct / 10)
-        bar = "▰" * filled + "▱" * (10 - filled)
-
-        if pct < 20:
-            status_txt = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
-        elif pct < 50:
-            status_txt = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
-        elif pct < 80:
-            status_txt = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
-        elif pct < 100:
-            status_txt = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
-        else:
-            status_txt = "✅ ᴄᴏᴍᴘʟᴇᴛᴇᴅ"
-
-        return (
-            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-            "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
-            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-            f"{bar} {pct}%\n"
-            f"{status_txt}\n\n"
-            "╭━━━━━━━━━━━━━━━━━━━━╮\n"
-            "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
-            "╰━━━━━━━━━━━━━━━━━━━━╯\n"
-            f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{atk['target']}:{atk['port']}</code>\n"
-            f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem}ꜱ</b>\n"
-            f"┣ 🕐 ᴛᴏᴛᴀʟ ➪ <b>{dur}ꜱ</b>\n"
-            f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{atk.get('username', 'Unknown')}</b>\n\n"
-        )
 
     def build_status():
         with attack_lock:
@@ -520,15 +486,44 @@ def cmd_status(msg):
         total_users = len(data['users'])
         total_attacks = len(data['attack_logs'])
         total_keys = len(data['keys'])
+        total_stickers = len(data.get('stickers', []))
+        total_videos = len(data.get('videos', []))
+        total_pyf = len(data.get('pyf_videos', []))
+        total_banned = len(data.get('banned_users', {}))
         user_attacks = data['users'].get(str(uid), {}).get('total_attacks', 0)
         time_left = time_remaining(uid)
         role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
 
         txt = ""
+
         if running:
-            box = get_attack_box()
-            if box:
-                txt += box
+            atk = running[0][1]
+            rem = int((atk['end_time'] - now).total_seconds())
+            dur = atk.get('duration', 60)
+            pct = int(((dur - rem) / dur) * 100) if dur > 0 else 0
+            filled = int(pct / 10)
+            bar = "▰" * filled + "▱" * (10 - filled)
+
+            if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
+            elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
+            elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
+            elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
+            else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+
+            txt += (
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                "▌   🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦   ▐\n"
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                f"{bar} {pct}%\n"
+                f"{st}\n\n"
+                "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+                "┃  ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+                "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+                f"┣ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{atk['target']}:{atk['port']}</code>\n"
+                f"┣ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem}ꜱ</b>\n"
+                f"┣ 🕐 ᴛᴏᴛᴀʟ ➪ <b>{dur}ꜱ</b>\n"
+                f"┗ 👤 ᴜꜱᴇʀ ➪ <b>@{atk.get('username', 'Unknown')}</b>\n\n"
+            )
 
         txt += (
             "╔══════════════════════════╗\n"
@@ -547,7 +542,10 @@ def cmd_status(msg):
             f"┣ 👥 ᴜꜱᴇʀꜱ ➪ <b>{total_users}</b>\n"
             f"┣ 🔑 ᴋᴇʏꜱ ➪ <b>{total_keys}</b>\n"
             f"┣ 💀 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_attacks}</b>\n"
-            f"┗ ⚡ ᴀᴄᴛɪᴠᴇ ➪ <b>{len(running)}</b>\n\n"
+            f"┣ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{total_banned}</b>\n"
+            f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{total_stickers}</b>\n"
+            f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{total_videos}</b>\n"
+            f"┗ 🎬 ᴘʏꜰ ➪ <b>{total_pyf}</b>\n\n"
             "╭━━━━━━━━━━━━━━━━━━━━╮\n"
             "┃  👤 𝗬𝗢𝗨𝗥 𝗜𝗡𝗙𝗢\n"
             "╰━━━━━━━━━━━━━━━━━━━━╯\n"
@@ -565,9 +563,9 @@ def cmd_status(msg):
     except Exception as e:
         print(f"Status Error: {e}")
 
-    # Auto-update thread — 3 sec
+    # Auto-update thread
     def auto_update():
-        for _ in range(200):  # 200 * 3 = 600 seconds max (10 min)
+        for _ in range(400):
             time.sleep(3)
             try:
                 bot.edit_message_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
@@ -575,7 +573,7 @@ def cmd_status(msg):
                 break
             with attack_lock:
                 if not active_attacks:
-                    # Keep updating few more times, then stop
+                    # Continue a few more cycles then stop
                     pass
 
     threading.Thread(target=auto_update, daemon=True).start()
@@ -597,6 +595,7 @@ def cmd_profile(msg):
         "╰━━━━━━━━━━━━━━━━━━━━╯\n"
         f"┣ 🆔 ɪᴅ ➪ <code>{uid}</code>\n"
         f"┣ 📛 ɴᴀᴍᴇ ➪ <b>{msg.from_user.first_name}</b>\n"
+        f"┣ 🔗 ᴜꜱᴇʀɴᴀᴍᴇ ➪ @{msg.from_user.username or 'N/A'}\n"
         f"┣ 🎭 ʀᴏʟᴇ ➪ {role}\n"
         f"┣ ⏰ ᴛɪᴍᴇ ➪ <b>{time_remaining(uid)}</b>\n"
         f"┗ 🎯 ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{u.get('total_attacks', 0)}</b>\n\n"
@@ -607,23 +606,84 @@ def cmd_profile(msg):
     bot.reply_to(msg, txt, parse_mode="HTML")
 
 
-# ============= KEY MANAGEMENT (CUSTOM NAME) =============
+# ============= KEY SYSTEM (CUSTOM NAME + 1d/1h/1m/1s) =============
+_pending_key = {}
+
+def parse_duration(text):
+    """Parse duration like 1d, 2h, 30m, 60s, 7d, 1month"""
+    text = text.lower().strip()
+    # word-based
+    word_map = {
+        "second": 1, "seconds": 1, "sec": 1, "s": 1,
+        "minute": 60, "minutes": 60, "min": 60, "m": 60,
+        "hour": 3600, "hours": 3600, "hr": 3600, "h": 3600,
+        "day": 86400, "days": 86400, "d": 86400,
+        "week": 604800, "weeks": 604800, "w": 604800,
+        "month": 2592000, "months": 2592000, "mo": 2592000,
+        "year": 31536000, "years": 31536000, "y": 31536000,
+    }
+    # number + suffix
+    m = re.match(r'^(\d+)\s*([a-z]+)$', text)
+    if m:
+        num = int(m.group(1))
+        suf = m.group(2)
+        if suf in word_map:
+            return num * word_map[suf]
+        return None
+    # only number = days default
+    if text.isdigit():
+        return int(text) * 86400
+    # word only (e.g. "day")
+    if text in word_map:
+        return word_map[text]
+    return None
+
+def human_readable(seconds):
+    if seconds >= 31536000 and seconds % 31536000 == 0:
+        return f"{seconds // 31536000} ʏᴇᴀʀ"
+    if seconds >= 2592000 and seconds % 2592000 == 0:
+        return f"{seconds // 2592000} ᴍᴏɴᴛʜ"
+    if seconds >= 604800 and seconds % 604800 == 0:
+        return f"{seconds // 604800} ᴡᴇᴇᴋ"
+    if seconds >= 86400 and seconds % 86400 == 0:
+        return f"{seconds // 86400} ᴅᴀʏ"
+    if seconds >= 3600 and seconds % 3600 == 0:
+        return f"{seconds // 3600} ʜᴏᴜʀ"
+    if seconds >= 60 and seconds % 60 == 0:
+        return f"{seconds // 60} ᴍɪɴᴜᴛᴇ"
+    return f"{seconds} ꜱᴇᴄᴏɴᴅ"
+
+
 @bot.message_handler(commands=['genkey', 'gen'])
 def cmd_gen(msg):
     if not is_owner(msg.from_user.id): return
     p = msg.text.split()
     if len(p) < 2:
         bot.reply_to(msg,
-            "⚠️ <b>ᴜꜱᴀɢᴇ:</b>\n"
-            "<code>/genkey DAYS [AMOUNT]</code>\n"
-            "<code>/genkey DAYS AMOUNT CUSTOM-NAME</code>\n\n"
-            "📝 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
-            "<code>/genkey 30 5 PREMIUM</code>",
+            "⚠️ <b>ɢᴇɴᴋᴇʏ ᴜꜱᴀɢᴇ</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            "📝 <code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
+            "⏰ <b>ᴅᴜʀᴀᴛɪᴏɴ ꜰᴏʀᴍᴀᴛ:</b>\n"
+            "┣ <code>1d</code> ➪ 1 ᴅᴀʏ\n"
+            "┣ <code>2h</code> ➪ 2 ʜᴏᴜʀꜱ\n"
+            "┣ <code>30m</code> ➪ 30 ᴍɪɴᴜᴛᴇꜱ\n"
+            "┣ <code>60s</code> ➪ 60 ꜱᴇᴄᴏɴᴅꜱ\n"
+            "┣ <code>1month</code> ➪ 1 ᴍᴏɴᴛʜ\n"
+            "┗ <code>1week</code> ➪ 1 ᴡᴇᴇᴋ\n\n"
+            "📌 <b>ᴇxᴀᴍᴘʟᴇꜱ:</b>\n"
+            "┣ <code>/genkey 1d 5</code> ➪ 5 ᴋᴇʏꜱ 1 ᴅᴀʏ\n"
+            "┣ <code>/genkey 1month 10 PREMIUM</code>\n"
+            "┗ <code>/genkey 30m 1 TEST</code>",
             parse_mode="HTML")
         return
 
+    duration_str = p[1]
+    secs = parse_duration(duration_str)
+    if not secs or secs < 1:
+        bot.reply_to(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴅᴜʀᴀᴛɪᴏɴ!</b> ᴜꜱᴇ 1ᴅ / 1ʜ / 1ᴍ / 1ꜱ / 1ᴍᴏɴᴛʜ", parse_mode="HTML")
+        return
+
     try:
-        days = int(p[1])
         amt = int(p[2]) if len(p) > 2 else 1
         custom_name = p[3].upper() if len(p) > 3 else None
     except:
@@ -632,15 +692,14 @@ def cmd_gen(msg):
     keys = []
     for _ in range(amt):
         if custom_name:
-            # CUSTOM NAME format: CUSTOMNAME-XXXX-XXXX-XXXX
-            random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
-            formatted = f"{custom_name}-{random_part[:4]}-{random_part[4:8]}-{random_part[8:12]}"
+            rp = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+            formatted = f"{custom_name}-{rp[:4]}-{rp[4:8]}-{rp[8:12]}"
         else:
-            raw = gen_key(16)
-            formatted = fmt_key(raw)
+            formatted = fmt_key(gen_key(16))
 
         data["keys"][formatted] = {
-            "days": days,
+            "seconds": secs,
+            "duration_text": human_readable(secs),
             "created_at": datetime.now().isoformat(),
             "used": False,
             "used_by": None
@@ -648,10 +707,12 @@ def cmd_gen(msg):
         keys.append(formatted)
     save_data(data)
 
-    txt = f"✅ <b>ɢᴇɴᴇʀᴀᴛᴇᴅ {amt} ᴋᴇʏꜱ</b>\n━━━━━━━━━━━━━\n"
+    txt = f"✅ <b>ɢᴇɴᴇʀᴀᴛᴇᴅ {amt} ᴋᴇʏꜱ</b>\n"
+    txt += "━━━━━━━━━━━━━━━━━━━━━\n"
     for k in keys:
         txt += f"<code>{k}</code>\n"
-    txt += f"━━━━━━━━━━━━━\n⏰ ᴅᴜʀᴀᴛɪᴏɴ: <b>{days} ᴅᴀʏꜱ</b>"
+    txt += "━━━━━━━━━━━━━━━━━━━━━\n"
+    txt += f"⏰ ᴅᴜʀᴀᴛɪᴏɴ: <b>{human_readable(secs)}</b>"
     bot.reply_to(msg, txt, parse_mode="HTML")
 
 
@@ -669,15 +730,15 @@ def cmd_redeem(msg):
     if kinfo.get("used"):
         bot.reply_to(msg, "❌ <b>ᴀʟʀᴇᴀᴅʏ ᴜꜱᴇᴅ!</b>", parse_mode="HTML"); return
 
-    days = kinfo["days"]
-    expiry = datetime.now() + timedelta(days=days)
+    secs = kinfo.get("seconds", kinfo.get("days", 30) * 86400)
+    expiry = datetime.now() + timedelta(seconds=secs)
     data["users"].setdefault(str(uid), {})
     existing = data["users"][str(uid)].get("key_expiry")
     if existing:
         try:
             old_exp = datetime.fromisoformat(existing)
             if old_exp > datetime.now():
-                expiry = old_exp + timedelta(days=days)
+                expiry = old_exp + timedelta(seconds=secs)
         except: pass
     data["users"][str(uid)]["key_expiry"] = expiry.isoformat()
     data["users"][str(uid)]["username"] = msg.from_user.username or msg.from_user.first_name
@@ -686,11 +747,12 @@ def cmd_redeem(msg):
     save_data(data)
 
     bot.reply_to(msg,
-        f"✅ <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍᴇᴅ!</b>\n"
-        f"━━━━━━━━━━━━━\n"
-        f"⏰ ᴀᴅᴅᴇᴅ: <b>+{days} ᴅᴀʏꜱ</b>\n"
-        f"📅 ᴇxᴘɪʀᴇꜱ: <b>{expiry.strftime('%d %b %Y %H:%M')}</b>\n"
-        f"━━━━━━━━━━━━━",
+        "╔══════════════════════════╗\n"
+        "║   ✅ 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠𝗘𝗗 ✅   ║\n"
+        "╚══════════════════════════╝\n\n"
+        f"┣ ⏰ ᴀᴅᴅᴇᴅ ➪ <b>+{human_readable(secs)}</b>\n"
+        f"┣ 📅 ᴇxᴘɪʀᴇꜱ ➪ <b>{expiry.strftime('%d %b %Y %H:%M')}</b>\n"
+        "┗ 🎯 ᴇɴᴊᴏʏ ʏᴏᴜʀ ᴀᴛᴛᴀᴄᴋꜱ!",
         parse_mode="HTML")
 
 
@@ -707,15 +769,18 @@ def cmd_panel(msg):
         "👥 /users ➪ ᴜꜱᴇʀꜱ ʟɪꜱᴛ\n"
         "📊 /stats ➪ ꜱᴛᴀᴛꜱ\n"
         "📢 /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-        "🚫 /ban ID ➪ ʙᴀɴ ᴜꜱᴇʀ\n"
-        "✅ /unban ID ➪ ᴜɴʙᴀɴ ᴜꜱᴇʀ\n"
-        "🔑 /genkey DAYS AMT ➪ ɢᴇɴ ᴋᴇʏꜱ\n"
+        "🚫 /ban ID ➪ ʙᴀɴ\n"
+        "✅ /unban ID ➪ ᴜɴʙᴀɴ\n"
+        "🔑 /genkey ➪ ɢᴇɴ ᴋᴇʏꜱ\n"
         "📡 /setapi ➪ ꜱᴇᴛ ᴀᴘɪ\n"
         "🧪 /testapi ➪ ᴛᴇꜱᴛ ᴀᴘɪ\n"
         "⏱️ /setmaxtime SEC ➪ ᴍᴀx ᴛɪᴍᴇ\n"
         "⏸️ /setcooldown SEC ➪ ᴄᴏᴏʟᴅᴏᴡɴ\n"
         "🔧 /maintenance ➪ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ\n"
-        "⚙️ /settings ➪ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅꜱ",
+        "⚙️ /settings ➪ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅꜱ\n\n"
+        "╔══════════════════════════╗\n"
+        "║   ⚡ 𝗕𝗢𝗧 𝗢𝗡𝗟𝗜𝗡𝗘 ⚡   ║\n"
+        "╚══════════════════════════╝",
         parse_mode="HTML")
 
 
@@ -723,10 +788,11 @@ def cmd_panel(msg):
 def cmd_users(msg):
     if not is_owner(msg.from_user.id): return
     if not data["users"]:
-        bot.reply_to(msg, "📂 ɴᴏ ᴜꜱᴇʀꜱ."); return
-    txt = "👥 <b>ᴜꜱᴇʀꜱ ʟɪꜱᴛ</b>\n━━━━━━━━━━━━━\n"
-    for i, (uid, u) in enumerate(list(data["users"].items())[:50], 1):
-        txt += f"{i}. <code>{uid}</code> | {u.get('total_attacks', 0)} ᴀᴛᴛᴀᴄᴋꜱ\n"
+        bot.reply_to(msg, "📂 <b>ɴᴏ ᴜꜱᴇʀꜱ.</b>", parse_mode="HTML"); return
+    txt = "╔══════════════════════════╗\n║   👥 𝗨𝗦𝗘𝗥𝗦 𝗟𝗜𝗦𝗧 👥   ║\n╚══════════════════════════╝\n\n"
+    for i, (u_id, u) in enumerate(list(data["users"].items())[:50], 1):
+        txt += f"{i}. <code>{u_id}</code> ➪ {u.get('total_attacks', 0)} ᴀᴛᴛᴀᴄᴋꜱ\n"
+    txt += f"\n━━━━━━━━━━━━━━━━━━━━━\n🔹 ᴛᴏᴛᴀʟ: <b>{len(data['users'])}</b>"
     bot.reply_to(msg, txt, parse_mode="HTML")
 
 
@@ -748,16 +814,41 @@ def cmd_broadcast(msg):
 @bot.message_handler(commands=['stats'])
 def cmd_stats(msg):
     if not is_owner(msg.from_user.id): return
+    used_keys = sum(1 for k, v in data['keys'].items() if v.get('used'))
+    unused_keys = len(data['keys']) - used_keys
     txt = (
-        "📊 <b>ʙᴏᴛ ꜱᴛᴀᴛꜱ</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👥 ᴜꜱᴇʀꜱ: <b>{len(data['users'])}</b>\n"
-        f"🔑 ᴋᴇʏꜱ: <b>{len(data['keys'])}</b>\n"
-        f"💀 ᴀᴛᴛᴀᴄᴋꜱ: <b>{len(data['attack_logs'])}</b>\n"
-        f"❄ ꜱᴛɪᴄᴋᴇʀꜱ: <b>{len(data.get('stickers', []))}</b>\n"
-        f"📹 ᴠɪᴅᴇᴏꜱ: <b>{len(data.get('videos', []))}</b>\n"
-        f"🎬 ᴘʏꜰ ᴠɪᴅᴇᴏꜱ: <b>{len(data.get('pyf_videos', []))}</b>\n"
-        f"⏱️ ᴜᴘᴛɪᴍᴇ: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>"
+        "╔══════════════════════════╗\n"
+        "║   📊 𝗕𝗢𝗧 𝗦𝗧𝗔𝗧𝗦 📊   ║\n"
+        "╚══════════════════════════╝\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  👥 𝗨𝗦𝗘𝗥𝗦\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ 👥 ᴛᴏᴛᴀʟ ➪ <b>{len(data['users'])}</b>\n"
+        f"┣ 👑 ᴀᴅᴍɪɴꜱ ➪ <b>{len(data.get('admins', {}))}</b>\n"
+        f"┣ 💼 ʀᴇꜱᴇʟʟᴇʀꜱ ➪ <b>{len(data.get('resellers', {}))}</b>\n"
+        f"┗ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{len(data.get('banned_users', {}))}</b>\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  🔑 𝗞𝗘𝗬𝗦\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ 🔑 ᴛᴏᴛᴀʟ ➪ <b>{len(data['keys'])}</b>\n"
+        f"┣ ✅ ᴜꜱᴇᴅ ➪ <b>{used_keys}</b>\n"
+        f"┗ 🆓 ᴀᴠᴀɪʟᴀʙʟᴇ ➪ <b>{unused_keys}</b>\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  💀 𝗔𝗧𝗧𝗔𝗖𝗞𝗦\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ 💀 ᴛᴏᴛᴀʟ ➪ <b>{len(data['attack_logs'])}</b>\n"
+        f"┣ ⏱️ ᴍᴀx ᴛɪᴍᴇ ➪ <b>{get_setting('max_attack_time', 300)}ꜱ</b>\n"
+        f"┗ ⏸️ ᴄᴏᴏʟᴅᴏᴡɴ ➪ <b>{get_setting('user_cooldown', 5)}ꜱ</b>\n\n"
+        "╭━━━━━━━━━━━━━━━━━━━━╮\n"
+        "┃  🎨 𝗖𝗢𝗡𝗧𝗘𝗡𝗧\n"
+        "╰━━━━━━━━━━━━━━━━━━━━╯\n"
+        f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{len(data.get('stickers', []))}</b>\n"
+        f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{len(data.get('videos', []))}</b>\n"
+        f"┗ 🎬 ᴘʏꜰ ➪ <b>{len(data.get('pyf_videos', []))}</b>\n\n"
+        f"⏱️ ᴜᴘᴛɪᴍᴇ: <b>{str(datetime.now() - BOT_START_TIME).split('.')[0]}</b>\n\n"
+        "╔══════════════════════════╗\n"
+        "║   🔥 𝗢𝗡𝗟𝗜𝗡𝗘 🔥   ║\n"
+        "╚══════════════════════════╝"
     )
     bot.reply_to(msg, txt, parse_mode="HTML")
 
@@ -769,7 +860,7 @@ def cmd_ban(msg):
     if len(p) < 2: bot.reply_to(msg, "⚠️ /ban ID"); return
     data["banned_users"][p[1]] = datetime.now().isoformat()
     save_data(data)
-    bot.reply_to(msg, f"✅ <b>ʙᴀɴɴᴇᴅ</b> <code>{p[1]}</code>", parse_mode="HTML")
+    bot.reply_to(msg, f"🚫 <b>ʙᴀɴɴᴇᴅ</b> <code>{p[1]}</code>", parse_mode="HTML")
 
 
 @bot.message_handler(commands=['unban'])
@@ -811,8 +902,7 @@ def cmd_setmaxtime(msg):
     try:
         set_setting("max_attack_time", int(p[1]))
         bot.reply_to(msg, f"✅ <b>ᴍᴀx ᴛɪᴍᴇ:</b> {p[1]}ꜱ", parse_mode="HTML")
-    except:
-        bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
+    except: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
 
 
 @bot.message_handler(commands=['setcooldown'])
@@ -823,8 +913,7 @@ def cmd_setcooldown(msg):
     try:
         set_setting("user_cooldown", int(p[1]))
         bot.reply_to(msg, f"✅ <b>ᴄᴏᴏʟᴅᴏᴡɴ:</b> {p[1]}ꜱ", parse_mode="HTML")
-    except:
-        bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
+    except: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ")
 
 
 @bot.message_handler(commands=['maintenance'])
@@ -842,32 +931,26 @@ def cmd_removesticker(msg):
     p = msg.text.split()
     if len(p) < 2:
         if not data["stickers"]:
-            bot.reply_to(msg, "❄ ᴋᴏɪ ꜱᴛɪᴄᴋᴇʀ ɴᴀʜɪ ʜᴀɪ.")
-            return
+            bot.reply_to(msg, "❄ ᴋᴏɪ ꜱᴛɪᴄᴋᴇʀ ɴᴀʜɪ ʜᴀɪ."); return
         txt = "❄ <b>ꜱᴛɪᴄᴋᴇʀꜱ ʟɪꜱᴛ:</b>\n━━━━━━━━━━━━━\n"
         for i, s in enumerate(data["stickers"], 1):
             txt += f"{i}. <code>{s}</code>\n"
         txt += "\n❌ ʀᴇᴍᴏᴠᴇ: <code>/removesticker NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
-        return
+        bot.reply_to(msg, txt, parse_mode="HTML"); return
     try:
         idx = int(p[1]) - 1
         if 0 <= idx < len(data["stickers"]):
-            data["stickers"].pop(idx)
-            save_data(data)
+            data["stickers"].pop(idx); save_data(data)
             bot.reply_to(msg, f"✅ <b>ꜱᴛɪᴄᴋᴇʀ #{p[1]} ʀᴇᴍᴏᴠᴇᴅ!</b>\n❄ ᴛᴏᴛᴀʟ: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
-    except:
-        bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/removesticker NUMBER</code>", parse_mode="HTML")
+        else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
+    except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/removesticker NUMBER</code>", parse_mode="HTML")
 
 
 @bot.message_handler(commands=['liststickers'])
 def cmd_liststickers(msg):
     if not is_owner(msg.from_user.id): return
     if not data["stickers"]:
-        bot.reply_to(msg, "❄ ᴋᴏɪ ꜱᴛɪᴄᴋᴇʀ ɴᴀʜɪ ʜᴀɪ.")
-        return
+        bot.reply_to(msg, "❄ ᴋᴏɪ ꜱᴛɪᴄᴋᴇʀ ɴᴀʜɪ ʜᴀɪ."); return
     txt = "❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥𝗦\n"
     for i, s in enumerate(data["stickers"], 1):
         txt += f"{i}. {s}\n"
@@ -880,8 +963,7 @@ def cmd_liststickers(msg):
 def cmd_listvideo(msg):
     if not is_owner(msg.from_user.id): return
     if not data["videos"]:
-        bot.reply_to(msg, "📹 ᴋᴏɪ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ.")
-        return
+        bot.reply_to(msg, "📹 ᴋᴏɪ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ."); return
     txt = "📹 🇻 🇮 🇩 🇪 🇴 🇸 ：\n"
     for i, v in enumerate(data["videos"], 1):
         txt += f"🛸{i} {v}\n"
@@ -895,24 +977,19 @@ def cmd_delvideo(msg):
     p = msg.text.split()
     if len(p) < 2:
         if not data["videos"]:
-            bot.reply_to(msg, "📹 ᴋᴏɪ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ.")
-            return
+            bot.reply_to(msg, "📹 ᴋᴏɪ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ."); return
         txt = "📹 <b>ᴠɪᴅᴇᴏꜱ ʟɪꜱᴛ:</b>\n━━━━━━━━━━━━━\n"
         for i, v in enumerate(data["videos"], 1):
             txt += f"{i}. <code>{v}</code>\n"
         txt += "\n❌ ᴅᴇʟᴇᴛᴇ: <code>/delvideo NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
-        return
+        bot.reply_to(msg, txt, parse_mode="HTML"); return
     try:
         idx = int(p[1]) - 1
         if 0 <= idx < len(data["videos"]):
-            data["videos"].pop(idx)
-            save_data(data)
+            data["videos"].pop(idx); save_data(data)
             bot.reply_to(msg, f"✅ <b>ᴠɪᴅᴇᴏ #{p[1]} ʀᴇᴍᴏᴠᴇᴅ!</b>\n📹 ᴛᴏᴛᴀʟ: <b>{len(data['videos'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
-    except:
-        bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delvideo NUMBER</code>", parse_mode="HTML")
+        else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
+    except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delvideo NUMBER</code>", parse_mode="HTML")
 
 
 # ============= PYF VIDEO COMMANDS =============
@@ -927,8 +1004,7 @@ def cmd_addpyf(msg):
 def cmd_listpyf(msg):
     if not is_owner(msg.from_user.id): return
     if not data["pyf_videos"]:
-        bot.reply_to(msg, "🎬 ᴋᴏɪ ᴘʏꜰ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ.")
-        return
+        bot.reply_to(msg, "🎬 ᴋᴏɪ ᴘʏꜰ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ."); return
     txt = "🎬 🇵 🇾 🇫 ᴠɪᴅᴇᴏꜱ ：\n"
     for i, v in enumerate(data["pyf_videos"], 1):
         txt += f"🛸{i} {v}\n"
@@ -942,24 +1018,19 @@ def cmd_delpyf(msg):
     p = msg.text.split()
     if len(p) < 2:
         if not data["pyf_videos"]:
-            bot.reply_to(msg, "🎬 ᴋᴏɪ ᴘʏꜰ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ.")
-            return
+            bot.reply_to(msg, "🎬 ᴋᴏɪ ᴘʏꜰ ᴠɪᴅᴇᴏ ɴᴀʜɪ ʜᴀɪ."); return
         txt = "🎬 <b>ᴘʏꜰ ᴠɪᴅᴇᴏꜱ ʟɪꜱᴛ:</b>\n━━━━━━━━━━━━━\n"
         for i, v in enumerate(data["pyf_videos"], 1):
             txt += f"{i}. <code>{v}</code>\n"
         txt += "\n❌ ᴅᴇʟᴇᴛᴇ: <code>/delpyf NUMBER</code>"
-        bot.reply_to(msg, txt, parse_mode="HTML")
-        return
+        bot.reply_to(msg, txt, parse_mode="HTML"); return
     try:
         idx = int(p[1]) - 1
         if 0 <= idx < len(data["pyf_videos"]):
-            data["pyf_videos"].pop(idx)
-            save_data(data)
+            data["pyf_videos"].pop(idx); save_data(data)
             bot.reply_to(msg, f"✅ <b>ᴘʏꜰ ᴠɪᴅᴇᴏ #{p[1]} ʀᴇᴍᴏᴠᴇᴅ!</b>\n🎬 ᴛᴏᴛᴀʟ: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
-        else:
-            bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
-    except:
-        bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delpyf NUMBER</code>", parse_mode="HTML")
+        else: bot.reply_to(msg, "❌ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!")
+    except: bot.reply_to(msg, "❌ ᴜꜱᴀɢᴇ: <code>/delpyf NUMBER</code>", parse_mode="HTML")
 
 
 # ============= AUTO STICKER =============
@@ -969,8 +1040,7 @@ def auto_sticker(msg):
     if not is_owner(uid): return
     file_id = msg.sticker.file_id
     if file_id not in data["stickers"]:
-        data["stickers"].append(file_id)
-        save_data(data)
+        data["stickers"].append(file_id); save_data(data)
         bot.reply_to(msg, f"✅ <b>ꜱᴛɪᴄᴋᴇʀ ᴀᴅᴅᴇᴅ!</b>\n❄ ᴛᴏᴛᴀʟ: <b>{len(data['stickers'])}</b>", parse_mode="HTML")
     else:
         bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
@@ -988,21 +1058,19 @@ def handle_video(msg):
     if _pending_pyf.get(uid):
         _pending_pyf[uid] = False
         if file_id not in data["pyf_videos"]:
-            data["pyf_videos"].append(file_id)
-            save_data(data)
+            data["pyf_videos"].append(file_id); save_data(data)
             bot.reply_to(msg, f"✅ <b>ᴘʏꜰ ᴠɪᴅᴇᴏ ᴀᴅᴅᴇᴅ!</b>\n🎬 ᴛᴏᴛᴀʟ: <b>{len(data['pyf_videos'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
     else:
         if file_id not in data["videos"]:
-            data["videos"].append(file_id)
-            save_data(data)
+            data["videos"].append(file_id); save_data(data)
             bot.reply_to(msg, f"✅ <b>ᴠɪᴅᴇᴏ ᴀᴅᴅᴇᴅ!</b>\n📹 ᴛᴏᴛᴀʟ: <b>{len(data['videos'])}</b>", parse_mode="HTML")
         else:
             bot.reply_to(msg, "ℹ️ <b>ᴀʟʀᴇᴀᴅʏ ᴀᴅᴅᴇᴅ.</b>", parse_mode="HTML")
 
 
-# ============= SETTINGS COMMAND =============
+# ============= SETTINGS =============
 @bot.message_handler(commands=['settings'])
 def cmd_settings(msg):
     if not is_owner(msg.from_user.id): return
@@ -1011,31 +1079,32 @@ def cmd_settings(msg):
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
         "👑 <b>ᴏᴡɴᴇʀ</b>\n"
         "┣ /panel ➪ ᴏᴡɴᴇʀ ᴘᴀɴᴇʟ\n"
-        "┣ /users ➪ ᴜꜱᴇʀꜱ ʟɪꜱᴛ\n"
+        "┣ /users ➪ ᴜꜱᴇʀꜱ\n"
         "┣ /stats ➪ ꜱᴛᴀᴛꜱ\n"
-        "┣ /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-        "┣ /ban ID ➪ ʙᴀɴ\n"
-        "┗ /unban ID ➪ ᴜɴʙᴀɴ\n\n"
+        "┣ /broadcast MSG\n"
+        "┣ /ban ID\n"
+        "┗ /unban ID\n\n"
         "🔑 <b>ᴋᴇʏ</b>\n"
-        "┣ /genkey DAYS [AMT] [NAME] ➪ ɢᴇɴ ᴋᴇʏꜱ\n"
-        "┗ /redeem KEY ➪ ʀᴇᴅᴇᴇᴍ\n\n"
+        "┣ /genkey 1d 5 → 5 ᴋᴇʏꜱ 1 ᴅᴀʏ\n"
+        "┣ /genkey 1month 10 PREMIUM\n"
+        "┗ /redeem KEY\n\n"
         "📡 <b>ᴀᴘɪ</b>\n"
-        "┣ /setapi URL TOKEN [method] [geo]\n"
-        "┣ /testapi ➪ ᴛᴇꜱᴛ\n"
-        "┣ /setmaxtime SEC ➪ ᴍᴀx ᴛɪᴍᴇ\n"
-        "┗ /setcooldown SEC ➪ ᴄᴏᴏʟᴅᴏᴡɴ\n\n"
+        "┣ /setapi URL TOKEN\n"
+        "┣ /testapi\n"
+        "┣ /setmaxtime SEC\n"
+        "┗ /setcooldown SEC\n\n"
         "🔧 <b>ʙᴏᴛ</b>\n"
-        "┗ /maintenance ➪ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ\n\n"
+        "┗ /maintenance\n\n"
         "❄ <b>ꜱᴛɪᴄᴋᴇʀ</b>\n"
-        "┣ ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ ➪ ᴀᴜᴛᴏ ᴀᴅᴅ\n"
+        "┣ ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ\n"
         "┣ /removesticker NUMBER\n"
         "┗ /liststickers\n\n"
         "📹 <b>ᴠɪᴅᴇᴏ</b>\n"
-        "┣ ꜱᴇɴᴅ ᴠɪᴅᴇᴏ ➪ ᴀᴜᴛᴏ ᴀᴅᴅ\n"
+        "┣ ꜱᴇɴᴅ ᴠɪᴅᴇᴏ\n"
         "┣ /listvideo\n"
         "┗ /delvideo NUMBER\n\n"
         "🎬 <b>ᴘʏꜰ ᴠɪᴅᴇᴏ</b>\n"
-        "┣ /addpyf ➪ ᴀᴅᴅ\n"
+        "┣ /addpyf\n"
         "┣ /listpyf\n"
         "┗ /delpyf NUMBER\n"
         "━━━━━━━━━━━━━━━━━━━━━"
@@ -1065,7 +1134,7 @@ def btn_redeem(msg):
 
 @bot.message_handler(func=lambda m: m.text == "🔑 𝐆𝐄𝐍 𝐊𝐄𝐘")
 def btn_genkey(msg):
-    bot.reply_to(msg, "🔑 <code>/genkey DAYS AMOUNT [NAME]</code>", parse_mode="HTML")
+    bot.reply_to(msg, "🔑 <code>/genkey 1d 5 [NAME]</code>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: m.text == "📊 𝐒𝐓𝐀𝐓𝐒")
 def btn_stats(msg): cmd_stats(msg)
