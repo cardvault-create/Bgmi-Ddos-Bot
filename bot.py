@@ -3139,20 +3139,20 @@ def universal_button_handler(msg):
             check_ban(msg)
             return
 
-        if btype == "𝐀𝐓𝐓𝐀𝐂𝐊 𝐌𝐄𝐍𝐔":
+        if btype == "ATTACK":
             safe_reply(msg,
                 "  ◆ 📌 <b>ᴜꜱᴀɢᴇ:</b> <code>/attack 𝐈𝐏 𝐏𝐎𝐑𝐓 𝐓𝐈𝐌𝐄</code>\n"
                 "  ◆ 📝 <b>ᴇxᴀᴍᴘʟᴇ:</b> <code>/attack 𝟏.𝟐.𝟑.𝟒 𝟖𝟎 𝟔𝟎</code>",
                 parse_mode="HTML")
             return
 
-        if btype == "𝐒𝐓𝐀𝐓𝐔𝐒 𝐌𝐄𝐍𝐔":
+        if btype == "STATUS":
             do_status(msg); return
 
-        if btype == "𝐏𝐑𝐎𝐅𝐈𝐋𝐄":
+        if btype == "PROFILE":
             do_profile(msg); return
 
-        if btype == "𝐎𝐖𝐍𝐄𝐑_𝐏𝐀𝐍𝐄𝐋":
+        if btype == "OWNER_PANEL":
             if not is_owner(uid):
                 safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
@@ -3161,7 +3161,7 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
-        if btype == "𝐑𝐄𝐃𝐄𝐄𝐌":
+        if btype == "REDEEM":
             safe_reply(msg,
                 "  📝 <code>/redeem Yᴀᴀɴ KᴇY DᴀL LᴀUᴅE</code>",
                 parse_mode="HTML")
