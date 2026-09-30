@@ -2070,6 +2070,189 @@ def do_genkey(msg):
 @bot.message_handler(commands=['genkey', 'gen'])
 def cmd_gen(msg): do_genkey(msg)
 
+# ============= KEY DELETE SYSTEM ★★★ =============
+@bot.message_handler(commands=['listkeys'])
+def cmd_listkeys(msg):
+    try:
+        if not is_owner(msg.from_user.id): return
+        keys = ensure_dict(data.get("keys", {}))
+        if not keys:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║              🗝️ 𝗞𝗘𝗬 𝗟𝗜𝗦𝗧 🗝️              ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📂 <b>ᴋᴏɪ ᴋᴇʏ ɴᴀʜɪ ʜᴀɪ</b>\n\n"
+                "  📌 <b>ɢᴇɴᴇʀᴀᴛᴇ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ:</b>\n"
+                "  ➤ <code>/genkey 1d 5</code>",
+                parse_mode="HTML")
+            return
+
+        used_count = sum(1 for k, v in keys.items() if isinstance(v, dict) and v.get('used'))
+        unused_count = len(keys) - used_count
+
+        txt = (
+            "╔══════════════════════════╗\n"
+            "║              🗝️ 𝗞𝗘𝗬 𝗟𝗜𝗦𝗧 🗝️              ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  ◆ 📊 ᴛᴏᴛᴀʟ ➪ <b>{len(keys)}</b>\n"
+            f"  ◆ ✅ ᴜꜱᴇᴅ ➪ <b>{used_count}</b>\n"
+            f"  ◆ 🆓 ᴀᴠᴀɪʟ ➪ <b>{unused_count}</b>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃           📋 𝗔𝗟𝗟 𝗞𝗘𝗬𝗦 📋           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        )
+
+        # Saari keys display karo (limit 50)
+        for i, (key, info) in enumerate(list(keys.items())[:50], 1):
+            if not isinstance(info, dict):
+                status = "❓ ᴋɴᴏᴡɴ"
+            elif info.get('used'):
+                status = f"✅ ᴜꜱᴇᴅ ʙʏ <code>{info.get('used_by','?')}</code>"
+            else:
+                status = "🆓 ᴀᴠᴀɪʟ"
+
+            dur = info.get('duration_text', 'N/A') if isinstance(info, dict) else 'N/A'
+            txt += f"  ◆ <b>{i:02d}.</b> <code>{key}</code>\n"
+            txt += f"      ┣ ⏰ {dur}\n"
+            txt += f"      ┗ {status}\n\n"
+
+        if len(keys) > 50:
+            txt += f"\n  ... ᴀɴᴅ {len(keys) - 50} ᴍᴏʀᴇ ᴋᴇʏꜱ\n"
+
+        txt += (
+            "\n┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃         🗑️ 𝗗𝗘𝗟𝗘𝗧𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 🗑️         ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ➤ <code>/delkey KEY</code> ➪ ᴇᴋ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ\n"
+            "  ➤ <code>/delallkeys</code> ➪ ꜱᴀᴀʀɪ ᴜɴᴜꜱᴇᴅ ᴋᴇʏꜱ ᴅᴇʟᴇᴛᴇ\n"
+        )
+
+        # Message lamba ho sakta hai, isliye 2 parts mein bhejo agar zaroorat ho
+        if len(txt) > 4000:
+            txt = txt[:4000] + "\n\n⚠️ <i>ʟɪꜱᴛ ᴛᴏᴏ ʟᴏɴɢ — ᴋᴜᴄʜ ᴋᴇʏꜱ ʜɪᴅᴅᴇɴ</i>"
+
+        safe_reply(msg, txt, parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ listkeys error: {e}")
+        safe_reply(msg, f"❌ <b>ᴇʀʀᴏʀ:</b> <code>{escape_html(str(e)[:100])}</code>", parse_mode="HTML")
+
+
+@bot.message_handler(commands=['delkey'])
+def cmd_delkey(msg):
+    try:
+        if not is_owner(msg.from_user.id): return
+        p = msg.text.split()
+        if len(p) < 2:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║            🗑️ 𝗗𝗘𝗟𝗘𝗧𝗘 𝗞𝗘𝗬 🗑️            ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📝 <code>/delkey KEY</code>\n\n"
+                "  📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+                "  ➤ <code>/delkey ABC-1234-DEFG-HIJK</code>\n\n"
+                "  💡 <b>ᴋᴇʏ ʟɪꜱᴛ ᴅᴇᴋʜɴᴇ ᴋᴇ ʟɪʏᴇ:</b>\n"
+                "  ➤ <code>/listkeys</code>",
+                parse_mode="HTML")
+            return
+
+        key = p[1].strip().upper()
+        keys = ensure_dict(data.get("keys", {}))
+
+        if key not in keys:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║             ❌ 𝗞𝗘𝗬 𝗡𝗢𝗧 𝗙𝗢𝗨𝗡𝗗 ❌           ║\n"
+                "╚══════════════════════════╝\n\n"
+                f"  ◆ 🔑 ᴋᴇʏ ➪ <code>{escape_html(key)}</code>\n\n"
+                "  ⚠️ <b>ʏᴇʜ ᴋᴇʏ ᴅᴀᴛᴀʙᴀꜱᴇ ᴍᴇ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+                "  💡 <code>/listkeys</code> ꜱᴇ ᴄʜᴇᴄᴋ ᴋᴀʀᴏ",
+                parse_mode="HTML")
+            return
+
+        # Delete key
+        key_info = keys.pop(key)
+        save_data(data)
+
+        # Agar yeh key kisi user ne use ki hai toh user ka key bhi hata do
+        used_by = key_info.get('used_by') if isinstance(key_info, dict) else None
+        user_cleared = False
+        if used_by:
+            uid_str = str(used_by)
+            if uid_str in ensure_dict(data.get("users", {})):
+                # User ka key_expiry check karo
+                if isinstance(data["users"][uid_str], dict):
+                    data["users"][uid_str]["key_expiry"] = None
+                    data["users"][uid_str]["key_activated"] = None
+                    user_cleared = True
+                    save_data(data)
+
+        msg_text = (
+            "╔══════════════════════════╗\n"
+            "║            ✅ 𝗞𝗘𝗬 𝗗𝗘𝗟𝗘𝗧𝗘𝗗 ✅            ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  ◆ 🗑️ ᴋᴇʏ ➪ <code>{escape_html(key)}</code>\n"
+            f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{key_info.get('duration_text','N/A') if isinstance(key_info, dict) else 'N/A'}</b>\n"
+            f"  ◆ 📊 ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{len(keys)}</b>\n"
+        )
+
+        if user_cleared:
+            msg_text += f"\n  ⚠️ <b>ᴜꜱᴇʀ <code>{used_by}</code> ᴋᴀ ᴋᴇʏ ᴀᴄᴄᴇꜱꜱ ʙʜɪ ʀᴇᴠᴏᴋᴇ ᴋᴀʀ ᴅɪʏᴀ</b>"
+
+        msg_text += "\n\n╔══════════════════════════╗\n║         🗑️ ᴋᴇʏ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ɢᴏɴᴇ       ║\n╚══════════════════════════╝"
+
+        safe_reply(msg, msg_text, parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ delkey error: {e}")
+        safe_reply(msg, f"❌ <b>ᴇʀʀᴏʀ:</b> <code>{escape_html(str(e)[:100])}</code>", parse_mode="HTML")
+
+
+@bot.message_handler(commands=['delallkeys'])
+def cmd_delallkeys(msg):
+    try:
+        if not is_owner(msg.from_user.id): return
+        p = msg.text.split()
+        # Confirmation required
+        if len(p) < 2 or p[1].lower() != "confirm":
+            keys = ensure_dict(data.get("keys", {}))
+            unused = sum(1 for k, v in keys.items() if isinstance(v, dict) and not v.get('used'))
+            used = len(keys) - unused
+
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║          ⚠️ 𝗗𝗘𝗟𝗘𝗧𝗘 𝗔𝗟𝗟 𝗞𝗘𝗬𝗦 ⚠️          ║\n"
+                "╚══════════════════════════╝\n\n"
+                f"  ◆ 📊 ᴛᴏᴛᴀʟ ᴋᴇʏꜱ ➪ <b>{len(keys)}</b>\n"
+                f"  ◆ 🆓 ᴜɴᴜꜱᴇᴅ ➪ <b>{unused}</b>\n"
+                f"  ◆ ✅ ᴜꜱᴇᴅ ➪ <b>{used}</b>\n\n"
+                "  ⚠️ <b>ʏᴇʜ ꜱɪʀꜰ ᴜɴᴜꜱᴇᴅ ᴋᴇʏꜱ ᴅᴇʟᴇᴛᴇ ᴋᴀʀᴇɢᴀ</b>\n"
+                "  ⚠️ <b>ᴜꜱᴇᴅ ᴋᴇʏꜱ ꜱᴀꜰᴇ ʀᴀʜᴇɴɢɪ</b>\n\n"
+                "  🔴 <b>ᴄᴏɴꜰɪʀᴍ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ:</b>\n"
+                "  ➤ <code>/delallkeys confirm</code>",
+                parse_mode="HTML")
+            return
+
+        # Confirmed — delete all UNUSED keys
+        keys = ensure_dict(data.get("keys", {}))
+        to_delete = [k for k, v in keys.items() if isinstance(v, dict) and not v.get('used')]
+        deleted_count = 0
+        for k in to_delete:
+            keys.pop(k, None)
+            deleted_count += 1
+        save_data(data)
+
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║        ✅ 𝗔𝗟𝗟 𝗞𝗘𝗬𝗦 𝗗𝗘𝗟𝗘𝗧𝗘𝗗 ✅         ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  ◆ 🗑️ ᴅᴇʟᴇᴛᴇᴅ ➪ <b>{deleted_count}</b> ᴜɴᴜꜱᴇᴅ ᴋᴇʏꜱ\n"
+            f"  ◆ 📊 ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{len(keys)}</b>\n\n"
+            "  ✅ <b>ᴜꜱᴇᴅ ᴋᴇʏꜱ ꜱᴀꜰᴇ ʜᴀɪɴ</b>",
+            parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ delallkeys error: {e}")
+        safe_reply(msg, f"❌ <b>ᴇʀʀᴏʀ:</b> <code>{escape_html(str(e)[:100])}</code>", parse_mode="HTML")
+
+
 @bot.message_handler(commands=['redeem'])
 def cmd_redeem(msg):
     try:
@@ -2162,7 +2345,10 @@ def cmd_panel(msg):
             "  ◆ ⏸️ /setcooldown SEC\n"
             "  ◆ 🔧 /maintenance\n"
             "  ◆ 📩 /feedback on|off|list\n"
-            "  ◆ ⚙️ /settings\n\n"
+            "  ◆ ⚙️ /settings\n"
+            "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n"
+            "  ◆ 🌌 /delkey KEY ➪ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ\n"
+            "  ◆ 🐼 /delallkeys ➪ ꜱᴀᴀʀɪ ᴜɴᴜꜱᴇᴅ ᴋᴇʏꜱ ᴅᴇʟᴇᴛᴇ\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃        ❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🐻‍❄️      ┃\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
