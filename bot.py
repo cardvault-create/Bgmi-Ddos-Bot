@@ -2059,6 +2059,7 @@ def cmd_redeem(msg):
             if old_exp and old_exp > ist_now():
                 expiry = old_exp + timedelta(seconds=secs)
         data["users"][str(uid)]["key_expiry"] = expiry.isoformat()
+        data["users"][str(uid)]["key_activated"] = ist_now().isoformat()
         data["users"][str(uid)]["username"] = msg.from_user.username or msg.from_user.first_name
         kinfo["used"] = True; kinfo["used_by"] = uid
         kinfo["used_at"] = ist_now().isoformat()
