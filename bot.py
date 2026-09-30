@@ -793,7 +793,7 @@ def cmd_start(msg):
         elif is_reseller(uid):
             role = "🦇 𝗩𝗔𝗠𝗣𝗜𝗥𝗘 𝗟𝗢𝗥𝗗"
         else:
-            role = "🩸 𝗡𝗘𝗪 𝗕𝗟𝗢𝗢𝗗"
+            role = "🧟 𝗡𝗘𝗪 𝗕𝗟𝗢𝗢𝗗"
 
         # ★★★ CLICKABLE NAME ★★★
         if username:
@@ -802,7 +802,7 @@ def cmd_start(msg):
             clickable_name = f'<a href="tg://user?id={uid}">{escape_html(name)}</a>'
 
         # Join date
-        joined_date = "❌ ɴᴏ ᴅᴀᴛᴀ"
+        joined_date = "📈 ɴᴏ ᴅᴀᴛᴀ"
         if u.get('joined_ist'):
             joined_date = str(u['joined_ist']) + " IST"
         elif u.get('joined_at'):
@@ -811,18 +811,18 @@ def cmd_start(msg):
                 joined_date = to_ist(jt).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
         # Key activated
-        activated_date = "❌ ɴᴏ ᴋᴇʏ"
+        activated_date = "🧿 ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
-            activated_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
+            activated_date = "🦄 ᴜɴʟɪᴍɪᴛᴇᴅ"
         elif u.get("key_activated"):
             at = safe_parse_dt(u["key_activated"])
             if at:
                 activated_date = to_ist(at).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
         # Key expiry
-        expiry_date = "❌ ɴᴏ ᴋᴇʏ"
+        expiry_date = " 🛰️ ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
-            expiry_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
+            expiry_date = "🦄 ᴜɴʟɪᴍɪᴛᴇᴅ"
         elif u.get("key_expiry"):
             exp = safe_parse_dt(u["key_expiry"])
             if exp:
@@ -831,7 +831,7 @@ def cmd_start(msg):
         # Time counter
         time_days = "00"; time_hours = "00"; time_minutes = "00"; time_seconds = "00"
         if is_owner(uid) or is_reseller(uid):
-            time_days = time_hours = time_minutes = time_seconds = "♾️"
+            time_days = time_hours = time_minutes = time_seconds = "📟"
         elif u.get("key_expiry"):
             exp = safe_parse_dt(u["key_expiry"])
             if exp:
@@ -844,8 +844,8 @@ def cmd_start(msg):
 
         # Attack log
         total_attacks = safe_int(u.get('total_attacks', 0))
-        last_attack_ip = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
-        last_attack_time = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
+        last_attack_ip = "🎟️ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
+        last_attack_time = "   📟 ɴᴏ ᴀᴛᴛᴀᴄᴋ"
         logs = ensure_list(data.get("attack_logs", []))
         user_logs = [l for l in logs if str(l.get('user_id')) == str(uid)]
         if user_logs:
@@ -874,7 +874,7 @@ def cmd_start(msg):
         # ★★★ FINAL TEXT ★★★
         text = (
             "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
-            f"┊         {BOT_NAME}            ┊\n"
+            f"┊         {BOT_NAME}         ┊\n"
             "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
             f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ {clickable_name}\n\n"
             "╭─ 𝗔𝗚𝗘𝗡𝗧 𝗜𝗡𝗙𝗢 \n"
