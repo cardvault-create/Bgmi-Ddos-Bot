@@ -1589,6 +1589,29 @@ def do_status(msg):
         uid = msg.from_user.id
         cid = msg.chat.id
 
+        # ★★★ KEY CHECK — Active key ke bina status nahi milega ★★★
+        if not is_owner(uid) and not has_valid_key(uid):
+            state = key_state(uid)
+            if state == "expired":
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║                ❌ 𝗞𝗘𝗬 𝗘𝗫𝗣𝗜𝗥𝗘𝗗 ❌               ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⚠️ <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴇxᴘɪʀᴇ ʜᴏ ᴄʜᴜᴋɪ ʜᴀɪ!</b>\n\n"
+                    "  📌 <b>ɴᴀʏᴀ ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
+                    "  ➤ <code>/redeem YOUR-KEY</code>",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            else:
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║               🔋 𝗡𝗢 𝗞𝗘𝗬 𝗙𝗢𝗨𝗡𝗗 🪫              ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⚠️ <b>ᴀᴀᴘᴋᴇ ᴘᴀᴀꜱ ᴋᴏɪ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+                    "  📌 <b>ꜱᴛᴀᴛᴜꜱ ᴅᴇᴋʜɴᴇ ᴋᴇ ʟɪʏᴇ ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪</b>\n"
+                    "  ➤ <code>/redeem YOUR-KEY</code>",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            return
+
         try:
             status_msg = bot.send_message(cid, "📊 ʟᴏᴀᴅɪɴɢ ꜱᴛᴀᴛᴜꜱ...")
         except Exception as e:
