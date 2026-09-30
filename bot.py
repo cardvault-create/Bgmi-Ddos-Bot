@@ -2794,6 +2794,7 @@ print("=" * 60)
 
 def polling_worker():
     """Main polling in a separate thread with auto-restart."""
+    global bot  # ★★★ YAHAN — function ke start me ★★★
     consecutive_failures = 0
     while True:
         try:
@@ -2829,12 +2830,11 @@ def polling_worker():
 
             if consecutive_failures % 20 == 0:
                 try:
-                    global bot
                     bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
                     print("🔧 Bot re-initialized")
                 except Exception as reinit_err:
                     print(f"❌ Re-init failed: {reinit_err}")
-
+                    
 # Start polling in background thread
 polling_thread = threading.Thread(target=polling_worker, daemon=True)
 polling_thread.start()
