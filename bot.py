@@ -37,7 +37,6 @@ DEFAULT_API_GEOLOCATION = "ALL"
 
 DATA_FILE = "bot_data.json"
 
-# ============= DEVELOPER CONTACT BUTTON =============
 DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞"
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
 
@@ -79,6 +78,9 @@ def load_data():
         "approved_groups": {}, "attack_logs": [], "admin_logs": [],
         "banned_users": {}, "feedbacks": [],
         "stickers": [], "videos": [], "pyf_videos": [],
+        "feedback_required": {},   # uid_str -> True / False  (per user)
+        "feedback_enabled": False, # global toggle
+        "pending_attacks": {},     # uid_str -> {"ip":..,"port":..,"dur":..} waiting for feedback
         "settings": {
             "max_attack_time": 300, "user_cooldown": 5,
             "maintenance_mode": False,
@@ -101,6 +103,8 @@ def load_data():
                     if not isinstance(d["stickers"], list): d["stickers"] = []
                     if not isinstance(d["videos"], list): d["videos"] = []
                     if not isinstance(d["pyf_videos"], list): d["pyf_videos"] = []
+                    if not isinstance(d.get("feedback_required"), dict): d["feedback_required"] = {}
+                    if not isinstance(d.get("pending_attacks"), dict): d["pending_attacks"] = {}
                     if not isinstance(d["admins"], dict):
                         d["admins"] = {str(BOT_OWNER): {"added_at": datetime.now().isoformat()}}
                     if not isinstance(d.get("settings"), dict):
@@ -271,13 +275,10 @@ def escape_html(text):
     except: return "N/A"
 
 def safe_reply(msg, text, **kwargs):
-    """Reply to message, fallback to send if reply fails."""
     try:
         return bot.reply_to(msg, text, **kwargs)
     except Exception as e:
-        err = str(e)
-        print(f"❌ reply_to failed: {err[:120]}")
-        # Fallback: send to chat directly
+        print(f"❌ reply_to failed: {str(e)[:120]}")
         try:
             return bot.send_message(msg.chat.id, text, **kwargs)
         except Exception as e2:
@@ -293,10 +294,6 @@ def safe_send(cid, text, **kwargs):
 # ============= BUTTON MATCHING (UNICODE FIXED) =============
 # ============================================================
 def normalize_text(text):
-    """
-    Convert any Unicode bold/mathematical/fullwidth chars to plain ASCII.
-    Example: '🔥 𝐀𝐓𝐓𝐀𝐂𝐊'  →  '🔥 ATTACK'
-    """
     if not text: return ""
     try:
         for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0',
@@ -311,9 +308,7 @@ def normalize_text(text):
 
 
 def get_button_type(text):
-    """Detect button by keywords. Order matters — specific first."""
     if not text: return None
-    # Skip commands like /start /attack etc — they have dedicated handlers
     stripped = text.strip()
     if stripped.startswith('/'): return None
 
@@ -520,7 +515,7 @@ def is_attack_running(uid=None):
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
 # ============================================================
-# ============= START COMMAND (REGISTERED FIRST) =============
+# ============= START COMMAND =============
 # ============================================================
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
@@ -617,6 +612,51 @@ def cmd_start(msg):
             "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
         )
 
+        # ============ COMMANDS LIST ============
+        commands_block = (
+            "╔══════════════════════════════╗\n"
+            "║       🎯 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎯            ║\n"
+            "╚══════════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃          ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗠𝗔𝗡𝗗\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "┣ 📌 <code>/attack IP PORT TIME</code>\n"
+            "┣ 📝 ᴇxᴀᴍᴘʟᴇ:\n"
+            "┗ <code>/attack 1.2.3.4 80 60</code>\n\n"
+        )
+
+        # Different command set for owner vs user
+        if is_owner(uid):
+            commands_block += (
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃          👑 𝗢𝗪𝗡𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "┣ 🔑 <code>/genkey 1d 5</code> — ɢᴇɴ ᴋᴇʏꜱ\n"
+                "┣ 👥 <code>/users</code> — ᴀʟʟ ᴜꜱᴇʀꜱ\n"
+                "┣ 📊 <code>/stats</code> — ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+                "┣ 📢 <code>/broadcast MSG</code> — ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+                "┣ 🚫 <code>/ban ID REASON</code> — ʙᴀɴ ᴜꜱᴇʀ\n"
+                "┣ ✅ <code>/unban ID</code> — ᴜɴʙᴀɴ ᴜꜱᴇʀ\n"
+                "┣ ⚙️ <code>/feedback on</code> — ꜰᴇᴇᴅʙᴀᴄᴋ ᴏɴ\n"
+                "┣ ⚙️ <code>/feedback off</code> — ꜰᴇᴇᴅʙᴀᴄᴋ ᴏꜰꜰ\n"
+                "┣ 🔧 <code>/maintenance</code> — ᴛᴏɢɢʟᴇ ᴍᴏᴅᴇ\n"
+                "┣ 📡 <code>/setapi URL TOKEN</code> — ꜱᴇᴛ ᴀᴘɪ\n"
+                "┣ 🧪 <code>/testapi</code> — ᴛᴇꜱᴛ ᴀᴘɪ\n"
+                "┣ ⏱️ <code>/setmaxtime SEC</code>\n"
+                "┣ ⏸️ <code>/setcooldown SEC</code>\n"
+                "┗ ⚙️ <code>/settings</code> — ᴀʟʟ ʜᴇʟᴘ\n\n"
+            )
+        else:
+            commands_block += (
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃            👤 𝗨𝗦𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "┣ 🔑 <code>/redeem YOUR-KEY</code> — ᴀᴄᴛɪᴠᴀᴛᴇ ᴋᴇʏ\n"
+                "┣ 👤 <code>/profile</code> — ᴠɪᴇᴡ ᴘʀᴏꜰɪʟᴇ\n"
+                "┣ 📊 <code>/status</code> — ʟɪᴠᴇ ꜱᴛᴀᴛᴜꜱ\n"
+                "┗ 🔥 <code>/attack IP PORT TIME</code>\n\n"
+            )
+
         if is_new and not has_key:
             text = header + (
                 f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ, {escape_html(name)}!</b>\n\n"
@@ -630,11 +670,12 @@ def cmd_start(msg):
                 "1️⃣ <b>ʀᴇᴅᴇᴇᴍ ᴋᴇʏ</b> ➤ <code>/redeem YOUR-KEY</code>\n"
                 "2️⃣ <b>ʟᴀᴜɴᴄʜ ᴀᴛᴛᴀᴄᴋ</b> ➤ <code>/attack IP PORT TIME</code>\n"
                 "3️⃣ <b>ᴄʜᴇᴄᴋ ᴘʀᴏꜰɪʟᴇ</b> ➤ <code>/profile</code>\n\n"
-                "━━━━━━━━━━━━━━━━━━━━━\n"
                 "⚠️ <b>ʙɪɴᴀ ᴋᴇʏ ᴋᴇ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ʟᴀɢᴇɢᴀ!</b>\n"
-                "🔑 ᴋᴇʏ ʟᴇɴᴇ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ.\n"
-                "━━━━━━━━━━━━━━━━━━━━━\n\n"
-                "👇 <b>ɴᴇᴇᴄʜᴇ ʙᴜᴛᴛᴏɴꜱ ꜱᴇ ꜱᴛᴀʀᴛ ᴋᴀʀᴏ</b>"
+                "🔑 ᴋᴇʏ ʟᴇɴᴇ ᴋᴇ ʟɪʏᴇ ᴏᴡɴᴇʀ ꜱᴇ ᴄᴏɴᴛᴀᴄᴛ ᴋᴀʀᴏ.\n\n"
+                + commands_block
+                + "╔══════════════════════════════╗\n"
+                "║          🔥 ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ ɴᴏᴡ 🔥            ║\n"
+                "╚══════════════════════════════╝"
             )
         elif has_key:
             u = ensure_dict(data.get("users", {})).get(str(uid), {})
@@ -649,7 +690,10 @@ def cmd_start(msg):
                 f"⏰ <b>ᴛɪᴍᴇ ʟᴇꜰᴛ:</b> <b>{time_left}</b>\n"
                 f"🎯 <b>ᴛᴏᴛᴀʟ ᴀᴛᴛᴀᴄᴋꜱ:</b> {total_attacks}\n"
                 "━━━━━━━━━━━━━━━━━━━━━\n\n"
-                "🔥 <b>ʀᴇᴀᴅʏ ᴛᴏ ʟᴀᴜɴᴄʜ ᴀᴛᴛᴀᴄᴋ?</b>"
+                + commands_block
+                + "╔══════════════════════════════╗\n"
+                "║          🔥 ʀᴇᴀᴅʏ ᴛᴏ ᴀᴛᴛᴀᴄᴋ 🔥            ║\n"
+                "╚══════════════════════════════╝"
             )
         else:
             text = header + (
@@ -662,10 +706,12 @@ def cmd_start(msg):
                 "⚠️ <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴇxᴘɪʀᴇ ʜᴏ ɢᴀʏɪ ʜᴀɪ</b>\n\n"
                 "📌 <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
                 "➤ <code>/redeem YOUR-KEY</code>\n\n"
-                "👇 <b>ɴᴇᴇᴄʜᴇ ʙᴜᴛᴛᴏɴꜱ ꜱᴇ ꜱᴛᴀʀᴛ ᴋᴀʀᴏ</b>"
+                + commands_block
+                + "╔══════════════════════════════╗\n"
+                "║       🔑 ɢᴇᴛ ᴋᴇʏ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ 🔑        ║\n"
+                "╚══════════════════════════════╝"
             )
 
-        # Owner notification in background
         if is_new:
             def notify_owner():
                 try:
@@ -696,13 +742,12 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # Send main message + sticker in background
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    time.sleep(1.5)  # reduced from 5
+                    time.sleep(1.2)
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-                    time.sleep(0.5)
+                    time.sleep(0.4)
                     try: bot.delete_message(cid, sticker_msg.message_id)
                     except: pass
                 else:
@@ -717,9 +762,72 @@ def cmd_start(msg):
         traceback.print_exc()
 
 # ============= CALLBACKS =============
-@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_")))
+@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_")))
 def handle_callbacks(call):
     try:
+        # FEEDBACK CALLBACK
+        if call.data.startswith("fb_"):
+            try:
+                uid = call.from_user.id
+                # Parse: fb_STAR_RATING
+                parts = call.data.split("_", 2)
+                if len(parts) >= 3:
+                    rating = parts[1]
+                    fb_text = parts[2].replace("|", " ")
+                    data["feedbacks"].append({
+                        "user_id": uid,
+                        "username": call.from_user.username or call.from_user.first_name,
+                        "rating": rating,
+                        "text": fb_text,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    # Clear pending feedback requirement
+                    if str(uid) in ensure_dict(data.get("pending_attacks", {})):
+                        del data["pending_attacks"][str(uid)]
+                    data["feedback_required"][str(uid)] = False
+                    save_data(data)
+
+                    try:
+                        bot.answer_callback_query(call.id, "✅ Feedback submitted!", show_alert=True)
+                    except: pass
+
+                    # Notify owner
+                    try:
+                        rating_icon = {"1": "⭐", "2": "⭐⭐", "3": "⭐⭐⭐", "4": "⭐⭐⭐⭐", "5": "⭐⭐⭐⭐⭐"}.get(rating, "⭐")
+                        owner_fb = (
+                            "╔══════════════════════╗\n"
+                            "║       📩 𝗡𝗘𝗪 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 📩         ║\n"
+                            "╚══════════════════════╝\n\n"
+                            f"👤 ᴜꜱᴇʀ ➪ <code>{uid}</code>\n"
+                            f"🔗 @{escape_html(call.from_user.username or call.from_user.first_name or 'User')}\n"
+                            f"⭐ ʀᴀᴛɪɴɢ ➪ {rating_icon}\n"
+                            f"💬 ᴍꜱɢ ➪ <i>{escape_html(fb_text)}</i>\n"
+                            f"📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>"
+                        )
+                        bot.send_message(BOT_OWNER, owner_fb, parse_mode="HTML")
+                    except: pass
+
+                    # Show thank you
+                    try:
+                        bot.edit_message_text(
+                            chat_id=call.message.chat.id,
+                            message_id=call.message.message_id,
+                            text=(
+                                "╔══════════════════════════╗\n"
+                                "║     ✅ 𝗧𝗛𝗔𝗡𝗞 𝗬𝗢𝗨 ✅        ║\n"
+                                "╚══════════════════════════╝\n\n"
+                                "🎉 <b>ᴀᴀᴘᴋᴀ ꜰᴇᴇᴅʙᴀᴄᴋ ᴍɪʟ ɢᴀʏᴀ!</b>\n\n"
+                                f"⭐ ʀᴀᴛɪɴɢ ➪ <b>{rating}</b>/5\n"
+                                f"💬 ᴍꜱɢ ➪ <i>{escape_html(fb_text)}</i>\n\n"
+                                "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                                "📌 <b>ᴀᴀᴘ ᴀʙ ɴᴀʏᴀ ᴀᴛᴛᴀᴄᴋ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴀɪɴ!</b>"
+                            ), parse_mode="HTML", reply_markup=None
+                        )
+                    except: pass
+            except Exception as e:
+                print(f"Feedback callback error: {e}")
+            return
+
         if call.data.startswith("stopatk_"):
             attack_id = call.data.replace("stopatk_", "", 1)
             caller_uid = call.from_user.id
@@ -898,7 +1006,7 @@ def handle_callbacks(call):
         try: bot.answer_callback_query(call.id, f"❌ Error", show_alert=True)
         except: pass
 
-# ============= ATTACK =============
+# ============= ATTACK (with FEEDBACK CHECK) =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
     try:
@@ -908,11 +1016,63 @@ def cmd_attack(msg):
         uid = msg.from_user.id
         cid = msg.chat.id
 
+        # MAINTENANCE CHECK
         if get_setting('maintenance_mode', False) and not is_owner(uid):
-            safe_reply(msg, f"🔧 {get_setting('maintenance_msg', 'Maintenance')}"); return
+            maintenance_msg = (
+                "╔══════════════════════════════╗\n"
+                "║      🔧 𝗕𝗢𝗧 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 🔧         ║\n"
+                "╚══════════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃       ⚙️ 𝗨𝗡𝗗𝗘𝗥 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 ⚙️\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                "🔧 <b>ʙᴏᴛ ᴀʙʜɪ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅ ᴍᴇ ʜᴀɪ</b>\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "⚠️ <b>ᴀᴀᴘ ᴀʙʜɪ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n"
+                "⏳ ᴛʜᴏᴅɪ ᴅᴇʀ ᴍᴇ ᴡᴀᴘᴀꜱ ᴛʀʏ ᴋᴀʀᴏ\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "📢 <b>ɴᴏᴛɪꜰɪᴄᴀᴛɪᴏɴ:</b>\n"
+                f"<i>{escape_html(get_setting('maintenance_msg', 'Bot under maintenance.'))}</i>\n\n"
+                f"👑 <b>ᴏᴡɴᴇʀ:</b> <code>{BOT_OWNER}</code>\n\n"
+                "╔══════════════════════════════╗\n"
+                "║          🕐 ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ 🕐         ║\n"
+                "╚══════════════════════════════╝"
+            )
+            safe_reply(msg, maintenance_msg, parse_mode="HTML", reply_markup=dev_btn_kb())
+            return
 
         if not is_owner(uid) and not has_valid_key(uid):
             safe_reply(msg, "⚠️ <b>ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ!</b> /redeem ꜰɪʀꜱᴛ.", parse_mode="HTML"); return
+
+        # FEEDBACK CHECK - if enabled globally and this user needs to give feedback
+        if data.get("feedback_enabled", False) and not is_owner(uid):
+            if str(uid) in ensure_dict(data.get("pending_attacks", {})):
+                fb_prompt = (
+                    "╔══════════════════════════╗\n"
+                    "║      📩 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📩      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃      💎 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗙𝗘𝗔𝗧𝗨𝗥𝗘 💎\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                    "⚠️ <b>ᴀᴀᴘᴋᴏ ᴀɢʟᴇ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜰᴇᴇᴅʙᴀᴄᴋ ᴅᴇɴᴀ ʜᴏɢᴀ</b>\n\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "📌 <b>ꜰᴇᴇᴅʙᴀᴄᴋ ᴋᴇ ʙᴀᴀᴅ ʜɪ ɴᴀʏᴀ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴇɢᴀ</b>\n"
+                    "🎯 5 ꜱᴛᴀʀ ʀᴀᴛɪɴɢ ᴅᴇ\n"
+                    "💬 ᴋᴜᴄʜ ᴄᴏᴍᴍᴇɴᴛ ʟɪᴋʜᴏ\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "👇 <b>ɴᴇᴇᴄʜᴇ ʙᴜᴛᴛᴏɴ ꜱᴇ ꜰᴇᴇᴅʙᴀᴄᴋ ᴅᴇ</b>"
+                )
+                kb = InlineKeyboardMarkup()
+                kb.row(
+                    InlineKeyboardButton("⭐ 1", callback_data=f"fb_1_Good|Service"),
+                    InlineKeyboardButton("⭐⭐ 2", callback_data=f"fb_2_Good|Service"),
+                    InlineKeyboardButton("⭐⭐⭐ 3", callback_data=f"fb_3_Good|Service")
+                )
+                kb.row(
+                    InlineKeyboardButton("⭐⭐⭐⭐ 4", callback_data=f"fb_4_Excellent|Service"),
+                    InlineKeyboardButton("⭐⭐⭐⭐⭐ 5", callback_data=f"fb_5_Excellent|Service")
+                )
+                safe_reply(msg, fb_prompt, parse_mode="HTML", reply_markup=kb)
+                return
 
         parts = msg.text.split()[1:]
         if len(parts) != 3:
@@ -946,11 +1106,7 @@ def cmd_attack(msg):
                 "╔══════════════════════════╗\n"
                 "║    ⏸️ 𝗖𝗢𝗢𝗟𝗗𝗢𝗪𝗡 𝗔𝗖𝗧𝗜𝗩𝗘 ⏸️   ║\n"
                 "╚══════════════════════════╝\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃   ⏰ 𝗪𝗔𝗜𝗧 𝗧𝗜𝗠𝗘 ⏰\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
                 f"┣ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{cd} ꜱᴇᴄᴏɴᴅꜱ</b>\n"
-                f"┣ ⏸️ ᴄᴏᴏʟᴅᴏᴡɴ ➪ <b>{get_setting('user_cooldown', 5)} ꜱᴇᴄᴏɴᴅꜱ</b>\n"
                 f"┗ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
                 "╔══════════════════════════╗\n"
                 "║     🔥 ʀᴇᴀᴅʏ ᴀꜰᴛᴇʀ ᴄᴅ 🔥      ║\n"
@@ -1099,6 +1255,15 @@ def cmd_attack(msg):
                 return
             with attack_lock: active_attacks.pop(attack_id, None)
             _stop_flags.pop(attack_id, None)
+
+            # Set pending feedback if global feedback is enabled
+            if data.get("feedback_enabled", False) and not is_owner(uid):
+                data["pending_attacks"][str(uid)] = {
+                    "last_target": f"{ip}:{port}",
+                    "completed_at": datetime.now().isoformat()
+                }
+                save_data(data)
+
             complete_caption = (
                 "╔══════════════════════════╗\n"
                 "║   ✅ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ✅    ║\n"
@@ -1111,23 +1276,52 @@ def cmd_attack(msg):
                 f"┣ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
                 f"┣ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
                 f"┗ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+            )
+
+            if data.get("feedback_enabled", False) and not is_owner(uid):
+                complete_caption += (
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃      💎 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 💎\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                    "🎁 <b>ᴀᴀᴘᴋᴏ ᴇᴋ ꜱᴘᴇᴄɪᴀʟ ɢɪꜰᴛ ᴍɪʟᴀ ʜᴀɪ!</b>\n\n"
+                    "📌 <b>ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜰᴇᴇᴅʙᴀᴄᴋ ᴅᴇɴᴀ:</b>\n"
+                    "⭐ ʀᴀᴛɪɴɢ ᴅᴇ (1-5)\n"
+                    "💬 ᴋᴜᴄʜ ᴄᴏᴍᴍᴇɴᴛ ʟɪᴋʜᴏ\n\n"
+                    "⚠️ <b>ꜰᴇᴇᴅʙᴀᴄᴋ ᴋᴇ ʙᴀᴀᴅ ʜɪ ɴᴀʏᴀ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴇɢᴀ</b>\n\n"
+                )
+
+            complete_caption += (
                 "╔══════════════════════════╗\n"
                 "║      🍹 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗢𝗡𝗘 🍺      ║\n"
                 "╚══════════════════════════╝"
             )
+
+            fb_kb = None
+            if data.get("feedback_enabled", False) and not is_owner(uid):
+                fb_kb = InlineKeyboardMarkup()
+                fb_kb.row(
+                    InlineKeyboardButton("⭐ 1", callback_data="fb_1_Good|Service"),
+                    InlineKeyboardButton("⭐⭐ 2", callback_data="fb_2_Good|Service"),
+                    InlineKeyboardButton("⭐⭐⭐ 3", callback_data="fb_3_Good|Service")
+                )
+                fb_kb.row(
+                    InlineKeyboardButton("⭐⭐⭐⭐ 4", callback_data="fb_4_Excellent|Service"),
+                    InlineKeyboardButton("⭐⭐⭐⭐⭐ 5", callback_data="fb_5_Excellent|Service")
+                )
+
             try:
                 if is_video:
                     bot.edit_message_caption(
                         chat_id=cid, message_id=attack_msg.message_id,
-                        caption=complete_caption, parse_mode="HTML", reply_markup=None
+                        caption=complete_caption, parse_mode="HTML", reply_markup=fb_kb
                     )
                 else:
                     bot.edit_message_text(
                         chat_id=cid, message_id=attack_msg.message_id,
-                        text=complete_caption, parse_mode="HTML", reply_markup=None
+                        text=complete_caption, parse_mode="HTML", reply_markup=fb_kb
                     )
             except:
-                try: bot.send_message(cid, complete_caption, parse_mode="HTML")
+                try: bot.send_message(cid, complete_caption, parse_mode="HTML", reply_markup=fb_kb)
                 except: pass
 
         threading.Thread(target=done, daemon=True).start()
@@ -1135,6 +1329,50 @@ def cmd_attack(msg):
         HEALTH["total_errors"] += 1
         print(f"❌ cmd_attack error: {e}")
         traceback.print_exc()
+
+# ============= FEEDBACK COMMAND =============
+@bot.message_handler(commands=['feedback'])
+def cmd_feedback(msg):
+    try:
+        if not is_owner(msg.from_user.id): return
+        p = msg.text.split()
+        if len(p) < 2:
+            cur = "🟢 ᴏɴ" if data.get("feedback_enabled", False) else "🔴 ᴏꜰꜰ"
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      📩 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 𝗦𝗬𝗦𝗧𝗘𝗠 📩      ║\n"
+                "╚══════════════════════════╝\n\n"
+                f"📊 <b>ᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ:</b> {cur}\n\n"
+                "📝 <code>/feedback on</code> — ᴇɴᴀʙʟᴇ\n"
+                "📝 <code>/feedback off</code> — ᴅɪꜱᴀʙʟᴇ\n"
+                "📝 <code>/feedback list</code> — ᴠɪᴇᴡ ᴀʟʟ",
+                parse_mode="HTML")
+            return
+
+        action = p[1].lower()
+        if action == "on":
+            data["feedback_enabled"] = True
+            save_data(data)
+            safe_reply(msg, "✅ <b>ꜰᴇᴇᴅʙᴀᴄᴋ ꜱʏꜱᴛᴇᴍ ᴇɴᴀʙʟᴇᴅ!</b>\n\n📌 ᴀʙ ʜᴀʀ ᴜꜱᴇʀ ᴀᴛᴛᴀᴄᴋ ꜱᴇ ᴘᴇʜʟᴇ ꜰᴇᴇᴅʙᴀᴄᴋ ᴅᴇɢᴀ.", parse_mode="HTML")
+        elif action == "off":
+            data["feedback_enabled"] = False
+            save_data(data)
+            safe_reply(msg, "❌ <b>ꜰᴇᴇᴅʙᴀᴄᴋ ꜱʏꜱᴛᴇᴍ ᴅɪꜱᴀʙʟᴇᴅ!</b>", parse_mode="HTML")
+        elif action == "list":
+            fbs = ensure_list(data.get("feedbacks", []))
+            if not fbs:
+                safe_reply(msg, "📂 ɴᴏ ꜰᴇᴇᴅʙᴀᴄᴋ ʏᴇᴛ.")
+                return
+            txt = "📩 𝗔𝗟𝗟 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞𝗦\n\n"
+            for i, fb in enumerate(fbs[-10:], 1):
+                txt += (
+                    f"<b>{i}.</b> ⭐ {fb.get('rating','?')}/5\n"
+                    f"   👤 <code>{fb.get('user_id','?')}</code>\n"
+                    f"   💬 {escape_html(fb.get('text','N/A'))}\n\n"
+                )
+            safe_reply(msg, txt, parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ cmd_feedback error: {e}")
 
 # ============= STATUS =============
 def do_status(msg):
@@ -1173,6 +1411,7 @@ def do_status(msg):
                 total_videos = len(ensure_list(data.get('videos', [])))
                 total_pyf = len(ensure_list(data.get('pyf_videos', [])))
                 total_banned = len(ensure_dict(data.get('banned_users', {})))
+                total_fb = len(ensure_list(data.get('feedbacks', [])))
 
                 user_data = ensure_dict(data.get('users', {})).get(str(uid), {})
                 if not isinstance(user_data, dict): user_data = {}
@@ -1240,6 +1479,19 @@ def do_status(msg):
                 elif api_ping < 1000: ping_icon = "🟠"; ping_status = "ꜱʟᴏᴡ"
                 else: ping_icon = "🔴"; ping_status = "ᴠᴇʀʏ ꜱʟᴏᴡ"
 
+                # BOT HEALTH STATUS
+                if api_failed > 10 and api_success == 0:
+                    health_status = "🔴 ᴜɴꜱᴛᴀʙʟᴇ"
+                elif api_success > 0 and api_failed / max(1, api_success) < 0.3:
+                    health_status = "🟢 ʜᴇᴀʟᴛʜʏ"
+                elif api_failed > 0:
+                    health_status = "🟡 ᴍɪɴᴏʀ ɪꜱꜱᴜᴇꜱ"
+                else:
+                    health_status = "🟢 ᴘᴇʀꜰᴇᴄᴛ"
+
+                fb_status = "🟢 ᴏɴ" if data.get("feedback_enabled", False) else "🔴 ᴏꜰꜰ"
+                maint_status = "🟢 ᴏɴ" if get_setting('maintenance_mode', False) else "🔴 ᴏꜰꜰ"
+
                 txt += (
                     "╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬╬\n"
                     "╬              📊 🇧 🇴 🇹 𝗦𝗧𝗔𝗧𝗨𝗦 📊             ╬\n"
@@ -1254,6 +1506,7 @@ def do_status(msg):
                     + "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     + "┃                  💚 𝗛𝗘𝗔𝗟𝗧𝗛 𝗖𝗛𝗘𝗖𝗞\n"
                     + "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    + f"┣ 🏥 ʜᴇᴀʟᴛʜ ➪ {health_status}\n"
                     + f"┣ 📡 ᴀᴘɪ ➪ {api_status}\n"
                     + f"┣ {ping_icon} ᴘɪɴɢ ➪ <b>{api_ping}ᴍꜱ</b> ({ping_status})\n"
                     + f"┣ ✅ ꜱᴜᴄᴄᴇꜱꜱ ➪ <b>{api_success}</b>\n"
@@ -1270,7 +1523,13 @@ def do_status(msg):
                     + f"┣ 🚫 ʙᴀɴɴᴇᴅ ➪ <b>{total_banned}</b>\n"
                     + f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{total_stickers}</b>\n"
                     + f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{total_videos}</b>\n"
-                    + f"┗ 🎬 ᴘʏꜰ ➪ <b>{total_pyf}</b>\n\n"
+                    + f"┣ 🎬 ᴘʏꜰ ➪ <b>{total_pyf}</b>\n"
+                    + f"┗ 📩 ꜰᴇᴇᴅʙᴀᴄᴋꜱ ➪ <b>{total_fb}</b>\n\n"
+                    + "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    + "┃                    ⚙️ 𝗦𝗬𝗦𝗧𝗘𝗠\n"
+                    + "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    + f"┣ 🔧 ᴍᴀɪɴᴛ ➪ {maint_status}\n"
+                    + f"┗ 📩 ꜰᴇᴇᴅʙᴀᴄᴋ ➪ {fb_status}\n\n"
                     + "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     + "┃                    👤 𝗬𝗢𝗨𝗥 𝗜𝗡𝗙𝗢\n"
                     + "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
@@ -1629,6 +1888,7 @@ def cmd_panel(msg):
             "┣ ⏱️ /setmaxtime SEC\n"
             "┣ ⏸️ /setcooldown SEC\n"
             "┣ 🔧 /maintenance\n"
+            "┣ 📩 /feedback on|off|list\n"
             "┗ ⚙️ /settings",
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_panel error: {e}")
@@ -1720,7 +1980,7 @@ def do_users(msg):
 @bot.message_handler(commands=['users'])
 def cmd_users(msg): do_users(msg)
 
-# ============= BROADCAST =============
+# ============= BROADCAST (FIXED - Sends owner's message as-is) =============
 @bot.message_handler(commands=['broadcast'])
 def cmd_broadcast(msg):
     try:
@@ -1741,21 +2001,19 @@ def cmd_broadcast(msg):
         total = len(ensure_dict(data.get("users", {})))
         sent = 0; failed = 0; banned_skip = 0
 
+        # Simple wrapper — owner's message as-is with minimal premium header/footer
         broadcast_header = (
             "╔══════════════════════════════╗\n"
-            "║   📢 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟 𝗔𝗡𝗡𝗢𝗨𝗡𝗖𝗘𝗠𝗘𝗡𝗧 📢   ║\n"
+            "║       📢 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟 𝗠𝗘𝗦𝗦𝗔𝗚𝗘 📢         ║\n"
             "╚══════════════════════════════╝\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃   💎 𝗙𝗥𝗢𝗠 𝗢𝗪𝗡𝗘𝗥 💎\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
         )
         broadcast_footer = (
-            "\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃   ⚡ 𝗕𝗢𝗧 𝗧𝗘𝗔𝗠 ⚡\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"┣ 👑 ᴏᴡɴᴇʀ ɪᴅ ➪ <code>{BOT_OWNER}</code>\n"
-            f"┗ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>"
+            "\n\n╔══════════════════════════════╗\n"
+            "║         👑 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 👑              ║\n"
+            "╚══════════════════════════════╝\n"
+            f"┗➤ 🕐 <code>{ist_time_str()} IST</code>"
         )
+        # Owner's text as-is
         full_message = broadcast_header + text + broadcast_footer
 
         status_msg = bot.reply_to(msg,
@@ -1784,7 +2042,7 @@ def cmd_broadcast(msg):
                             ), parse_mode="HTML"
                         )
                     except: pass
-                time.sleep(0.05)
+                time.sleep(0.08)
 
             try:
                 bot.edit_message_text(
@@ -1845,6 +2103,7 @@ def do_stats(msg):
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃                       💚 𝗛𝗘𝗔𝗟𝗧𝗛\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"┣ 🏥 ʜᴇᴀʟᴛʜ ➪ {'🟢 ʜᴇᴀʟᴛʜʏ' if api_success > 0 and api_failed < 5 else ('🟡 ᴍɪɴᴏʀ' if api_failed < 10 else '🔴 ᴜɴꜱᴛᴀʙʟᴇ')}\n"
             f"┣ 📡 ᴀᴘɪ ➪ {api_status}\n"
             f"┣ ⚡ ᴘɪɴɢ ➪ <b>{api_ping}ᴍꜱ</b>\n"
             f"┣ ✅ ᴀᴘɪ ᴏᴋ ➪ <b>{api_success}</b>\n"
@@ -1858,12 +2117,14 @@ def do_stats(msg):
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
             f"┣ ❄ ꜱᴛɪᴄᴋᴇʀꜱ ➪ <b>{len(ensure_list(data.get('stickers', [])))}</b>\n"
             f"┣ 📹 ᴠɪᴅᴇᴏꜱ ➪ <b>{len(ensure_list(data.get('videos', [])))}</b>\n"
-            f"┗ 🎬 ᴘʏꜰ ➪ <b>{len(ensure_list(data.get('pyf_videos', [])))}</b>\n\n"
+            f"┣ 🎬 ᴘʏꜰ ➪ <b>{len(ensure_list(data.get('pyf_videos', [])))}</b>\n"
+            f"┗ 📩 ꜰᴇᴇᴅʙᴀᴄᴋꜱ ➪ <b>{len(ensure_list(data.get('feedbacks', [])))}</b>\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃                      ⚙️ 𝗦𝗬𝗦𝗧𝗘𝗠\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
             f"┣ ⏱️ ᴜᴘᴛɪᴍᴇ ➪ <b>{uptime_str}</b>\n"
             f"┣ 🔧 ᴍᴀɪɴᴛ ➪ <b>{'🟢 ᴏɴ' if get_setting('maintenance_mode', False) else '🔴 ᴏꜰꜰ'}</b>\n"
+            f"┣ 📩 ꜰᴇᴇᴅʙᴀᴄᴋ ➪ <b>{'🟢 ᴏɴ' if data.get('feedback_enabled', False) else '🔴 ᴏꜰꜰ'}</b>\n"
             f"┣ 📡 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
             f"┗ 🕐 ɴᴏᴡ ➪ <code>{ist_time_str()} IST</code>\n\n"
             "╔══════════════════════════╗\n"
@@ -1929,21 +2190,114 @@ def cmd_setapi(msg):
         safe_reply(msg, "✅ <b>ᴀᴘɪ ᴜᴘᴅᴀᴛᴇᴅ!</b>", parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_setapi error: {e}")
 
+# ============= TESTAPI (LIVE CHECKING ANIMATION) =============
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
     try:
         if not is_owner(msg.from_user.id): return
         cid = msg.chat.id
-        loading_msg = bot.reply_to(msg, "🧪 <b>ᴛᴇꜱᴛɪɴɢ ᴀᴘɪ...</b>", parse_mode="HTML")
+
+        check_text = (
+            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+            "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+            "▱▱▱▱▱▱▱▱▱▱ 0%\n"
+            "⏳ 𝐒𝐭𝐚𝐫𝐭𝐢𝐧𝐠..."
+        )
+        loading_msg = bot.reply_to(msg, check_text, parse_mode="HTML")
 
         def run_test():
-            time.sleep(0.5)
+            steps = [
+                ("▰▱▱▱▱▱▱▱▱▱", "10%", "🌐 ᴄᴏɴɴᴇᴄᴛɪɴɢ ᴛᴏ ꜱᴇʀᴠᴇʀ..."),
+                ("▰▰▰▱▱▱▱▱▱▱", "30%", "🔑 ᴠᴇʀɪꜰʏɪɴɢ ᴛᴏᴋᴇɴ..."),
+                ("▰▰▰▰▰▱▱▱▱▱", "50%", "📡 ᴘɪɴɢɪɴɢ ᴀᴘɪ..."),
+                ("▰▰▰▰▰▰▰▱▱▱", "70%", "⚙️ ʟᴏᴀᴅɪɴɢ ʀᴇꜱᴘᴏɴꜱᴇ..."),
+                ("▰▰▰▰▰▰▰▰▰▱", "90%", "🔄 ᴘʀᴏᴄᴇꜱꜱɪɴɢ ᴅᴀᴛᴀ..."),
+            ]
+            for bar, pct, status in steps:
+                time.sleep(0.6)
+                try:
+                    bot.edit_message_text(
+                        chat_id=cid, message_id=loading_msg.message_id,
+                        text=(
+                            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                            "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+                            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                            f"{bar} {pct}\n{status}"
+                        ), parse_mode="HTML"
+                    )
+                except: pass
+
+            # Actual API test
+            start = time.time()
             ok, r = api_attack("1.1.1.1", 80, 5)
-            if ok: final_text = f"✅ <b>ᴀᴘɪ ᴡᴏʀᴋɪɴɢ</b>\n\n<code>{escape_html(r[:400])}</code>"
-            else: final_text = f"❌ <b>ᴀᴘɪ ꜰᴀɪʟᴇᴅ</b>\n\n<code>{escape_html(r[:400])}</code>"
+            elapsed_ms = int((time.time() - start) * 1000)
+
+            time.sleep(0.6)
+
+            # Final 100%
             try:
-                bot.edit_message_text(chat_id=cid, message_id=loading_msg.message_id,
-                    text=final_text, parse_mode="HTML")
+                bot.edit_message_text(
+                    chat_id=cid, message_id=loading_msg.message_id,
+                    text=(
+                        "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                        "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+                        "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                        "▰▰▰▰▰▰▰▰▰▰ 100%\n"
+                        "✅ Ｔｅｓｔ Ｃｏｍｐｌｅｔｅ!"
+                    ), parse_mode="HTML"
+                )
+            except: pass
+
+            time.sleep(1)
+
+            # FINAL RESULT
+            if ok:
+                final_text = (
+                    "╔══════════════════════════╗\n"
+                    "║       ✅ 𝗔𝗣𝗜 𝗧𝗘𝗦𝗧 𝗣𝗔𝗦𝗦 ✅        ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃  💎 𝗔𝗣𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 💎\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🟢 <b>ᴏɴʟɪɴᴇ</b>\n"
+                    f"┣ ⏱️ ʟᴀᴛᴇɴᴄʏ ➪ <b>{elapsed_ms}ᴍꜱ</b>\n"
+                    f"┣ 📡 ᴛᴇꜱᴛ ɪᴘ ➪ <code>1.1.1.1:80</code>\n"
+                    f"┗ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃  📩 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 𝗗𝗔𝗧𝗔\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    f"<code>{escape_html(r[:400])}</code>\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║      🟢 𝗔𝗣𝗜 𝗪𝗢𝗥𝗞𝗜𝗡𝗚 🟢       ║\n"
+                    "╚══════════════════════════╝"
+                )
+            else:
+                final_text = (
+                    "╔══════════════════════════╗\n"
+                    "║       ❌ 𝗔𝗣𝗜 𝗧𝗘𝗦𝗧 𝗙𝗔𝗜𝗟 ❌        ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃  💎 𝗔𝗣𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 💎\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🔴 <b>ꜰᴀɪʟᴇᴅ</b>\n"
+                    f"┣ ⏱️ ʟᴀᴛᴇɴᴄʏ ➪ <b>{elapsed_ms}ᴍꜱ</b>\n"
+                    f"┣ 📡 ᴛᴇꜱᴛ ɪᴘ ➪ <code>1.1.1.1:80</code>\n"
+                    f"┗ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n\n"
+                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                    "┃  📩 𝗘𝗥𝗥𝗢𝗥 𝗗𝗔𝗧𝗔\n"
+                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                    f"<code>{escape_html(r[:400])}</code>\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║      🔴 𝗔𝗣𝗜 𝗕𝗥𝗢𝗞𝗘𝗡 🔴      ║\n"
+                    "╚══════════════════════════╝"
+                )
+
+            try:
+                bot.edit_message_text(
+                    chat_id=cid, message_id=loading_msg.message_id,
+                    text=final_text, parse_mode="HTML"
+                )
             except:
                 try: bot.send_message(cid, final_text, parse_mode="HTML")
                 except: pass
@@ -1981,7 +2335,22 @@ def cmd_maintenance(msg):
         if not is_owner(msg.from_user.id): return
         cur = get_setting('maintenance_mode', False)
         set_setting("maintenance_mode", not cur)
-        safe_reply(msg, f"✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ:</b> {'ᴏɴ' if not cur else 'ᴏꜰꜰ'}", parse_mode="HTML")
+        if not cur:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      🔧 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 𝗢𝗡 🔧      ║\n"
+                "╚══════════════════════════╝\n\n"
+                "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴇɴᴀʙʟᴇᴅ!</b>\n\n"
+                "📌 ᴀʙ ᴋᴇᴠᴀʟ ᴏᴡɴᴇʀ ᴀᴛᴛᴀᴄᴋ ᴋᴀʀ ꜱᴀᴋᴛᴀ ʜᴀɪ.",
+                parse_mode="HTML")
+        else:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║     🔧 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 𝗢𝗙𝗙 🔧     ║\n"
+                "╚══════════════════════════╝\n\n"
+                "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴅɪꜱᴀʙʟᴇᴅ!</b>\n\n"
+                "📌 ᴀʙ ꜱᴀʙ ᴜꜱᴇʀ ᴀᴛᴛᴀᴄᴋ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴀɪɴ.",
+                parse_mode="HTML")
     except Exception as e: print(f"❌ maintenance error: {e}")
 
 # ============= STICKER/VIDEO =============
@@ -2131,7 +2500,10 @@ def cmd_settings(msg):
             "┣ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
             "┣ 📢 /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
             "┣ 🚫 /ban ID REASON ➪ ʙᴀɴ ᴜꜱᴇʀ\n"
-            "┗ ✅ /unban ID ➪ ᴜɴʙᴀɴ ᴜꜱᴇʀ\n\n"
+            "┣ ✅ /unban ID ➪ ᴜɴʙᴀɴ ᴜꜱᴇʀ\n"
+            "┣ 📩 /feedback on ➪ ꜰᴇᴇᴅʙᴀᴄᴋ ᴏɴ\n"
+            "┣ 📩 /feedback off ➪ ꜰᴇᴇᴅʙᴀᴄᴋ ᴏꜰꜰ\n"
+            "┗ 📩 /feedback list ➪ ꜰᴇᴇᴅʙᴀᴄᴋ ʟɪꜱᴛ\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃                🔑 𝗞𝗘𝗬 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
@@ -2142,7 +2514,7 @@ def cmd_settings(msg):
             "┃                📡 𝗔𝗣𝗜 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
             "┣ /setapi URL TOKEN\n"
-            "┣ /testapi ➪ ᴛᴇꜱᴛ ᴀᴘɪ\n"
+            "┣ /testapi ➪ ʟɪᴠᴇ ᴛᴇꜱᴛ\n"
             "┣ /setmaxtime SEC\n"
             "┗ /setcooldown SEC\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
@@ -2178,7 +2550,7 @@ def cmd_settings(msg):
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
 # ============================================================
-# ========== UNIVERSAL BUTTON HANDLER (FULLY FIXED) ==========
+# ========== UNIVERSAL BUTTON HANDLER ==========
 # ============================================================
 _handled_button_msgs = deque(maxlen=200)
 
@@ -2193,7 +2565,6 @@ def universal_button_handler(msg):
         if not btype:
             return
 
-        # Anti double-fire
         msg_key = (msg.chat.id, msg.message_id)
         if msg_key in _handled_button_msgs:
             return
@@ -2201,12 +2572,10 @@ def universal_button_handler(msg):
 
         print(f"🔘 BUTTON CLICKED: uid={uid} type={btype}")
 
-        # Banned check
         if is_banned(uid):
             check_ban(msg)
             return
 
-        # ==== ATTACK ====
         if btype == "ATTACK":
             safe_reply(msg,
                 "┌┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┐\n"
@@ -2219,21 +2588,15 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
-        # ==== STATUS ====
         if btype == "STATUS":
-            do_status(msg)
-            return
+            do_status(msg); return
 
-        # ==== PROFILE ====
         if btype == "PROFILE":
-            do_profile(msg)
-            return
+            do_profile(msg); return
 
-        # ==== OWNER PANEL ====
         if btype == "OWNER_PANEL":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║          📊 🅾︎🆆︎🅽︎🅴︎🆁︎ 🅿︎🅰︎🅽︎🅴︎🅻︎ 🔓       ║\n"
@@ -2245,7 +2608,6 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
-        # ==== REDEEM ====
         if btype == "REDEEM":
             safe_reply(msg,
                 "╔══════════════════════════════╗\n"
@@ -2255,45 +2617,33 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
-        # ==== GEN KEY ====
         if btype == "GEN_KEY":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║       🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🎛️          ║\n"
                 "╚══════════════════════════╝\n\n"
                 "📝 <code>/genkey 𝗗𝗨𝗥𝗔𝗧𝗜𝗢𝗡 [𝗔𝗠𝗢𝗨𝗡𝗧] [𝗡𝗔𝗠𝗘]</code>\n\n"
-                "⚡ ꜱᴇᴄ ➪ <code>10s</code> | ⏱️ ᴍɪɴ ➪ <code>30m</code>\n"
-                "🕐 ʜʀ ➪ <code>1h</code> | 📅 ᴅᴀʏ ➪ <code>1d</code>\n\n"
-                "📌 <b>ᴇxᴀᴍᴘʟᴇꜱ:</b>\n"
+                "📌 ᴇxᴀᴍᴘʟᴇꜱ:\n"
                 "<code>/genkey 1d 5</code>\n"
                 "<code>/genkey 1month 10 VIP</code>",
                 parse_mode="HTML")
             return
 
-        # ==== STATS ====
         if btype == "STATS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
-            do_stats(msg)
-            return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            do_stats(msg); return
 
-        # ==== USERS ====
         if btype == "USERS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
-            do_users(msg)
-            return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            do_users(msg); return
 
-        # ==== BROADCAST ====
         if btype == "BROADCAST":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║       📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢        ║\n"
@@ -2303,18 +2653,13 @@ def universal_button_handler(msg):
                 parse_mode="HTML")
             return
 
-        # ==== SETTINGS ====
         if btype == "SETTINGS":
             if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!")
-                return
-            cmd_settings(msg)
-            return
+                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            cmd_settings(msg); return
 
-        # ==== CLOSE ====
         if btype == "CLOSE":
-            safe_reply(msg, "❌ ᴄʟᴏꜱᴇᴅ.", reply_markup=kb_main(uid))
-            return
+            safe_reply(msg, "❌ ᴄʟᴏꜱᴇᴅ.", reply_markup=kb_main(uid)); return
 
     except Exception as e:
         HEALTH["total_errors"] += 1
