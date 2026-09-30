@@ -24,8 +24,6 @@ import traceback
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
-BOT_START_TIME = datetime.now()
-
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHme-PnJS4FWB4ickcIkjDbFMuDVpGz-9U")
 BOT_OWNER = int(os.environ.get('BOT_OWNER', 1987818347))
@@ -53,6 +51,8 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 def ist_now():
     return datetime.now(IST).replace(tzinfo=None)
+
+BOT_START_TIME = ist_now()
 
 def to_ist(dt):
     if dt is None: return ist_now()
