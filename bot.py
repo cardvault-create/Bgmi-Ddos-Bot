@@ -859,13 +859,13 @@ def cmd_start(msg):
         if has_key:
             bottom_icon = "🔴 𝗧𝗔𝗞𝗘 𝗧𝗛𝗘 𝗥𝗘𝗗 𝗣𝗜𝗟𝗟 🔴"
         else:
-            bottom_icon = "🟡 𝗔𝗖𝗧𝗜𝗩𝗔𝗧𝗘 𝗞𝗘𝗬 🟡"
+            bottom_icon = "🪫 Nᴏ Aᴄᴛɪᴠᴇ Pʟᴀɴ 🔋"
 
         # ★★★ FINAL TEXT — Same for owner & user ★★★
         text = (
-            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
-            f"┊         {BOT_NAME}              ┊\n"
-            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+            f"┊         {BOT_NAME}             ┊\n"
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
             f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ {clickable_name}\n\n"
             "╭─ 𝗔𝗚𝗘𝗡𝗧 𝗜𝗡𝗙𝗢 \n"
             f"│  ▸ ᴛᴀɢ    ➜ {role}\n"
