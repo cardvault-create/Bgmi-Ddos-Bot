@@ -795,7 +795,7 @@ def cmd_start(msg):
         else:
             role = "👤 ᴜꜱᴇʀ"
 
-        # ★★★ CLICKABLE NAME — user profile link ★★★
+        # ★★★ CLICKABLE NAME ★★★
         if username:
             clickable_name = f'<a href="https://t.me/{escape_html(username)}">{escape_html(name)}</a>'
         else:
@@ -855,17 +855,27 @@ def cmd_start(msg):
             if lt:
                 last_attack_time = to_ist(lt).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Bottom icon
+        # ★★★ BOTTOM BOX — LAUNCH HOLD / ROCKET READY ★★★
         if has_key:
-            bottom_icon = "🔴 𝗧𝗔𝗞𝗘 𝗧𝗛𝗘 𝗥𝗘𝗗 𝗣𝗜𝗟𝗟 🔴"
+            bottom_box = (
+                "▓▒░    ━━ 🚇 𝐑𝐎𝐂𝐊𝐄𝐓 𝐑𝐄𝐀𝐃𝐘 ━━    ░▒▓\n\n"
+                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
+                "█        ▸ Lᴀᴜɴᴄʜ Aᴜᴛʜᴏʀɪᴢᴇᴅ ◂        █\n"
+                "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█"
+            )
         else:
-            bottom_icon = "🪫 Nᴏ Aᴄᴛɪᴠᴇ Pʟᴀɴ 🔋"
+            bottom_box = (
+                "▓▒░    ━━ 🚇 𝐋𝐀𝐔𝐍𝐂𝐇 𝐇𝐎𝐋𝐃 ━━    ░▒▓\n\n"
+                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
+                "█           ▸ Nᴏ Kᴇʏ Fᴏᴜɴᴅ ◂           █\n"
+                "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█"
+            )
 
-        # ★★★ FINAL TEXT — Same for owner & user ★★★
+        # ★★★ FINAL TEXT ★★★
         text = (
-            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
-            f"┊         {BOT_NAME}             ┊\n"
-            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+            f"┊         {BOT_NAME}              ┊\n"
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
             f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ {clickable_name}\n\n"
             "╭─ 𝗔𝗚𝗘𝗡𝗧 𝗜𝗡𝗙𝗢 \n"
             f"│  ▸ ᴛᴀɢ    ➜ {role}\n"
@@ -894,9 +904,7 @@ def cmd_start(msg):
 
         text += (
             "📟 ᴄᴍᴅꜱ ➪ /attack /profile /status /redeem\n\n"
-            "╭━━━━━━━━━━━━━━━━━━━━━━━━━━╮\n"
-            f"┃           {bottom_icon}          ┃\n"
-            "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯"
+            + bottom_box
         )
 
         # Check message delete
@@ -949,7 +957,6 @@ def cmd_start(msg):
 
         # ★★★ PROFILE PHOTO FETCH FUNCTION ★★★
         def get_user_profile_photo(user_id):
-            """User ki profile photo ka file_id lao"""
             try:
                 photos = bot.get_user_profile_photos(user_id, limit=1)
                 if photos and photos.total_count > 0:
@@ -967,12 +974,8 @@ def cmd_start(msg):
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    # Sticker 5 second dikhega
                     time.sleep(5.0)
-
-                    # Profile photo try karo
                     profile_photo = get_user_profile_photo(uid)
-
                     if profile_photo:
                         try:
                             bot.send_photo(
@@ -990,17 +993,13 @@ def cmd_start(msg):
                         safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
                         print("✅ Final message sent (text only)")
 
-                    # 1.5 sec wait
                     time.sleep(1.5)
-
-                    # Sticker delete karo
                     try:
                         bot.delete_message(cid, sticker_msg.message_id)
                         print("🗑️ Sticker deleted successfully")
                     except Exception as del_err:
                         print(f"⚠️ Sticker delete failed: {del_err}")
                 else:
-                    # No sticker → still try profile photo
                     profile_photo = get_user_profile_photo(uid)
                     if profile_photo:
                         try:
