@@ -26,7 +26,7 @@ sys.stderr.reconfigure(line_buffering=True)
 BOT_START_TIME = datetime.now()
 
 # ============= CONFIG =============
-BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAG1BeT0TovAvPX24u-KzBjTA5T6YKmYmoo")
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHme-PnJS4FWB4ickcIkjDbFMuDVpGz-9U")
 
 # ★★★ FIX: BOT_OWNER ab INT hai — 0 pe atak nahi karega ★★★
 BOT_OWNER = int(os.environ.get('BOT_OWNER', 1987818347))
