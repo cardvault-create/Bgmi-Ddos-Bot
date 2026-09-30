@@ -315,16 +315,16 @@ def ist_full_str(dt=None):
     except: return "N/A"
 
 def time_remaining(uid):
-    if is_owner(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
-    if is_reseller(uid): return "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
+    if is_owner(uid): return "🌼 ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
+    if is_reseller(uid): return "🚇 ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
     try:
         u = ensure_dict(data.get("users", {})).get(str(uid))
-        if not u or not u.get('key_expiry'): return "❌ ɴᴏ ᴋᴇʏ"
+        if not u or not u.get('key_expiry'): return "🎟️ ɴᴏ ᴋᴇʏ"
         exp = safe_parse_dt(u['key_expiry'])
-        if not exp: return "❌ ɴᴏ ᴋᴇʏ"
+        if not exp: return "🧿 ɴᴏ ᴋᴇʏ"
         rem = exp - ist_now()
         total = int(rem.total_seconds())
-        if total <= 0: return "❌ ᴇxᴘɪʀᴇᴅ"
+        if total <= 0: return "📟 ᴇxᴘɪʀᴇᴅ"
         d = total // 86400; h = (total % 86400) // 3600
         m = (total % 3600) // 60; s = total % 60
         parts = []
@@ -333,20 +333,20 @@ def time_remaining(uid):
         if m > 0: parts.append(f"{m}ᴍ")
         parts.append(f"{s}ꜱ")
         return " ".join(parts)
-    except: return "❌ ᴇʀʀᴏʀ"
+    except: return "📮 ᴇʀʀᴏʀ"
 
 def time_remaining_lines(uid):
-    if is_owner(uid): return "  ┗ ♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
-    if is_reseller(uid): return "  ┗ ♾️ ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
+    if is_owner(uid): return "  ┗ ☣️ ᴜɴʟɪᴍɪᴛᴇᴅ (ᴏᴡɴᴇʀ)"
+    if is_reseller(uid): return "  ┗ 🍇 ᴜɴʟɪᴍɪᴛᴇᴅ (ʀᴇꜱᴇʟʟᴇʀ)"
     try:
         u = ensure_dict(data.get("users", {})).get(str(uid))
         if not u or not u.get('key_expiry'):
-            return "  ┗ ❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
+            return "  ┗ 🔬 ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
         exp = safe_parse_dt(u['key_expiry'])
-        if not exp: return "  ┗ ❌ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
+        if not exp: return "  ┗ 🧩 ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ"
         rem = exp - ist_now()
         total = int(rem.total_seconds())
-        if total <= 0: return "  ┗ ❌ ᴇxᴘɪʀᴇᴅ"
+        if total <= 0: return "  ┗ 🧟 ᴇxᴘɪʀᴇᴅ"
         d = total // 86400; h = (total % 86400) // 3600
         m = (total % 3600) // 60; s = total % 60
         lines = []
@@ -355,7 +355,7 @@ def time_remaining_lines(uid):
         if m > 0: lines.append(f"  ┣ ⏱️ ᴍɪɴᴜᴛᴇꜱ ➪ <b>{m:02d}</b>")
         lines.append(f"  ┗ ⚡ ꜱᴇᴄᴏɴᴅꜱ ➪ <b>{s:02d}</b>")
         return "\n".join(lines)
-    except: return "  ┗ ❌ ᴇʀʀᴏʀ"
+    except: return "  ┗ 🪫 ᴇʀʀᴏʀ"
 
 def escape_html(text):
     if text is None: return "N/A"
@@ -1190,7 +1190,7 @@ def handle_callbacks(call):
 
         # ★★★ OWNER CHECK — Ban/Give15m ke liye ★★★
         if not is_owner(call.from_user.id):
-            try: bot.answer_callback_query(call.id, "🚫 Owner only!", show_alert=True)
+            try: bot.answer_callback_query(call.id, "🚫 BᴏT FᴀTʜᴇR OɴʟY!", show_alert=True)
             except: pass
             return
 
@@ -1199,14 +1199,14 @@ def handle_callbacks(call):
         target_uid = data_parts[1] if len(data_parts) > 1 else None
 
         if not target_uid:
-            try: bot.answer_callback_query(call.id, "❌ Invalid")
+            try: bot.answer_callback_query(call.id, "❌ IɴVᴀʟɪD")
             except: pass
             return
 
         if action == "ban":
             target_uid_str = str(target_uid)
             if target_uid_str in ensure_dict(data.get("banned_users", {})):
-                try: bot.answer_callback_query(call.id, "⚠️ Already banned!", show_alert=True)
+                try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
                 except: pass
                 return
 
@@ -1219,9 +1219,9 @@ def handle_callbacks(call):
 
             try:
                 ban_notif = (
-                    "╔══════════════════════════════════╗\n"
-                    "║        🚫 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗕𝗔𝗡𝗡𝗘𝗗 🚫       ║\n"
-                    "╚══════════════════════════════════╝\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║             🚫 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗕𝗔𝗡𝗡𝗘𝗗 🚫           ║\n"
+                    "╚══════════════════════════╝\n\n"
                     "  ⛔ <b>ᴀᴀᴘᴋᴏ ɪꜱ ʙᴏᴛ ꜱᴇ ʙᴀɴ ᴋᴀʀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ</b>\n\n"
                     f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
                     f"  👑 <b>ᴏᴡɴᴇʀ ɪᴅ:</b> <code>{BOT_OWNER}</code>"
@@ -1229,7 +1229,7 @@ def handle_callbacks(call):
                 bot.send_message(int(target_uid), ban_notif, parse_mode="HTML", reply_markup=dev_btn_kb())
             except Exception as e: print(f"Ban notif error: {e}")
 
-            try: bot.answer_callback_query(call.id, f"✅ User {target_uid} banned!", show_alert=True)
+            try: bot.answer_callback_query(call.id, f"🧟 UsᴇR {target_uid} BᴀNɴᴇD SᴜᴄᴄEssFᴜLʟY!", show_alert=True)
             except: pass
 
         elif action == "give15m":
@@ -1244,23 +1244,23 @@ def handle_callbacks(call):
             save_data(data)
 
             key_notif = (
-                "╔══════════════════════════════════╗\n"
-                "║       🎁 𝗬𝗢𝗨 𝗚𝗢𝗧 𝗔 𝗞𝗘𝗬 🌵          ║\n"
-                "╚══════════════════════════════════╝\n\n"
-                "  💎 <b>ᴀᴀᴘᴋᴏ ᴏᴡɴᴇʀ ꜱᴇ 15 ᴍɪɴᴜᴛᴇꜱ ᴋᴀ ᴋᴇʏ ᴍɪʟᴀ ʜᴀɪ!</b>\n\n"
+                "╔══════════════════════════╗\n"
+                "║                🎁 𝗬𝗢𝗨 𝗚𝗢𝗧 𝗔 𝗞𝗘𝗬 🌵            ║\n"
+                "╚══════════════════════════╝\n\n"
+                "💎 <b>ᴀᴀᴘᴋᴏ ᴏᴡɴᴇʀ ꜱᴇ 15 ᴍɪɴᴜᴛᴇꜱ ᴋᴀ ᴋᴇʏ ᴍɪʟᴀ ʜᴀɪ!</b>\n\n"
                 "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"  ◆ 🔑 ᴋᴇʏ ➪ <code>{new_key}</code>\n"
                 f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>15 ᴍɪɴᴜᴛᴇꜱ</b>\n"
                 "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"  ➤ <code>/redeem {new_key}</code>\n\n"
-                "╔══════════════════════════════════╗\n"
-                "║      ⚡ 𝗥𝗘𝗗𝗘𝗘𝗠 𝗡𝗢𝗪 🌼              ║\n"
-                "╚══════════════════════════════════╝"
+                "╔══════════════════════════╗\n"
+                "║             ☣️ 𝗥𝗘𝗗𝗘𝗘𝗠 𝗡𝗢𝗪 🌼                  ║\n"
+                "╚══════════════════════════╝"
             )
             try: bot.send_message(int(target_uid), key_notif, parse_mode="HTML")
             except Exception as e: print(f"Key notif error: {e}")
 
-            try: bot.answer_callback_query(call.id, f"✅ 15m key sent!", show_alert=True)
+            try: bot.answer_callback_query(call.id, f"🍓 15ᴍ KᴇY SᴇNᴛ SᴜᴄᴄEssFᴜLʟY!", show_alert=True)
             except: pass
 
     except Exception as e:
@@ -1303,11 +1303,11 @@ def cmd_attack(msg):
                     parse_mode="HTML", reply_markup=dev_btn_kb())
             else:
                 safe_reply(msg,
-                    "╔══════════════════════════════════╗\n"
-                    "║       🔑 𝗡𝗢 𝗞𝗘𝗬 𝗙𝗢𝗨𝗡𝗗 🔑         ║\n"
-                    "╚══════════════════════════════════╝\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║               🔋 𝗡𝗢 𝗞𝗘𝗬 𝗙𝗢𝗨𝗡𝗗 🪫              ║\n"
+                    "╚══════════════════════════╝\n\n"
                     "  ⚠️ <b>ᴀᴀᴘᴋᴇ ᴘᴀᴀꜱ ᴋᴏɪ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
-                    "  📌 <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
+                    "  📌 <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪</b>\n"
                     "  ➤ <code>/redeem YOUR-KEY</code>",
                     parse_mode="HTML", reply_markup=dev_btn_kb())
             return
@@ -2029,36 +2029,36 @@ def do_genkey(msg):
         # ★★★ KEY DISPLAY WITH COPY BUTTONS ★★★
         for idx, key in enumerate(keys, 1):
             key_text = (
-                "╔══════════════════════════════════╗\n"
-                "║       ✅ 𝗞𝗘𝗬 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘𝗗 ✅         ║\n"
-                "╚══════════════════════════════════╝\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       💎 𝗞𝗘𝗬 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 💎          ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "╔══════════════════════════╗\n"
+                "║               🧟 𝗞𝗘𝗬 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘𝗗 🥡           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃               💈 𝗞𝗘𝗬 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 🏟️                ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                 f"  ◆ 🔢 ɴᴜᴍʙᴇʀ ➪ <b>#{idx}/{amt}</b>\n"
                 f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <code>{dur_text}</code>\n"
                 f"  ◆ 🎭 ᴛʏᴘᴇ ➪ <code>{'ᴘʀᴇᴍɪᴜᴍ' if custom_name else 'ꜱᴛᴀɴᴅᴀʀᴅ'}</code>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       🔑 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬 🔑            ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃                   🦄 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬 🪩                 ┃┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
                 f"  <code>{key}</code>\n\n"
                 "  ⬆️ <b>ᴋᴇʏ ᴘᴇ ʟᴏɴɢ ᴘʀᴇꜱꜱ ᴋᴀʀᴋᴇ ᴄᴏᴘʏ ᴋᴀʀᴏ</b>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       📋 𝗛𝗢𝗪 𝗧𝗢 𝗥𝗘𝗗𝗘𝗘𝗠 📋        ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃           📋 𝗛𝗢𝗪 𝗧𝗢 𝗥𝗘𝗗𝗘𝗘𝗠 📋           ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                 f"  ➤ <code>/redeem {key}</code>\n\n"
-                "╔══════════════════════════════════╗\n"
-                "║    💠 𝗡𝗘𝗫𝗧 𝗞𝗘𝗬 𝗖𝗢𝗣𝗬 𝗔𝗡𝗗 𝗨𝗦𝗘 💠     ║\n"
-                "╚══════════════════════════════════╝"
+                "╔══════════════════════════╗\n"
+                "║     💠 𝗡𝗘𝗫𝗧 𝗞𝗘𝗬 𝗖𝗢𝗣𝗬 𝗔𝗡𝗗 𝗨𝗦𝗘 💠     ║\n"
+                "╚══════════════════════════╝"
             )
 
             # ★ Copy button (alert me key dikhega) ★
             copy_kb = InlineKeyboardMarkup()
             copy_kb.add(
-                InlineKeyboardButton("📋 𝐂𝐎𝐏𝐘 𝐊𝐄𝐘 📋", callback_data=f"copykey_{key}")
+                InlineKeyboardButton("🍓 𝐂𝐎𝐏𝐘 𝐊𝐄𝐘 📋", callback_data=f"copykey_{key}")
             )
             copy_kb.add(
-                InlineKeyboardButton("📩 ɴᴇxᴛ ꜱᴛᴇᴘ — ʀᴇᴅᴇᴇᴍ ᴄᴏᴍᴍᴀɴᴅ", callback_data=f"redeeminfo_{key}")
+                InlineKeyboardButton("📩 ɴᴇxᴛ ꜱᴛᴇᴘ — ʀᴇᴅᴇᴇᴍ ᴄᴏᴍᴍᴀɴᴅ 🍑", callback_data=f"redeeminfo_{key}")
             )
 
             safe_reply(msg, key_text, parse_mode="HTML", reply_markup=copy_kb)
@@ -2078,17 +2078,17 @@ def cmd_redeem(msg):
         p = msg.text.split()
         if len(p) < 2:
             safe_reply(msg,
-                "╔══════════════════════════════════╗\n"
-                "║         🔑 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗘𝗬 🔑           ║\n"
-                "╚══════════════════════════════════╝\n\n"
-                "  📝 <code>/redeem YOUR-KEY</code>",
+                "╔══════════════════════════╗\n"
+                "║                 🫧 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗘𝗬 🍑                ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📝 <code>/redeem Yᴀᴀɴ KᴇY DᴀL LᴀUᴅE</code>",
                 parse_mode="HTML"); return
         key = p[1].strip().upper()
         if key not in ensure_dict(data.get("keys", {})):
             safe_reply(msg,
-                "╔══════════════════════════════════╗\n"
-                "║        ❌ 𝗜𝗡𝗩𝗔𝗟𝗜𝗗 𝗞𝗘𝗬 ❌           ║\n"
-                "╚══════════════════════════════════╝\n\n"
+                "╔══════════════════════════╗\n"
+                "║                  ❌ 𝗜𝗡𝗩𝗔𝗟𝗜𝗗 𝗞𝗘𝗬 ❌                ║\n"
+                "╚══════════════════════════╝\n\n"
                 "  ⚠️ <b>ʏᴇʜ ᴋᴇʏ ᴠᴀʟɪᴅ ɴᴀʜɪ ʜᴀɪ ʏᴀ ɢᴀʟᴀᴛ ʜᴀɪ!</b>\n\n"
                 f"  ◆ 🔑 ᴋᴇʏ ➪ <code>{escape_html(key)}</code>\n\n"
                 "  ◆ 📌 <b>ᴄʜᴇᴄᴋ ᴋᴀʀᴏ:</b>\n"
@@ -2101,9 +2101,9 @@ def cmd_redeem(msg):
             safe_reply(msg, "❌ <b>ᴋᴇʏ ᴅᴀᴛᴀ ᴋᴏʀʀᴜᴘᴛ!</b>", parse_mode="HTML"); return
         if kinfo.get("used"):
             safe_reply(msg,
-                "╔══════════════════════════════════╗\n"
-                "║      ⚠️ 𝗞𝗘𝗬 𝗔𝗟𝗥𝗘𝗔𝗗𝗬 𝗨𝗦𝗘𝗗 ⚠️       ║\n"
-                "╚══════════════════════════════════╝\n\n"
+                "╔══════════════════════════╗\n"
+                "║            🧌 𝗞𝗘𝗬 𝗔𝗟𝗥𝗘𝗔𝗗𝗬 𝗨𝗦𝗘𝗗 🕵️        ║\n"
+                "╚══════════════════════════╝\n\n"
                 "  🔒 <b>ʏᴇʜ ᴋᴇʏ ᴘᴇʜʟᴇ ʜɪ ᴜꜱᴇ ʜᴏ ᴄʜᴜᴋɪ ʜᴀɪ!</b>\n\n"
                 f"  ◆ 👤 ᴜꜱᴇᴅ ʙʏ ➪ <code>{kinfo.get('used_by', 'N/A')}</code>",
                 parse_mode="HTML"); return
@@ -2127,9 +2127,9 @@ def cmd_redeem(msg):
         expiry_ist = expiry.strftime('%d %b %Y, %I:%M:%S %p')
 
         safe_reply(msg,
-            "╔══════════════════════════════════╗\n"
-            "║        ✅ 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠𝗘𝗗 ✅          ║\n"
-            "╚══════════════════════════════════╝\n\n"
+            "╔══════════════════════════╗\n"
+            "║              🍇 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠𝗘𝗗 🥡              ║\n"
+            "╚══════════════════════════╝\n\n"
             f"  ◆ ⏰ ᴀᴅᴅᴇᴅ ➪ <b>+{human_readable(secs)}</b>\n"
             f"  ◆ 📅 ᴇxᴘɪʀᴇꜱ ➪ <code>{expiry_ist} IST</code>\n"
             f"  ◆ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{time_remaining(uid)}</b>",
