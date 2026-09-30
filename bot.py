@@ -14,6 +14,7 @@ import json
 import random
 import string
 import unicodedata
+from collections import deque
 from datetime import datetime, timedelta
 import time
 import requests
@@ -270,14 +271,23 @@ def escape_html(text):
     except: return "N/A"
 
 def safe_reply(msg, text, **kwargs):
-    try: return bot.reply_to(msg, text, **kwargs)
+    """Reply to message, fallback to send if reply fails."""
+    try:
+        return bot.reply_to(msg, text, **kwargs)
     except Exception as e:
-        print(f"❌ Safe reply error: {e}"); return None
+        err = str(e)
+        print(f"❌ reply_to failed: {err[:120]}")
+        # Fallback: send to chat directly
+        try:
+            return bot.send_message(msg.chat.id, text, **kwargs)
+        except Exception as e2:
+            print(f"❌ send_message also failed: {str(e2)[:120]}")
+            return None
 
 def safe_send(cid, text, **kwargs):
     try: return bot.send_message(cid, text, **kwargs)
     except Exception as e:
-        print(f"❌ Safe send error: {e}"); return None
+        print(f"❌ Safe send error: {str(e)[:120]}"); return None
 
 # ============================================================
 # ============= BUTTON MATCHING (UNICODE FIXED) =============
@@ -286,22 +296,14 @@ def normalize_text(text):
     """
     Convert any Unicode bold/mathematical/fullwidth chars to plain ASCII.
     Example: '🔥 𝐀𝐓𝐓𝐀𝐂𝐊'  →  '🔥 ATTACK'
-             '👑 𝐎𝐖𝐍𝐄𝐑 𝐏𝐀𝐍𝐄𝐋'  →  '👑 OWNER PANEL'
     """
     if not text: return ""
     try:
-        # Step 1: Remove invisible / zero-width chars
         for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0',
                    '\u2028', '\u2029', '\u2060', '\u180e']:
             text = text.replace(ch, '')
-
-        # Step 2: NFKD normalize — this converts 𝐀 → A, 𝘼 → A, etc.
         text = unicodedata.normalize('NFKD', text)
-
-        # Step 3: Drop combining marks (accents leftover)
         text = ''.join(c for c in text if not unicodedata.combining(c))
-
-        # Step 4: Uppercase + strip
         return text.strip().upper()
     except Exception as e:
         print(f"normalize_text error: {e}")
@@ -309,48 +311,28 @@ def normalize_text(text):
 
 
 def get_button_type(text):
-    """
-    Detect button by keywords. Order matters — specific first.
-    """
+    """Detect button by keywords. Order matters — specific first."""
     if not text: return None
+    # Skip commands like /start /attack etc — they have dedicated handlers
+    stripped = text.strip()
+    if stripped.startswith('/'): return None
+
     t = normalize_text(text)
 
     def has(*kws):
         return all(k in t for k in kws)
 
-    # OWNER PANEL
     if has("OWNER", "PANEL"): return "OWNER_PANEL"
-
-    # GENERATE KEY
     if has("GEN", "KEY"): return "GEN_KEY"
-
-    # BROADCAST
     if "BROADCAST" in t: return "BROADCAST"
-
-    # SETTINGS
     if "SETTINGS" in t: return "SETTINGS"
-
-    # PROFILE
     if "PROFILE" in t: return "PROFILE"
-
-    # STATUS
     if "STATUS" in t: return "STATUS"
-
-    # STATS
     if "STATS" in t: return "STATS"
-
-    # USERS
     if "USERS" in t: return "USERS"
-
-    # ATTACK (without STATS)
     if "ATTACK" in t and "STATS" not in t: return "ATTACK"
-
-    # REDEEM
     if "REDEEM" in t: return "REDEEM"
-
-    # CLOSE
     if "CLOSE" in t: return "CLOSE"
-
     return None
 
 
@@ -363,7 +345,7 @@ def api_health_check():
             token = get_setting("api_token", DEFAULT_API_TOKEN)
             start = time.time()
             try:
-                r = requests.get(url, params={"token": token}, timeout=10)
+                r = requests.get(url, params={"token": token}, timeout=15)
                 elapsed_ms = int((time.time() - start) * 1000)
                 HEALTH["last_api_ping_ms"] = elapsed_ms
                 if r.status_code in [200, 400, 401, 403, 405]:
@@ -433,7 +415,7 @@ def api_attack(ip, port, dur):
         geo = get_setting("api_geolocation", DEFAULT_API_GEOLOCATION)
         req = f"{url}?token={token}&host={ip}&port={port}&time={dur}&method={method}&geolocation={geo}"
         start = time.time()
-        resp = requests.get(req, timeout=10)
+        resp = requests.get(req, timeout=15)
         elapsed_ms = int((time.time() - start) * 1000)
         HEALTH["last_api_ping_ms"] = elapsed_ms
         if resp.status_code == 200:
@@ -537,7 +519,9 @@ def is_attack_running(uid=None):
             return len(active_attacks) > 0
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
-# ============= START =============
+# ============================================================
+# ============= START COMMAND (REGISTERED FIRST) =============
+# ============================================================
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
     try:
@@ -547,6 +531,8 @@ def cmd_start(msg):
         name = msg.from_user.first_name or "User"
         username = msg.from_user.username
         cid = msg.chat.id
+
+        print(f"🚀 /start from {uid} (@{username})")
 
         check_text = (
             "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
@@ -561,7 +547,8 @@ def cmd_start(msg):
         if chosen_pyf_start:
             try:
                 check = bot.send_video(cid, chosen_pyf_start, caption=check_text, parse_mode="HTML")
-            except:
+            except Exception as e:
+                print(f"Video send error: {e}")
                 check = bot.send_message(cid, check_text, parse_mode="HTML")
         else:
             check = bot.send_message(cid, check_text, parse_mode="HTML")
@@ -576,7 +563,7 @@ def cmd_start(msg):
         ]
 
         for bar, pct, status in steps:
-            time.sleep(0.3)
+            time.sleep(0.25)
             try:
                 bot.edit_message_caption(
                     chat_id=cid, message_id=check.message_id,
@@ -678,40 +665,44 @@ def cmd_start(msg):
                 "👇 <b>ɴᴇᴇᴄʜᴇ ʙᴜᴛᴛᴏɴꜱ ꜱᴇ ꜱᴛᴀʀᴛ ᴋᴀʀᴏ</b>"
             )
 
+        # Owner notification in background
         if is_new:
-            try:
-                join_time_display = data["users"][str(uid)].get("joined_ist", "N/A")
-                owner_notif = (
-                    "╔══════════════════════╗\n"
-                    "║         🆕 𝗡𝗘𝗪 𝗨𝗦𝗘𝗥 𝗔𝗟𝗘𝗥𝗧 🪩     ║\n"
-                    "╚══════════════════════╝\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃                👤 𝗨𝗦𝗘𝗥 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                    f"🆔 <b>ᴜꜱᴇʀ ɪᴅ:</b> <code>{uid}</code>\n"
-                    f"📛 <b>ɴᴀᴍᴇ:</b> <b>{escape_html(name)}</b>\n"
-                    f"🔗 <b>ᴜꜱᴇʀɴᴀᴍᴇ:</b> @{escape_html(username or 'N/A')}\n"
-                    f"📅 <b>ᴊᴏɪɴᴇᴅ ᴀᴛ:</b> <code>{join_time_display} IST</code>\n"
-                    f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <b>{len(ensure_dict(data['users']))}</b>\n\n"
-                    "╔══════════════════════╗\n"
-                    "║        ✴️ 𝗔𝗖𝗧𝗜𝗢𝗡 𝗕𝗨𝗧𝗧𝗢𝗡𝗦 🌠      ║\n"
-                    "╚══════════════════════╝"
-                )
-                kb = InlineKeyboardMarkup()
-                kb.row(
-                    InlineKeyboardButton("🚫 𝐁𝐀𝐍 𝐔𝐒𝐄𝐑", callback_data=f"ban_{uid}"),
-                    InlineKeyboardButton("🎁 𝐆𝐈𝐕𝐄 𝟏𝟓𝐌 𝐊𝐄𝐘", callback_data=f"give15m_{uid}")
-                )
-                bot.send_message(BOT_OWNER, owner_notif, reply_markup=kb, parse_mode="HTML")
-            except Exception as e:
-                print(f"Owner notification error: {e}")
+            def notify_owner():
+                try:
+                    join_time_display = data["users"][str(uid)].get("joined_ist", "N/A")
+                    owner_notif = (
+                        "╔══════════════════════╗\n"
+                        "║         🆕 𝗡𝗘𝗪 𝗨𝗦𝗘𝗥 𝗔𝗟𝗘𝗥𝗧 🪩     ║\n"
+                        "╚══════════════════════╝\n\n"
+                        "┏━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                        "┃                👤 𝗨𝗦𝗘𝗥 𝗗𝗘𝗧𝗔𝗜𝗟𝗦\n"
+                        "┗━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                        f"🆔 <b>ᴜꜱᴇʀ ɪᴅ:</b> <code>{uid}</code>\n"
+                        f"📛 <b>ɴᴀᴍᴇ:</b> <b>{escape_html(name)}</b>\n"
+                        f"🔗 <b>ᴜꜱᴇʀɴᴀᴍᴇ:</b> @{escape_html(username or 'N/A')}\n"
+                        f"📅 <b>ᴊᴏɪɴᴇᴅ ᴀᴛ:</b> <code>{join_time_display} IST</code>\n"
+                        f"👥 <b>ᴛᴏᴛᴀʟ ᴜꜱᴇʀꜱ:</b> <b>{len(ensure_dict(data['users']))}</b>\n\n"
+                        "╔══════════════════════╗\n"
+                        "║        ✴️ 𝗔𝗖𝗧𝗜𝗢𝗡 𝗕𝗨𝗧𝗧𝗢𝗡𝗦 🌠      ║\n"
+                        "╚══════════════════════╝"
+                    )
+                    kb = InlineKeyboardMarkup()
+                    kb.row(
+                        InlineKeyboardButton("🚫 𝐁𝐀𝐍 𝐔𝐒𝐄𝐑", callback_data=f"ban_{uid}"),
+                        InlineKeyboardButton("🎁 𝐆𝐈𝐕𝐄 𝟏𝟓𝐌 𝐊𝐄𝐘", callback_data=f"give15m_{uid}")
+                    )
+                    bot.send_message(BOT_OWNER, owner_notif, reply_markup=kb, parse_mode="HTML")
+                except Exception as e:
+                    print(f"Owner notification error: {e}")
+            threading.Thread(target=notify_owner, daemon=True).start()
 
+        # Send main message + sticker in background
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    time.sleep(5)
+                    time.sleep(1.5)  # reduced from 5
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-                    time.sleep(1)
+                    time.sleep(0.5)
                     try: bot.delete_message(cid, sticker_msg.message_id)
                     except: pass
                 else:
@@ -2189,7 +2180,7 @@ def cmd_settings(msg):
 # ============================================================
 # ========== UNIVERSAL BUTTON HANDLER (FULLY FIXED) ==========
 # ============================================================
-_handled_button_msgs = set()
+_handled_button_msgs = deque(maxlen=200)
 
 @bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
@@ -2206,9 +2197,7 @@ def universal_button_handler(msg):
         msg_key = (msg.chat.id, msg.message_id)
         if msg_key in _handled_button_msgs:
             return
-        _handled_button_msgs.add(msg_key)
-        if len(_handled_button_msgs) > 500:
-            _handled_button_msgs.clear()
+        _handled_button_msgs.append(msg_key)
 
         print(f"🔘 BUTTON CLICKED: uid={uid} type={btype}")
 
@@ -2356,8 +2345,10 @@ while True:
         bot.remove_webhook()
         time.sleep(0.5)
         bot.polling(
-            none_stop=True, interval=0, timeout=20,
-            long_polling_timeout=15,
+            none_stop=True,
+            interval=1,
+            timeout=30,
+            long_polling_timeout=25,
             allowed_updates=["message", "edited_message", "callback_query"]
         )
     except KeyboardInterrupt:
