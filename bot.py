@@ -25,7 +25,7 @@ sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
 # ============= CONFIG =============
-BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHme-PnJS4FWB4ickcIkjDbFMuDVpGz-9U")
+BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAFQd3hEVc6HKfoh0fpK34FeRgIK4Vqqn88")
 BOT_OWNER = int(os.environ.get('BOT_OWNER', 1987818347))
 BOT_OWNER_STR = str(BOT_OWNER)
 
