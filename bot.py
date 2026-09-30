@@ -1015,9 +1015,36 @@ def cmd_start(msg):
         traceback.print_exc()
         
 # ============= CALLBACKS =============
-@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_")))
+@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_", "copykey_", "redeeminfo_")))
 def handle_callbacks(call):
     try:
+        # ★★★ COPY KEY BUTTON HANDLER ★★★
+        if call.data.startswith("copykey_"):
+            try:
+                key = call.data.replace("copykey_", "", 1)
+                bot.answer_callback_query(
+                    call.id,
+                    f"🔑 KEY:\n\n{key}\n\n⬆️ Long press karke copy karo",
+                    show_alert=True
+                )
+            except Exception as e:
+                print(f"Copy key callback error: {e}")
+            return
+
+        # ★★★ REDEEM INFO BUTTON HANDLER ★★★
+        if call.data.startswith("redeeminfo_"):
+            try:
+                key = call.data.replace("redeeminfo_", "", 1)
+                bot.answer_callback_query(
+                    call.id,
+                    f"📌 REDEEM COMMAND:\n\n/redeem {key}\n\n⬆️ Ye command copy karke bot me bhejo",
+                    show_alert=True
+                )
+            except Exception as e:
+                print(f"Redeem info callback error: {e}")
+            return
+
+        # ★★★ STOP ATTACK HANDLER ★★★
         if call.data.startswith("stopatk_"):
             attack_id = call.data.replace("stopatk_", "", 1)
             caller_uid = call.from_user.id
@@ -1078,6 +1105,7 @@ def handle_callbacks(call):
                 except: pass
             return
 
+        # ★★★ FEEDBACK HANDLER ★★★
         if call.data.startswith("fb_"):
             try:
                 uid = call.from_user.id
@@ -1145,6 +1173,7 @@ def handle_callbacks(call):
                 print(f"Feedback callback error: {e}")
             return
 
+        # ★★★ OWNER CHECK — Ban/Give15m ke liye ★★★
         if not is_owner(call.from_user.id):
             try: bot.answer_callback_query(call.id, "🚫 Owner only!", show_alert=True)
             except: pass
@@ -1218,13 +1247,14 @@ def handle_callbacks(call):
 
             try: bot.answer_callback_query(call.id, f"✅ 15m key sent!", show_alert=True)
             except: pass
+
     except Exception as e:
         HEALTH["total_errors"] += 1
         print(f"Callback error: {e}")
         traceback.print_exc()
         try: bot.answer_callback_query(call.id, f"❌ Error", show_alert=True)
         except: pass
-
+            
 # ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
@@ -1981,32 +2011,47 @@ def do_genkey(msg):
 
         dur_text = human_readable(secs)
 
-        txt = (
-            "╔══════════════════════════════════╗\n"
-            "║       ✅ 𝗞𝗘𝗬𝗦 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘𝗗 ✅         ║\n"
-            "╚══════════════════════════════════╝\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃       💎 𝗞𝗘𝗬 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 💎          ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"  ◆ 🔢 ᴛᴏᴛᴀʟ ➪ <code>{amt}</code>\n"
-            f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <code>{dur_text}</code>\n"
-            f"  ◆ 🎭 ᴛʏᴘᴇ ➪ <code>{'ᴘʀᴇᴍɪᴜᴍ' if custom_name else 'ꜱᴛᴀɴᴅᴀʀᴅ'}</code>\n"
-        )
-        if custom_name:
-            txt += f"  ◆ 🏷️ ɴᴀᴍᴇ ➪ <code>{custom_name}</code>\n"
+        # ★★★ KEY DISPLAY WITH COPY BUTTONS ★★★
+        for idx, key in enumerate(keys, 1):
+            key_text = (
+                "╔══════════════════════════════════╗\n"
+                "║       ✅ 𝗞𝗘𝗬 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗘𝗗 ✅         ║\n"
+                "╚══════════════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃       💎 𝗞𝗘𝗬 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 💎          ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ◆ 🔢 ɴᴜᴍʙᴇʀ ➪ <b>#{idx}/{amt}</b>\n"
+                f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <code>{dur_text}</code>\n"
+                f"  ◆ 🎭 ᴛʏᴘᴇ ➪ <code>{'ᴘʀᴇᴍɪᴜᴍ' if custom_name else 'ꜱᴛᴀɴᴅᴀʀᴅ'}</code>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃       🔑 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬 🔑            ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+                f"  <code>{key}</code>\n\n"
+                "  ⬆️ <b>ᴋᴇʏ ᴘᴇ ʟᴏɴɢ ᴘʀᴇꜱꜱ ᴋᴀʀᴋᴇ ᴄᴏᴘʏ ᴋᴀʀᴏ</b>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃       📋 𝗛𝗢𝗪 𝗧𝗢 𝗥𝗘𝗗𝗘𝗘𝗠 📋        ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ➤ <code>/redeem {key}</code>\n\n"
+                "╔══════════════════════════════════╗\n"
+                "║    💠 𝗡𝗘𝗫𝗧 𝗞𝗘𝗬 𝗖𝗢𝗣𝗬 𝗔𝗡𝗗 𝗨𝗦𝗘 💠     ║\n"
+                "╚══════════════════════════════════╝"
+            )
 
-        txt += "\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n┃       🔑 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬𝗦 🔑          ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-        for i, k in enumerate(keys, 1):
-            txt += f"  <b>{i:02d}.</b> <code>{k}</code>\n"
-        txt += "\n╔══════════════════════════════════╗\n"
-        txt += "║       💠 𝗥𝗘𝗗𝗘𝗘𝗠 💠                ║\n"
-        txt += "╚══════════════════════════════════╝\n"
-        txt += "  ➤ <code>/redeem KEY</code>"
-        safe_reply(msg, txt, parse_mode="HTML")
+            # ★ Copy button (alert me key dikhega) ★
+            copy_kb = InlineKeyboardMarkup()
+            copy_kb.add(
+                InlineKeyboardButton("📋 𝐂𝐎𝐏𝐘 𝐊𝐄𝐘 📋", callback_data=f"copykey_{key}")
+            )
+            copy_kb.add(
+                InlineKeyboardButton("📩 ɴᴇxᴛ ꜱᴛᴇᴘ — ʀᴇᴅᴇᴇᴍ ᴄᴏᴍᴍᴀɴᴅ", callback_data=f"redeeminfo_{key}")
+            )
+
+            safe_reply(msg, key_text, parse_mode="HTML", reply_markup=copy_kb)
+
     except Exception as e:
         HEALTH["total_errors"] += 1
         print(f"❌ do_genkey error: {e}")
-
+        
 @bot.message_handler(commands=['genkey', 'gen'])
 def cmd_gen(msg): do_genkey(msg)
 
