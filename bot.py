@@ -795,34 +795,40 @@ def cmd_start(msg):
         else:
             role = "👤 ᴜꜱᴇʀ"
 
-        # Join date
+        # ★★★ CLICKABLE NAME — user profile link ★★★
+        if username:
+            clickable_name = f'<a href="https://t.me/{escape_html(username)}">{escape_html(name)}</a>'
+        else:
+            clickable_name = f'<a href="tg://user?id={uid}">{escape_html(name)}</a>'
+
+        # Join date — full IST time
         joined_date = "❌ ɴᴏ ᴅᴀᴛᴀ"
         if u.get('joined_ist'):
-            joined_date = str(u['joined_ist'])
+            joined_date = str(u['joined_ist']) + " IST"
         elif u.get('joined_at'):
             jt = safe_parse_dt(u['joined_at'])
             if jt:
-                joined_date = to_ist(jt).strftime('%d %b %Y, %I:%M:%S %p')
+                joined_date = to_ist(jt).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Key activated
+        # Key activated — exact time
         activated_date = "❌ ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
             activated_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
         elif u.get("key_activated"):
             at = safe_parse_dt(u["key_activated"])
             if at:
-                activated_date = to_ist(at).strftime('%d %b %Y, %I:%M:%S %p')
+                activated_date = to_ist(at).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Key expiry
+        # Key expiry — exact time
         expiry_date = "❌ ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
             expiry_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
         elif u.get("key_expiry"):
             exp = safe_parse_dt(u["key_expiry"])
             if exp:
-                expiry_date = to_ist(exp).strftime('%d %b %Y, %I:%M:%S %p')
+                expiry_date = to_ist(exp).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Time counter
+        # Time counter — Days/Hours/Mins/Secs
         time_days = "00"; time_hours = "00"; time_minutes = "00"; time_seconds = "00"
         if is_owner(uid) or is_reseller(uid):
             time_days = time_hours = time_minutes = time_seconds = "♾️"
@@ -836,34 +842,31 @@ def cmd_start(msg):
                 time_minutes = f"{(total % 3600) // 60:02d}"
                 time_seconds = f"{total % 60:02d}"
 
-        # Attack log
+        # ★★★ ATTACK LOG ★★★
         total_attacks = safe_int(u.get('total_attacks', 0))
+        last_attack_ip = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
         last_attack_time = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
-        last_target = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
         logs = ensure_list(data.get("attack_logs", []))
         user_logs = [l for l in logs if str(l.get('user_id')) == str(uid)]
         if user_logs:
             last = user_logs[-1]
+            last_attack_ip = f"{last.get('target','N/A')}:{last.get('port','N/A')}"
             lt = safe_parse_dt(last.get('timestamp'))
             if lt:
-                last_attack_time = to_ist(lt).strftime('%d %b %Y, %I:%M:%S %p')
-            last_target = f"{last.get('target','N/A')}:{last.get('port','N/A')}"
+                last_attack_time = to_ist(lt).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # ═══════════════════════════════════════════════════
-        # ★★★ MATRIX ZONE DESIGN ★★★
-        # ═══════════════════════════════════════════════════
+        # Bottom icon
         if has_key:
-            # Active user with key
             bottom_icon = "🔴 𝗧𝗔𝗞𝗘 𝗧𝗛𝗘 𝗥𝗘𝗗 𝗣𝗜𝗟𝗟 🔴"
         else:
-            # No key user
             bottom_icon = "🟡 𝗔𝗖𝗧𝗜𝗩𝗔𝗧𝗘 𝗞𝗘𝗬 🟡"
 
+        # ★★★ FINAL TEXT — Same for owner & user ★★★
         text = (
             "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
             f"┊         {BOT_NAME}              ┊\n"
             "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
-            f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ <b>{escape_html(name)}</b>\n\n"
+            f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ {clickable_name}\n\n"
             "╭─ 𝗔𝗚𝗘𝗡𝗧 𝗜𝗡𝗙𝗢 \n"
             f"│  ▸ ᴛᴀɢ    ➜ {role}\n"
             f"│  ▸ ᴄᴏᴅᴇ   ➜ <code>{uid}</code>\n"
@@ -881,20 +884,13 @@ def cmd_start(msg):
             "╰──────────────────────────╯\n\n"
             "╭─ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗢𝗚 \n"
             f"│  ▸ ᴛᴏᴛᴀʟ  ➜ <b>{total_attacks}</b>\n"
-            f"│  ▸ ʟᴀꜱᴛ   ➜ <code>{last_target}</code>\n"
-            f"│  ▸ ᴛᴀʀɢᴇᴛ ➜ <code>{last_attack_time}</code>\n"
+            f"│  ▸ ʟᴀꜱᴛ ɪᴘ ➜ <code>{last_attack_ip}</code>\n"
+            f"│  ▸ ᴛɪᴍᴇ  ➜ <code>{last_attack_time}</code>\n"
             "╰──────────────────────────╯\n\n"
         )
 
         if not has_key:
-            text += (
-                "🔑 ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪ <code>/redeem ʏᴏᴜʀ-ᴋᴇʏ</code>\n\n"
-            )
-
-        if is_owner(uid):
-            text += (
-                "👑 ᴏᴡɴᴇʀ ᴄᴍᴅꜱ ➪ /panel /genkey /users /stats\n\n"
-            )
+            text += "🔑 ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪ <code>/redeem ʏᴏᴜʀ-ᴋᴇʏ</code>\n\n"
 
         text += (
             "📟 ᴄᴍᴅꜱ ➪ /attack /profile /status /redeem\n\n"
@@ -903,13 +899,13 @@ def cmd_start(msg):
             "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯"
         )
 
-        # ★★★ Check message delete karo ★★★
+        # Check message delete
         try:
             bot.delete_message(cid, check.message_id)
         except:
             pass
 
-        # ★★★ STICKER — INSTANT SEND ★★★
+        # Sticker — instant
         chosen_sticker = get_random_sticker()
         sticker_msg = None
         if chosen_sticker:
@@ -920,8 +916,6 @@ def cmd_start(msg):
             except Exception as e:
                 print(f"❌ Sticker send failed: {e}")
                 sticker_msg = None
-        else:
-            print("⚠️ No sticker available in database")
 
         if is_new:
             def notify_owner():
@@ -953,7 +947,7 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # ★★★ Sticker 5 sec dikhega → phir message → 1.5 sec baad sticker delete ★★★
+        # Sticker 5 sec → message → 1.5 sec → delete
         def send_with_sticker():
             try:
                 if sticker_msg:
