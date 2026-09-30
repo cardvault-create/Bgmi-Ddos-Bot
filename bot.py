@@ -762,20 +762,25 @@ def cmd_start(msg):
         has_key = state in ("owner", "reseller", "active")
         time_left = time_remaining(uid)
 
-        try: bot.delete_message(cid, check.message_id)
-        except: pass
+        # ★★★ Check message delete karo — instantly ★★★
+        try:
+            bot.delete_message(cid, check.message_id)
+        except:
+            pass
 
-        # ★★★ STICKER SEND WITH PROPER FLOW ★★★
+        # ★★★ STICKER — INSTANT SEND ★★★
         chosen_sticker = get_random_sticker()
         sticker_msg = None
         if chosen_sticker:
             try:
                 print(f"🎨 Sending sticker for /start...")
                 sticker_msg = bot.send_sticker(cid, chosen_sticker)
-                print(f"✅ Sticker sent successfully")
+                print(f"✅ Sticker sent successfully — 4 sec dikhega")
             except Exception as e:
                 print(f"❌ Sticker send failed: {e}")
                 sticker_msg = None
+        else:
+            print("⚠️ No sticker available in database")
 
         # ★★★ PREMIUM HEADER ★★★
         header = (
@@ -977,13 +982,28 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # ★★★ FIXED: send_with_sticker with CORRECT INDENTATION ★★★
+        # ★★★ FIXED: Sticker 4 sec dikhega → phir message → 1 sec baad sticker delete ★★★
         def send_with_sticker():
             try:
                 if sticker_msg:
+                    # ★ Sticker already sent. 4 second wait karo ★
                     time.sleep(4.0)
+
+                    # ★ Final message bhejo ★
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                    print("✅ Final message sent")
+
+                    # ★ 1 second aur wait karo ★
+                    time.sleep(1.0)
+
+                    # ★ Ab sticker delete karo ★
+                    try:
+                        bot.delete_message(cid, sticker_msg.message_id)
+                        print("🗑️ Sticker deleted successfully")
+                    except Exception as del_err:
+                        print(f"⚠️ Sticker delete failed: {del_err}")
                 else:
+                    # Sticker nahi hai to seedha message bhejo
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
             except Exception as e:
                 print(f"send_with_sticker error: {e}")
