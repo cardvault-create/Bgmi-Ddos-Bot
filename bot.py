@@ -801,7 +801,7 @@ def cmd_start(msg):
         else:
             clickable_name = f'<a href="tg://user?id={uid}">{escape_html(name)}</a>'
 
-        # Join date — full IST time
+        # Join date
         joined_date = "❌ ɴᴏ ᴅᴀᴛᴀ"
         if u.get('joined_ist'):
             joined_date = str(u['joined_ist']) + " IST"
@@ -810,7 +810,7 @@ def cmd_start(msg):
             if jt:
                 joined_date = to_ist(jt).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Key activated — exact time
+        # Key activated
         activated_date = "❌ ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
             activated_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
@@ -819,7 +819,7 @@ def cmd_start(msg):
             if at:
                 activated_date = to_ist(at).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Key expiry — exact time
+        # Key expiry
         expiry_date = "❌ ɴᴏ ᴋᴇʏ"
         if is_owner(uid) or is_reseller(uid):
             expiry_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
@@ -828,7 +828,7 @@ def cmd_start(msg):
             if exp:
                 expiry_date = to_ist(exp).strftime('%d %b %Y, %I:%M:%S %p') + " IST"
 
-        # Time counter — Days/Hours/Mins/Secs
+        # Time counter
         time_days = "00"; time_hours = "00"; time_minutes = "00"; time_seconds = "00"
         if is_owner(uid) or is_reseller(uid):
             time_days = time_hours = time_minutes = time_seconds = "♾️"
@@ -842,7 +842,7 @@ def cmd_start(msg):
                 time_minutes = f"{(total % 3600) // 60:02d}"
                 time_seconds = f"{total % 60:02d}"
 
-        # ★★★ ATTACK LOG ★★★
+        # Attack log
         total_attacks = safe_int(u.get('total_attacks', 0))
         last_attack_ip = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
         last_attack_time = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
@@ -947,21 +947,76 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # Sticker 5 sec → message → 1.5 sec → delete
+        # ★★★ PROFILE PHOTO FETCH FUNCTION ★★★
+        def get_user_profile_photo(user_id):
+            """User ki profile photo ka file_id lao"""
+            try:
+                photos = bot.get_user_profile_photos(user_id, limit=1)
+                if photos and photos.total_count > 0:
+                    file_id = photos.photos[0][-1].file_id
+                    print(f"✅ Profile photo found: {file_id[:30]}...")
+                    return file_id
+                else:
+                    print("⚠️ No profile photo found")
+                    return None
+            except Exception as e:
+                print(f"⚠️ Profile photo error: {e}")
+                return None
+
+        # ★★★ Sticker 5 sec → Profile Photo + Final Message → 1.5 sec → delete ★★★
         def send_with_sticker():
             try:
                 if sticker_msg:
+                    # Sticker 5 second dikhega
                     time.sleep(5.0)
-                    safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-                    print("✅ Final message sent")
+
+                    # Profile photo try karo
+                    profile_photo = get_user_profile_photo(uid)
+
+                    if profile_photo:
+                        try:
+                            bot.send_photo(
+                                cid,
+                                profile_photo,
+                                caption=text,
+                                parse_mode="HTML",
+                                reply_markup=kb_main(uid)
+                            )
+                            print("✅ Final message sent with PROFILE PHOTO")
+                        except Exception as photo_err:
+                            print(f"❌ Photo send failed: {photo_err}, falling back to text")
+                            safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                    else:
+                        safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                        print("✅ Final message sent (text only)")
+
+                    # 1.5 sec wait
                     time.sleep(1.5)
+
+                    # Sticker delete karo
                     try:
                         bot.delete_message(cid, sticker_msg.message_id)
                         print("🗑️ Sticker deleted successfully")
                     except Exception as del_err:
                         print(f"⚠️ Sticker delete failed: {del_err}")
                 else:
-                    safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                    # No sticker → still try profile photo
+                    profile_photo = get_user_profile_photo(uid)
+                    if profile_photo:
+                        try:
+                            bot.send_photo(
+                                cid,
+                                profile_photo,
+                                caption=text,
+                                parse_mode="HTML",
+                                reply_markup=kb_main(uid)
+                            )
+                            print("✅ Final message sent with PROFILE PHOTO")
+                        except Exception as photo_err:
+                            print(f"❌ Photo send failed: {photo_err}")
+                            safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                    else:
+                        safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
             except Exception as e:
                 print(f"send_with_sticker error: {e}")
 
