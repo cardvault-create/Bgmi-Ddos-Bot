@@ -775,7 +775,7 @@ def cmd_start(msg):
             try:
                 print(f"🎨 Sending sticker for /start...")
                 sticker_msg = bot.send_sticker(cid, chosen_sticker)
-                print(f"✅ Sticker sent successfully — 4 sec dikhega")
+                print(f"✅ Sticker sent successfully — 5 sec dikhega")
             except Exception as e:
                 print(f"❌ Sticker send failed: {e}")
                 sticker_msg = None
@@ -982,19 +982,19 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # ★★★ FIXED: Sticker 4 sec dikhega → phir message → 1 sec baad sticker delete ★★★
+        # ★★★ FIXED: Sticker 5 sec dikhega → phir message → 1.5 sec baad sticker delete ★★★
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    # ★ Sticker already sent. 4 second wait karo ★
-                    time.sleep(4.0)
+                    # ★ Sticker already sent. 5 second wait karo ★
+                    time.sleep(5.0)
 
                     # ★ Final message bhejo ★
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
                     print("✅ Final message sent")
 
-                    # ★ 1 second aur wait karo ★
-                    time.sleep(1.0)
+                    # ★ 1.5 second aur wait karo ★
+                    time.sleep(1.5)
 
                     # ★ Ab sticker delete karo ★
                     try:
