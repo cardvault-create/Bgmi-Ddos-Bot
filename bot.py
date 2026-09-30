@@ -123,7 +123,6 @@ def load_data():
                         d["settings"] = default["settings"]
                     for sk, sv in default["settings"].items():
                         d["settings"].setdefault(sk, sv)
-                    # Force API
                     if not d["settings"].get("api_token") or len(str(d["settings"].get("api_token", ""))) < 10:
                         d["settings"]["api_token"] = DEFAULT_API_TOKEN
                     if not d["settings"].get("api_url") or not str(d["settings"].get("api_url", "")).startswith("http"):
@@ -132,7 +131,6 @@ def load_data():
                         d["settings"]["api_method"] = DEFAULT_API_METHOD
                     if not d["settings"].get("api_geolocation"):
                         d["settings"]["api_geolocation"] = DEFAULT_API_GEOLOCATION
-                    # ★★★ FORCE OWNER IN ADMINS ★★★
                     if BOT_OWNER_STR not in d["admins"]:
                         d["admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat()}
                     return d
@@ -205,7 +203,6 @@ def get_random_pyf():
 
 # ============= HELPERS (★★★ OWNER CHECK FIXED ★★★) =============
 def is_owner(uid):
-    """★★★ FIXED: Safe int comparison + admin check ★★★"""
     try:
         uid_int = int(uid)
         if uid_int == BOT_OWNER:
@@ -581,7 +578,52 @@ def is_attack_running(uid=None):
         if uid is None:
             return len(active_attacks) > 0
         return any(a.get('user_id') == uid for a in active_attacks.values())
-        # ============= START COMMAND =============
+
+# ============================================================
+# ★★★ FIXED: UNIVERSAL SAFE EDIT HELPERS (for animations) ★★★
+# ============================================================
+def safe_edit_text(cid, mid, text, **kwargs):
+    """Safely edit a text message with HTML, ignore 'not modified' errors."""
+    try:
+        return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
+    except Exception as e:
+        err = str(e).lower()
+        if "message is not modified" in err:
+            return None
+        if "too many requests" in err or "retry after" in err:
+            time.sleep(4)
+            try:
+                return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
+            except: return None
+        # If the original was a video/caption message, fallback to caption edit
+        if "there is no text in the message to edit" in err or "message can't be edited" in err:
+            try:
+                return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=text, **kwargs)
+            except: return None
+        print(f"edit_text err: {str(e)[:120]}")
+        return None
+
+def safe_edit_caption(cid, mid, caption, **kwargs):
+    """Safely edit a caption (video/photo message) with HTML."""
+    try:
+        return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
+    except Exception as e:
+        err = str(e).lower()
+        if "message is not modified" in err:
+            return None
+        if "too many requests" in err or "retry after" in err:
+            time.sleep(4)
+            try:
+                return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
+            except: return None
+        if "there is no caption in the message to edit" in err or "message can't be edited" in err:
+            try:
+                return bot.edit_message_text(chat_id=cid, message_id=mid, text=caption, **kwargs)
+            except: return None
+        print(f"edit_caption err: {str(e)[:120]}")
+        return None
+
+# ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
     try:
@@ -603,10 +645,12 @@ def cmd_start(msg):
         )
 
         check = None
+        is_video_msg = False
         chosen_pyf_start = get_random_pyf()
         if chosen_pyf_start:
             try:
                 check = bot.send_video(cid, chosen_pyf_start, caption=check_text, parse_mode="HTML")
+                is_video_msg = True
             except Exception as e:
                 print(f"Video send error: {e}")
                 check = bot.send_message(cid, check_text, parse_mode="HTML")
@@ -622,30 +666,19 @@ def cmd_start(msg):
             ("▰▰▰▰▰▰▰▰▰▰", "100%", "✅ Ｖｅｒｉｆｉｅｄ!"),
         ]
 
+        # ★★★ FIXED: Box animation now works for both video & text ★★★
         for bar, pct, status in steps:
-            time.sleep(0.25)
-            try:
-                bot.edit_message_caption(
-                    chat_id=cid, message_id=check.message_id,
-                    caption=(
-                        "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                        "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
-                        "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                        f"{bar} {pct}\n{status}"
-                    ), parse_mode="HTML"
-                )
-            except:
-                try:
-                    bot.edit_message_text(
-                        chat_id=cid, message_id=check.message_id,
-                        text=(
-                            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                            "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
-                            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                            f"{bar} {pct}\n{status}"
-                        ), parse_mode="HTML"
-                    )
-                except: pass
+            time.sleep(0.35)
+            anim_text = (
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                f"{bar} {pct}\n{status}"
+            )
+            if is_video_msg:
+                safe_edit_caption(cid, check.message_id, anim_text, parse_mode="HTML")
+            else:
+                safe_edit_text(cid, check.message_id, anim_text, parse_mode="HTML")
 
         is_new = str(uid) not in ensure_dict(data.get("users", {}))
         if is_new:
@@ -1277,23 +1310,11 @@ def cmd_attack(msg):
                 try:
                     new_text = build_attack_caption()
                     if new_text != last_text:
-                        try:
-                            if is_video:
-                                bot.edit_message_caption(
-                                    chat_id=cid, message_id=attack_msg.message_id,
-                                    caption=new_text, parse_mode="HTML", reply_markup=stop_kb
-                                )
-                            else:
-                                bot.edit_message_text(
-                                    chat_id=cid, message_id=attack_msg.message_id,
-                                    text=new_text, parse_mode="HTML", reply_markup=stop_kb
-                                )
-                            last_text = new_text
-                        except Exception as e:
-                            err = str(e)
-                            if "message is not modified" in err.lower(): continue
-                            if "Too Many Requests" in err or "retry after" in err.lower():
-                                time.sleep(5); continue
+                        if is_video:
+                            safe_edit_caption(cid, attack_msg.message_id, new_text, parse_mode="HTML", reply_markup=stop_kb)
+                        else:
+                            safe_edit_text(cid, attack_msg.message_id, new_text, parse_mode="HTML", reply_markup=stop_kb)
+                        last_text = new_text
                 except: pass
 
         threading.Thread(target=auto_update_attack, daemon=True).start()
@@ -1358,15 +1379,9 @@ def cmd_attack(msg):
 
             try:
                 if is_video:
-                    bot.edit_message_caption(
-                        chat_id=cid, message_id=attack_msg.message_id,
-                        caption=complete_caption, parse_mode="HTML", reply_markup=fb_kb
-                    )
+                    safe_edit_caption(cid, attack_msg.message_id, complete_caption, parse_mode="HTML", reply_markup=fb_kb)
                 else:
-                    bot.edit_message_text(
-                        chat_id=cid, message_id=attack_msg.message_id,
-                        text=complete_caption, parse_mode="HTML", reply_markup=fb_kb
-                    )
+                    safe_edit_text(cid, attack_msg.message_id, complete_caption, parse_mode="HTML", reply_markup=fb_kb)
             except:
                 try: bot.send_message(cid, complete_caption, parse_mode="HTML", reply_markup=fb_kb)
                 except: pass
@@ -1376,7 +1391,8 @@ def cmd_attack(msg):
         HEALTH["total_errors"] += 1
         print(f"❌ cmd_attack error: {e}")
         traceback.print_exc()
-        # ============= STATUS =============
+
+# ============= STATUS =============
 def do_status(msg):
     try:
         if check_ban(msg): return
@@ -1549,13 +1565,7 @@ def do_status(msg):
                 traceback.print_exc()
                 return "⚠️ <b>ꜱᴛᴀᴛᴜꜱ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ</b>"
 
-        try:
-            bot.edit_message_text(
-                chat_id=cid, message_id=status_msg.message_id,
-                text=build_status(), parse_mode="HTML"
-            )
-        except Exception as e:
-            print(f"Status First Edit Error: {e}")
+        safe_edit_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
 
         def auto_update():
             last_text = None
@@ -1564,17 +1574,9 @@ def do_status(msg):
                 try:
                     new_text = build_status()
                     if new_text != last_text:
-                        bot.edit_message_text(
-                            chat_id=cid, message_id=status_msg.message_id,
-                            text=new_text, parse_mode="HTML"
-                        )
+                        safe_edit_text(cid, status_msg.message_id, new_text, parse_mode="HTML")
                         last_text = new_text
-                except Exception as e:
-                    err = str(e)
-                    if "message is not modified" in err.lower(): continue
-                    if "Too Many Requests" in err or "retry after" in err.lower():
-                        time.sleep(5); continue
-                    break
+                except: break
 
         threading.Thread(target=auto_update, daemon=True).start()
     except Exception as e:
@@ -1681,12 +1683,7 @@ def do_profile(msg):
                 print(f"Build Profile Error: {e}"); traceback.print_exc()
                 return "⚠️ <b>ᴘʀᴏꜰɪʟᴇ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ</b>"
 
-        try:
-            bot.edit_message_text(
-                chat_id=cid, message_id=profile_msg.message_id,
-                text=build_profile(), parse_mode="HTML"
-            )
-        except Exception as e: print(f"Profile First Edit Error: {e}")
+        safe_edit_text(cid, profile_msg.message_id, build_profile(), parse_mode="HTML")
 
         def auto_update_profile():
             last_text = None
@@ -1695,17 +1692,9 @@ def do_profile(msg):
                 try:
                     new_text = build_profile()
                     if new_text != last_text:
-                        bot.edit_message_text(
-                            chat_id=cid, message_id=profile_msg.message_id,
-                            text=new_text, parse_mode="HTML"
-                        )
+                        safe_edit_text(cid, profile_msg.message_id, new_text, parse_mode="HTML")
                         last_text = new_text
-                except Exception as e:
-                    err = str(e)
-                    if "message is not modified" in err.lower(): continue
-                    if "Too Many Requests" in err or "retry after" in err.lower():
-                        time.sleep(5); continue
-                    break
+                except: break
 
         threading.Thread(target=auto_update_profile, daemon=True).start()
     except Exception as e:
@@ -1971,12 +1960,7 @@ def do_users(msg):
             except Exception as e:
                 print(f"Build users error: {e}"); return "⚠️ ᴜꜱᴇʀꜱ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ"
 
-        try:
-            bot.edit_message_text(
-                chat_id=users_msg.chat.id, message_id=users_msg.message_id,
-                text=build_users_live(), parse_mode="HTML"
-            )
-        except: pass
+        safe_edit_text(users_msg.chat.id, users_msg.message_id, build_users_live(), parse_mode="HTML")
 
         def auto_update_users():
             last_text = None
@@ -1985,17 +1969,9 @@ def do_users(msg):
                 try:
                     new_text = build_users_live()
                     if new_text != last_text:
-                        bot.edit_message_text(
-                            chat_id=users_msg.chat.id, message_id=users_msg.message_id,
-                            text=new_text, parse_mode="HTML"
-                        )
+                        safe_edit_text(users_msg.chat.id, users_msg.message_id, new_text, parse_mode="HTML")
                         last_text = new_text
-                except Exception as e:
-                    err = str(e)
-                    if "message is not modified" in err.lower(): continue
-                    if "Too Many Requests" in err or "retry after" in err.lower():
-                        time.sleep(5); continue
-                    break
+                except: break
 
         threading.Thread(target=auto_update_users, daemon=True).start()
     except Exception as e:
@@ -2059,37 +2035,28 @@ def cmd_broadcast(msg):
                     sent += 1
                 except Exception as e:
                     failed += 1
-                    err_str = str(e).lower()
-                    if not any(kw in err_str for kw in ["chat not found", "blocked", "deactivated", "kicked"]):
-                        print(f"Broadcast fail {uid_str}: {str(e)[:100]}")
 
                 if i % 5 == 0 or i == total:
                     try:
-                        bot.edit_message_text(
-                            chat_id=status_msg.chat.id, message_id=status_msg.message_id,
-                            text=(
-                                f"📤 <b>ᴘʀᴏɢʀᴇꜱꜱ:</b> {i}/{total}\n"
-                                f"✅ ꜱᴇɴᴛ: {sent}\n"
-                                f"❌ ꜰᴀɪʟᴇᴅ: {failed}\n"
-                                f"🚫 ʙᴀɴɴᴇᴅ: {banned_skip}"
-                            ), parse_mode="HTML"
-                        )
+                        safe_edit_text(status_msg.chat.id, status_msg.message_id,
+                            f"📤 <b>ᴘʀᴏɢʀᴇꜱꜱ:</b> {i}/{total}\n"
+                            f"✅ ꜱᴇɴᴛ: {sent}\n"
+                            f"❌ ꜰᴀɪʟᴇᴅ: {failed}\n"
+                            f"🚫 ʙᴀɴɴᴇᴅ: {banned_skip}",
+                            parse_mode="HTML")
                     except: pass
                 time.sleep(0.1)
 
             try:
-                bot.edit_message_text(
-                    chat_id=status_msg.chat.id, message_id=status_msg.message_id,
-                    text=(
-                        f"╔══════════════════════════╗\n"
-                        f"║     ✅ 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗗𝗢𝗡𝗘 ✅     ║\n"
-                        f"╚══════════════════════════╝\n\n"
-                        f"✅ ꜱᴇɴᴛ ➪ <b>{sent}</b>\n"
-                        f"❌ ꜰᴀɪʟᴇᴅ ➪ <b>{failed}</b>\n"
-                        f"🚫 ʙᴀɴɴᴇᴅ ➪ <b>{banned_skip}</b>\n\n"
-                        f"🕐 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>"
-                    ), parse_mode="HTML"
-                )
+                safe_edit_text(status_msg.chat.id, status_msg.message_id,
+                    f"╔══════════════════════════╗\n"
+                    f"║     ✅ 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗗𝗢𝗡𝗘 ✅     ║\n"
+                    f"╚══════════════════════════╝\n\n"
+                    f"✅ ꜱᴇɴᴛ ➪ <b>{sent}</b>\n"
+                    f"❌ ꜰᴀɪʟᴇᴅ ➪ <b>{failed}</b>\n"
+                    f"🚫 ʙᴀɴɴᴇᴅ ➪ <b>{banned_skip}</b>\n\n"
+                    f"🕐 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>",
+                    parse_mode="HTML")
             except: pass
 
         threading.Thread(target=do_broadcast, daemon=True).start()
@@ -2214,7 +2181,8 @@ def cmd_unban(msg):
             safe_reply(msg, f"✅ <b>ᴜɴʙᴀɴɴᴇᴅ</b> <code>{target_id}</code>", parse_mode="HTML")
         else: safe_reply(msg, "❌ ɴᴏᴛ ʙᴀɴɴᴇᴅ")
     except Exception as e: print(f"❌ cmd_unban error: {e}")
-        # ============= SETAPI =============
+
+# ============= SETAPI =============
 @bot.message_handler(commands=['setapi'])
 def cmd_setapi(msg):
     try:
@@ -2270,28 +2238,31 @@ def cmd_setapi(msg):
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_setapi error: {e}")
 
-# ============= TESTAPI (★★★ FIXED — 0 PE ATAK NAHI ★★★) =============
+# ============= TESTAPI (★★★ FIXED WITH BOX ANIMATION ★★★) =============
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
     try:
         uid = msg.from_user.id
-        # ★★★ DEBUG: Confirm owner check works ★★★
         print(f"🧪 /testapi from {uid} | BOT_OWNER={BOT_OWNER} | is_owner={is_owner(uid)}")
-        
+
         if not is_owner(uid):
             safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!", parse_mode="HTML")
             return
-        
+
         cid = msg.chat.id
 
-        # ★★★ STEP 1: Immediate "starting" message ★★★
         try:
-            loading_msg = bot.reply_to(msg, "🧪 <b>ɪɴɪᴛɪᴀʟɪᴢɪɴɢ ᴛᴇꜱᴛ...</b>", parse_mode="HTML")
+            loading_msg = bot.reply_to(msg, 
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                "▱▱▱▱▱▱▱▱▱▱ 0%\n"
+                "⏳ 𝐒𝐭𝐚𝐫𝐭𝐢𝐧𝐠...", 
+                parse_mode="HTML")
         except Exception as e:
             print(f"❌ Initial test reply failed: {e}")
             return
 
-        # ★★★ STEP 2: Run test in thread (won't block handler) ★★★
         def run_test():
             try:
                 steps = [
@@ -2303,20 +2274,14 @@ def cmd_testapi(msg):
                 ]
                 
                 for bar, pct, status in steps:
-                    time.sleep(0.6)
-                    try:
-                        bot.edit_message_text(
-                            chat_id=cid, message_id=loading_msg.message_id,
-                            text=(
-                                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                                "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
-                                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                                f"{bar} {pct}\n{status}"
-                            ), parse_mode="HTML"
-                        )
-                    except Exception as e:
-                        print(f"Edit step failed: {str(e)[:80]}")
-                        pass
+                    time.sleep(0.7)
+                    anim_text = (
+                        "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                        "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+                        "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                        f"{bar} {pct}\n{status}"
+                    )
+                    safe_edit_text(cid, loading_msg.message_id, anim_text, parse_mode="HTML")
 
                 # API call
                 start = time.time()
@@ -2324,20 +2289,16 @@ def cmd_testapi(msg):
                 elapsed_ms = int((time.time() - start) * 1000)
                 print(f"🧪 API test result: ok={ok} | elapsed={elapsed_ms}ms | resp={r[:100]}")
 
-                time.sleep(0.6)
+                time.sleep(0.8)
 
-                try:
-                    bot.edit_message_text(
-                        chat_id=cid, message_id=loading_msg.message_id,
-                        text=(
-                            "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                            "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
-                            "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                            "▰▰▰▰▰▰▰▰▰▰ 100%\n"
-                            "✅ Ｔｅｓｔ Ｃｏｍｐｌｅｔｅ!"
-                        ), parse_mode="HTML"
-                    )
-                except: pass
+                final_anim = (
+                    "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                    "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
+                    "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                    "▰▰▰▰▰▰▰▰▰▰ 100%\n"
+                    "✅ Ｔｅｓｔ Ｃｏｍｐｌｅｔｅ!"
+                )
+                safe_edit_text(cid, loading_msg.message_id, final_anim, parse_mode="HTML")
 
                 time.sleep(0.5)
 
@@ -2382,16 +2343,7 @@ def cmd_testapi(msg):
                         "╚══════════════════════════╝"
                     )
 
-                try:
-                    bot.edit_message_text(
-                        chat_id=cid, message_id=loading_msg.message_id,
-                        text=final_text, parse_mode="HTML"
-                    )
-                except Exception as e:
-                    print(f"❌ Final edit failed: {e}")
-                    try: 
-                        bot.send_message(cid, final_text, parse_mode="HTML")
-                    except: pass
+                safe_edit_text(cid, loading_msg.message_id, final_text, parse_mode="HTML")
             except Exception as e:
                 print(f"❌ Testapi thread error: {e}")
                 traceback.print_exc()
@@ -2399,7 +2351,6 @@ def cmd_testapi(msg):
                     bot.send_message(cid, f"❌ ᴛᴇꜱᴛ ᴇʀʀᴏʀ: <code>{escape_html(str(e)[:200])}</code>", parse_mode="HTML")
                 except: pass
 
-        # Start thread
         threading.Thread(target=run_test, daemon=True).start()
         print(f"✅ Testapi thread started for {uid}")
         
@@ -2725,7 +2676,8 @@ def cmd_settings(msg):
         )
         safe_reply(msg, txt, parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_settings error: {e}")
-        # ============================================================
+
+# ============================================================
 # ========== UNIVERSAL BUTTON HANDLER (FULLY FIXED) ==========
 # ============================================================
 _handled_button_msgs = {}
