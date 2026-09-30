@@ -6,7 +6,7 @@ PREMIUM FULL FIXED - All Media Working
 """
 
 import telebot
-from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import threading
 import os
 import re
@@ -526,16 +526,19 @@ def api_attack(ip, port, dur):
 
 # ============= KEYBOARDS =============
 def kb_main(uid):
-    m = ReplyKeyboardMarkup(resize_keyboard=True)
     if is_owner(uid):
+        m = ReplyKeyboardMarkup(resize_keyboard=True)
         m.row("🔥 𝐀𝐓𝐓𝐀𝐂𝐊", "📊 𝐒𝐓𝐀𝐓𝐔𝐒")
         m.row("👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄", "👑 𝐎𝐖𝐍𝐄𝐑 𝐏𝐀𝐍𝐄𝐋")
+        return m
     elif is_reseller(uid) or has_valid_key(uid):
+        m = ReplyKeyboardMarkup(resize_keyboard=True)
         m.row("🔥 𝐀𝐓𝐓𝐀𝐂𝐊", "📊 𝐒𝐓𝐀𝐓𝐔𝐒")
-        m.row("🔑 𝐑𝐄𝐃𝐄𝐄𝐌", "👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄")
+        m.row("👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄")
+        return m
     else:
-        m.row("🔑 𝐑𝐄𝐃𝐄𝐄𝐌", "👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄")
-    return m
+        # ★★★ NO KEY — Remove all buttons ★★★
+        return ReplyKeyboardRemove()
 
 def kb_owner():
     m = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -581,9 +584,10 @@ def check_key_expiry_notifications():
                                     "║                  🔥 ɢᴇᴛ ɴᴇᴡ ᴋᴇʏ 🍑                   ║\n"
                                     "╚══════════════════════════╝"
                                 )
-                                bot.send_message(int(uid_str), expire_msg, parse_mode="HTML")
-                            except Exception as e:
-                                print(f"Expiry notify error {uid_str}: {e}")
+                                    bot.send_message(int(uid_str), expire_msg, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+    print(f"🔒 Key expired for {uid_str} — Keyboard removed")
+except Exception as e:
+    print(f"Expiry notify error {uid_str}: {e}")
                 except: pass
         except Exception as e:
             print(f"Expiry check error: {e}")
