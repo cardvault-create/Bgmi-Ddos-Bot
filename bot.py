@@ -977,22 +977,23 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
+        # ★★★ FIXED: send_with_sticker with CORRECT INDENTATION ★★★
         def send_with_sticker():
-          try:
-            if sticker_msg:
-               time.sleep(2.0)
-               safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-             else:
-               safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
-           except Exception as e:
-             print(f"send_with_sticker error: {e}")
+            try:
+                if sticker_msg:
+                    time.sleep(4.0)
+                    safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+                else:
+                    safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
+            except Exception as e:
+                print(f"send_with_sticker error: {e}")
 
         threading.Thread(target=send_with_sticker, daemon=True).start()
     except Exception as e:
         HEALTH["total_errors"] += 1
         print(f"❌ cmd_start error: {e}")
         traceback.print_exc()
-
+        
 # ============= CALLBACKS =============
 @bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_")))
 def handle_callbacks(call):
