@@ -789,11 +789,11 @@ def cmd_start(msg):
 
         # Role
         if is_owner(uid):
-            role = "👑 ᴏᴡɴᴇʀ"
+            role = "🧛 𝗩𝗔𝗠𝗣𝗜𝗥𝗘 𝗞𝗜𝗡𝗚"
         elif is_reseller(uid):
-            role = "💼 ʀᴇꜱᴇʟʟᴇʀ"
+            role = "🦇 𝗩𝗔𝗠𝗣𝗜𝗥𝗘 𝗟𝗢𝗥𝗗"
         else:
-            role = "👤 ᴜꜱᴇʀ"
+            role = "🩸 𝗡𝗘𝗪 𝗕𝗟𝗢𝗢𝗗"
 
         # ★★★ CLICKABLE NAME ★★★
         if username:
@@ -858,16 +858,16 @@ def cmd_start(msg):
         # ★★★ BOTTOM BOX — LAUNCH HOLD / ROCKET READY ★★★
         if has_key:
             bottom_box = (
-                "▓▒░    ━━ 🚇 𝐑𝐎𝐂𝐊𝐄𝐓 𝐑𝐄𝐀𝐃𝐘 ━━    ░▒▓\n\n"
-                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
-                "█        ▸ Lᴀᴜɴᴄʜ Aᴜᴛʜᴏʀɪᴢᴇᴅ ◂        █\n"
+                "▓▒░    ━━ 🚇 𝐑𝐎𝐂𝐊𝐄𝐓 𝐑𝐄𝐀𝐃𝐘 ━━    ░▒▓\n\n"
+                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
+                "█              ▸ Lᴀᴜɴᴄʜ Aᴜᴛʜᴏʀɪᴢᴇᴅ ◂             █\n"
                 "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█"
             )
         else:
             bottom_box = (
-                "▓▒░    ━━ 🚇 𝐋𝐀𝐔𝐍𝐂𝐇 𝐇𝐎𝐋𝐃 ━━    ░▒▓\n\n"
-                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
-                "█           ▸ Nᴏ Kᴇʏ Fᴏᴜɴᴅ ◂           █\n"
+                "▓▒░     ━━ 🚇 𝐋𝐀𝐔𝐍𝐂𝐇 𝐇𝐎𝐋𝐃 ━━    ░▒▓\n\n"
+                "█▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▄█\n"
+                "█                   ▸ Nᴏ Kᴇʏ Fᴏᴜɴᴅ ◂                  █\n"
                 "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█"
             )
 
@@ -903,8 +903,12 @@ def cmd_start(msg):
             text += "🔑 ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪ <code>/redeem ʏᴏᴜʀ-ᴋᴇʏ</code>\n\n"
 
         text += (
-            "📟 ᴄᴍᴅꜱ ➪ /attack /profile /status /redeem\n\n"
-            + bottom_box
+                "\n\n"
+                "◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣\n"
+                "▓▓                /attack ♯ /profile              ▓▓\n"
+                "▓▓           /status ⌬ /redeem         ▓▓\n"
+                "◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤◥◤\n\n"
+                + bottom_box
         )
 
         # Check message delete
