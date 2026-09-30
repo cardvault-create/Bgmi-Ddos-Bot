@@ -694,29 +694,22 @@ def cmd_start(msg):
 
         print(f"🚀 /start from {uid} (@{username}) | owner={is_owner(uid)}")
 
-        # ★★★ BOX GROW FUNCTION — Top & Bottom Lines Badhti Jayengi ★★★
+        # ★★★ BOX GROW FUNCTION ★★★
         def make_box(pct_num):
             if pct_num <= 0:
-                top = "◢◤"
-                bottom = "◥◣"
+                top = "◢◤"; bottom = "◥◣"
             elif pct_num <= 10:
-                top = "◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣"
             elif pct_num <= 30:
-                top = "◢◤◢◤◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣◥◣◥◣"
             elif pct_num <= 50:
-                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
             elif pct_num <= 70:
-                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
             elif pct_num <= 90:
-                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
             else:
-                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"
-                bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
+                top = "◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤"; bottom = "◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣◥◣"
             return top, bottom
 
         top, bottom = make_box(0)
@@ -728,7 +721,6 @@ def cmd_start(msg):
             "⏳ 𝐒𝐭𝐚𝐫𝐭𝐢𝐧𝐠..."
         )
 
-        # ★★★ PYF VIDEO SEND WITH FALLBACK ★★★
         check = None
         is_video_msg = False
         chosen_pyf_start = get_random_pyf()
@@ -751,7 +743,6 @@ def cmd_start(msg):
         if not check:
             return
 
-        # ★★★ STEPS WITH NUMERIC PCT — Box grow hoga ★★★
         steps = [
             ("▰▱▱▱▱▱▱▱▱▱", 10, "10%", "📡 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗶𝗻𝗴 𝘁𝗼 𝘀𝗲𝗿𝘃𝗲𝗿..."),
             ("▰▰▰▱▱▱▱▱▱▱", 30, "30%", "👤 𝐕𝐞𝐫𝐢𝐟𝐲𝐢𝐧𝐠 𝐮𝐬𝐞𝐫..."),
@@ -763,9 +754,7 @@ def cmd_start(msg):
 
         for bar, pct_num, pct, status in steps:
             time.sleep(0.3)
-
             top, bottom = make_box(pct_num)
-
             anim_text = (
                 f"{top}\n"
                 "      ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡\n"
@@ -778,6 +767,9 @@ def cmd_start(msg):
             else:
                 safe_edit_text(cid, check.message_id, anim_text, parse_mode="HTML")
 
+        # ═══════════════════════════════════════════════════
+        # ★★★ COLLECT ALL USER DATA ★★★
+        # ═══════════════════════════════════════════════════
         is_new = str(uid) not in ensure_dict(data.get("users", {}))
         if is_new:
             join_time = ist_now()
@@ -785,15 +777,133 @@ def cmd_start(msg):
                 "username": username or name, "first_name": name,
                 "joined_at": join_time.isoformat(),
                 "joined_ist": join_time.strftime('%d %b %Y, %I:%M:%S %p'),
-                "total_attacks": 0, "key_expiry": None
+                "total_attacks": 0, "key_expiry": None,
+                "key_activated": None
             }
             save_data(data)
 
         state = key_state(uid)
         has_key = state in ("owner", "reseller", "active")
-        time_left = time_remaining(uid)
+        u = ensure_dict(data.get("users", {})).get(str(uid), {})
+        if not isinstance(u, dict): u = {}
 
-        # ★★★ Check message delete karo — instantly ★★★
+        # Role
+        if is_owner(uid):
+            role = "👑 ᴏᴡɴᴇʀ"
+        elif is_reseller(uid):
+            role = "💼 ʀᴇꜱᴇʟʟᴇʀ"
+        else:
+            role = "👤 ᴜꜱᴇʀ"
+
+        # Join date
+        joined_date = "❌ ɴᴏ ᴅᴀᴛᴀ"
+        if u.get('joined_ist'):
+            joined_date = str(u['joined_ist'])
+        elif u.get('joined_at'):
+            jt = safe_parse_dt(u['joined_at'])
+            if jt:
+                joined_date = to_ist(jt).strftime('%d %b %Y, %I:%M:%S %p')
+
+        # Key activated
+        activated_date = "❌ ɴᴏ ᴋᴇʏ"
+        if is_owner(uid) or is_reseller(uid):
+            activated_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
+        elif u.get("key_activated"):
+            at = safe_parse_dt(u["key_activated"])
+            if at:
+                activated_date = to_ist(at).strftime('%d %b %Y, %I:%M:%S %p')
+
+        # Key expiry
+        expiry_date = "❌ ɴᴏ ᴋᴇʏ"
+        if is_owner(uid) or is_reseller(uid):
+            expiry_date = "♾️ ᴜɴʟɪᴍɪᴛᴇᴅ"
+        elif u.get("key_expiry"):
+            exp = safe_parse_dt(u["key_expiry"])
+            if exp:
+                expiry_date = to_ist(exp).strftime('%d %b %Y, %I:%M:%S %p')
+
+        # Time counter
+        time_days = "00"; time_hours = "00"; time_minutes = "00"; time_seconds = "00"
+        if is_owner(uid) or is_reseller(uid):
+            time_days = time_hours = time_minutes = time_seconds = "♾️"
+        elif u.get("key_expiry"):
+            exp = safe_parse_dt(u["key_expiry"])
+            if exp:
+                rem = exp - ist_now()
+                total = max(0, int(rem.total_seconds()))
+                time_days = f"{total // 86400:02d}"
+                time_hours = f"{(total % 86400) // 3600:02d}"
+                time_minutes = f"{(total % 3600) // 60:02d}"
+                time_seconds = f"{total % 60:02d}"
+
+        # Attack log
+        total_attacks = safe_int(u.get('total_attacks', 0))
+        last_attack_time = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
+        last_target = "❌ ɴᴏ ᴀᴛᴛᴀᴄᴋ"
+        logs = ensure_list(data.get("attack_logs", []))
+        user_logs = [l for l in logs if str(l.get('user_id')) == str(uid)]
+        if user_logs:
+            last = user_logs[-1]
+            lt = safe_parse_dt(last.get('timestamp'))
+            if lt:
+                last_attack_time = to_ist(lt).strftime('%d %b %Y, %I:%M:%S %p')
+            last_target = f"{last.get('target','N/A')}:{last.get('port','N/A')}"
+
+        # ═══════════════════════════════════════════════════
+        # ★★★ MATRIX ZONE DESIGN ★★★
+        # ═══════════════════════════════════════════════════
+        if has_key:
+            # Active user with key
+            bottom_icon = "🔴 𝗧𝗔𝗞𝗘 𝗧𝗛𝗘 𝗥𝗘𝗗 𝗣𝗜𝗟𝗟 🔴"
+        else:
+            # No key user
+            bottom_icon = "🟡 𝗔𝗖𝗧𝗜𝗩𝗔𝗧𝗘 𝗞𝗘𝗬 🟡"
+
+        text = (
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n"
+            f"┊         {BOT_NAME}              ┊\n"
+            "〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰\n\n"
+            f"  🌼 ᴡᴇʟᴄᴏᴍᴇ ᴀɢᴇɴᴛ  ➪ <b>{escape_html(name)}</b>\n\n"
+            "╭─ 𝗔𝗚𝗘𝗡𝗧 𝗜𝗡𝗙𝗢 \n"
+            f"│  ▸ ᴛᴀɢ    ➜ {role}\n"
+            f"│  ▸ ᴄᴏᴅᴇ   ➜ <code>{uid}</code>\n"
+            f"│  ▸ ᴊᴏɪɴ   ➜ <code>{joined_date}</code>\n"
+            "╰──────────────────────────╯\n\n"
+            "╭─ 𝗘𝗡𝗖𝗥𝗬𝗣𝗧𝗘𝗗 𝗞𝗘𝗬 \n"
+            f"│  ▸ ᴜɴʟᴏᴄᴋ ➜ <code>{activated_date}</code>\n"
+            f"│  ▸ ᴇxᴘɪʀᴇ ➜ <code>{expiry_date}</code>\n"
+            "╰──────────────────────────╯\n\n"
+            "╭─ 𝗧𝗜𝗠𝗘 𝗖𝗢𝗨𝗡𝗧𝗘𝗥 \n"
+            f"│  ▸ 📅 ᴅᴀʏꜱ   ➜ <b>{time_days}</b>\n"
+            f"│  ▸ 🕐 ʜᴏᴜʀꜱ  ➜ <b>{time_hours}</b>\n"
+            f"│  ▸ ⏱️ ᴍɪɴꜱ   ➜ <b>{time_minutes}</b>\n"
+            f"│  ▸ ⚡ ꜱᴇᴄꜱ   ➜ <b>{time_seconds}</b>\n"
+            "╰──────────────────────────╯\n\n"
+            "╭─ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗢𝗚 \n"
+            f"│  ▸ ᴛᴏᴛᴀʟ  ➜ <b>{total_attacks}</b>\n"
+            f"│  ▸ ʟᴀꜱᴛ   ➜ <code>{last_target}</code>\n"
+            f"│  ▸ ᴛᴀʀɢᴇᴛ ➜ <code>{last_attack_time}</code>\n"
+            "╰──────────────────────────╯\n\n"
+        )
+
+        if not has_key:
+            text += (
+                "🔑 ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪ <code>/redeem ʏᴏᴜʀ-ᴋᴇʏ</code>\n\n"
+            )
+
+        if is_owner(uid):
+            text += (
+                "👑 ᴏᴡɴᴇʀ ᴄᴍᴅꜱ ➪ /panel /genkey /users /stats\n\n"
+            )
+
+        text += (
+            "📟 ᴄᴍᴅꜱ ➪ /attack /profile /status /redeem\n\n"
+            "╭━━━━━━━━━━━━━━━━━━━━━━━━━━╮\n"
+            f"┃           {bottom_icon}          ┃\n"
+            "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯"
+        )
+
+        # ★★★ Check message delete karo ★★★
         try:
             bot.delete_message(cid, check.message_id)
         except:
@@ -812,176 +922,6 @@ def cmd_start(msg):
                 sticker_msg = None
         else:
             print("⚠️ No sticker available in database")
-
-        # ★★★ PREMIUM HEADER ★★★
-        header = (
-            "╔═══════════════════════════════════╗\n"
-            "║                                   ║\n"
-            f"║  {BOT_NAME}  ║\n"
-            "║                                   ║\n"
-            "╚═══════════════════════════════════╝\n"
-        )
-
-        # ★★★ PREMIUM COMMANDS BLOCK ★★★
-        commands_block = (
-            "\n╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮\n"
-            "┃    🎯 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎯    ┃\n"
-            "╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃      ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 ⚔️       ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "  ◆ 📌 <code>/attack IP PORT TIME</code>\n"
-            "  ◆ 📝 ᴇxᴀᴍᴘʟᴇ ➪ <code>/attack 1.2.3.4 80 60</code>\n"
-            "  ◆ ⏱️ ᴛɪᴍᴇ ➪ ꜱᴇᴄᴏɴᴅꜱ ᴍᴇ (30-300)\n\n"
-        )
-
-        if is_owner(uid):
-            commands_block += (
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       👑 𝗢𝗪𝗡𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 👑      ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 🔑 <code>/genkey 1d 5</code> — ɢᴇɴ ᴋᴇʏꜱ\n"
-                "  ◆ 👥 <code>/users</code> — ᴀʟʟ ᴜꜱᴇʀꜱ ʟɪꜱᴛ\n"
-                "  ◆ 📊 <code>/stats</code> — ʙᴏᴛ ꜱᴛᴀᴛɪꜱᴛɪᴄꜱ\n"
-                "  ◆ 📢 <code>/broadcast MSG</code> — ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-                "  ◆ 🚫 <code>/ban ID REASON</code> — ʙᴀɴ ᴜꜱᴇʀ\n"
-                "  ◆ ✅ <code>/unban ID</code> — ᴜɴʙᴀɴ ᴜꜱᴇʀ\n"
-                "  ◆ 📩 <code>/feedback on</code> — ꜰᴇᴇᴅʙᴀᴄᴋ ᴏɴ\n"
-                "  ◆ 🔧 <code>/maintenance</code> — ᴛᴏɢɢʟᴇ ᴍᴏᴅᴇ\n"
-                "  ◆ 📡 <code>/setapi URL TOKEN</code> — ꜱᴇᴛ ᴀᴘɪ\n"
-                "  ◆ 🧪 <code>/testapi</code> — ᴛᴇꜱᴛ ᴀᴘɪ\n"
-                "  ◆ ⚙️ <code>/settings</code> — ᴀʟʟ ʜᴇʟᴘ\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃     ❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 ❄      ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 🎨 ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ ➪ ᴀᴅᴅ ᴋᴀʀᴏ\n"
-                "  ◆ 📋 <code>/liststickers</code> — ʟɪꜱᴛ ᴅᴇᴋʜᴏ\n"
-                "  ◆ 🗑️ <code>/removesticker NUM</code> — ʀᴇᴍᴏᴠᴇ\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       📹 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 📹       ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 🎬 ꜱᴇɴᴅ ᴠɪᴅᴇᴏ ➪ ᴀᴛᴛᴀᴄᴋ ᴍᴇ ᴀᴀʏᴇɢᴀ\n"
-                "  ◆ 📋 <code>/listvideo</code> — ʟɪꜱᴛ ᴅᴇᴋʜᴏ\n"
-                "  ◆ 🗑️ <code>/delvideo NUM</code> — ʀᴇᴍᴏᴠᴇ\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃     🎬 𝗣𝗬𝗙 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎬     ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 🎬 <code>/addpyf</code> — ᴘʏꜰ ᴀᴅᴅ ᴋᴀʀᴏ\n"
-                "  ◆ 📋 <code>/listpyf</code> — ᴘʏꜰ ʟɪꜱᴛ ᴅᴇᴋʜᴏ\n"
-                "  ◆ 🗑️ <code>/delpyf NUM</code> — ʀᴇᴍᴏᴠᴇ\n\n"
-            )
-        else:
-            commands_block += (
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃        👤 𝗨𝗦𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 👤        ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 🔑 <code>/redeem YOUR-KEY</code> — ᴀᴄᴛɪᴠᴀᴛᴇ ᴋᴇʏ\n"
-                "  ◆ 👤 <code>/profile</code> — ᴠɪᴇᴡ ᴘʀᴏꜰɪʟᴇ\n"
-                "  ◆ 📊 <code>/status</code> — ʟɪᴠᴇ ꜱᴛᴀᴛᴜꜱ\n"
-                "  ◆ 🔥 <code>/attack IP PORT TIME</code> — ᴀᴛᴛᴀᴄᴋ\n\n"
-            )
-
-        if state == "expired":
-            text = header + (
-                f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                f"┃  👋 ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {escape_html(name)}!  ┃\n"
-                f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃        📊 𝗬𝗢𝗨𝗥 𝗦𝗧𝗔𝗧𝗨𝗦 📊         ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ ⚠️ ꜱᴛᴀᴛᴜꜱ ➪ ❌ ᴋᴇʏ ᴇxᴘɪʀᴇᴅ\n"
-                f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
-                "  ◆ ⚡ ʙᴏᴛ ➪ 🟢 ᴏɴʟɪɴᴇ\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         ⚠️ 𝗔𝗟𝗘𝗥𝗧 ⚠️              ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ⚠️ <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴇxᴘɪʀᴇ ʜᴏ ᴄʜᴜᴋɪ ʜᴀɪ!</b>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       🔑 𝗡𝗘𝗪 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠 🔑       ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ➤ <code>/redeem YOUR-NEW-KEY</code>\n\n"
-                + commands_block
-                + "╔═══════════════════════════════════╗\n"
-                "║    🔑 ɢᴇᴛ ɴᴇᴡ ᴋᴇʏ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ 🎑     ║\n"
-                "╚═══════════════════════════════════╝"
-            )
-        elif state == "none" and not has_key:
-            if is_new:
-                text = header + (
-                    f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    f"┃  👋 ᴡᴇʟᴄᴏᴍᴇ, {escape_html(name)}!            ┃\n"
-                    f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃     🎉 𝗔𝗖𝗖𝗢𝗨𝗡𝗧 𝗖𝗥𝗘𝗔𝗧𝗘𝗗 🎉       ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    "  ✅ ᴀᴀᴘᴋᴀ ᴀᴄᴄᴏᴜɴᴛ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ\n"
-                    "     ᴄʀᴇᴀᴛᴇ ʜᴏ ɢᴀʏᴀ ʜᴀɪ!\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃        📊 𝗬𝗢𝗨𝗥 𝗦𝗧𝗔𝗧𝗨𝗦 📊         ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    "  ◆ ❌ ꜱᴛᴀᴛᴜꜱ ➪ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ\n"
-                    f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
-                    "  ◆ ⚡ ʙᴏᴛ ➪ 🟢 ᴏɴʟɪɴᴇ\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃      🚀 𝗞𝗔𝗜𝗦𝗘 𝗦𝗧𝗔𝗥𝗧 𝗞𝗔𝗥𝗘? 🚀       ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    "  ① <b>ʀᴇᴅᴇᴇᴍ ᴋᴇʏ</b>\n"
-                    "     ➤ <code>/redeem YOUR-KEY</code>\n\n"
-                    "  ② <b>ʟᴀᴜɴᴄʜ ᴀᴛᴛᴀᴄᴋ</b>\n"
-                    "     ➤ <code>/attack IP PORT TIME</code>\n\n"
-                    "  ③ <b>ᴄʜᴇᴄᴋ ᴘʀᴏꜰɪʟᴇ</b>\n"
-                    "     ➤ <code>/profile</code>\n\n"
-                    "  ⚠️ <b>ʙɪɴᴀ ᴋᴇʏ ᴋᴇ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ʟᴀɢᴇɢᴀ!</b>\n\n"
-                    + commands_block
-                    + "╔═══════════════════════════════════╗\n"
-                    "║      ☣️ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ ɴᴏᴡ 📮          ║\n"
-                    "╚═══════════════════════════════════╝"
-                )
-            else:
-                text = header + (
-                    f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    f"┃  👋 ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {escape_html(name)}!     ┃\n"
-                    f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃        📊 𝗬𝗢𝗨𝗥 𝗦𝗧𝗔𝗧𝗨𝗦 📊         ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    "  ◆ ❌ ꜱᴛᴀᴛᴜꜱ ➪ ɴᴏ ᴀᴄᴛɪᴠᴇ ᴋᴇʏ\n"
-                    f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method', 'UDP-BIG'))}</code>\n"
-                    "  ◆ ⚡ ʙᴏᴛ ➪ 🟢 ᴏɴʟɪɴᴇ\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃       🔑 𝗞𝗘𝗬 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗔𝗥𝗢 🔑       ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    "  ➤ <code>/redeem YOUR-KEY</code>\n\n"
-                    + commands_block
-                    + "╔═══════════════════════════════════╗\n"
-                    "║      🔑 ɢᴇᴛ ᴋᴇʏ ᴛᴏ ꜱᴛᴀʀᴛ 🎑           ║\n"
-                    "╚═══════════════════════════════════╝"
-                )
-        elif has_key:
-            u = ensure_dict(data.get("users", {})).get(str(uid), {})
-            total_attacks = safe_int(u.get("total_attacks", 0))
-            role = "👑 ᴏᴡɴᴇʀ" if is_owner(uid) else ("💼 ʀᴇꜱᴇʟʟᴇʀ" if is_reseller(uid) else "👤 ᴜꜱᴇʀ")
-            text = header + (
-                f"\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                f"┃  👋 ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {escape_html(name)}!     ┃\n"
-                f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃     ✅ 𝗞𝗘𝗬 𝗩𝗘𝗥𝗜𝗙𝗜𝗘𝗗 ✅          ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃      👤 𝗬𝗢𝗨𝗥 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 👤         ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                f"  ◆ 👤 ʀᴏʟᴇ ➪ {role}\n"
-                f"  ◆ 🆔 ɪᴅ ➪ <code>{uid}</code>\n"
-                f"  ◆ ⏰ ᴛɪᴍᴇ ʟᴇꜰᴛ ➪ <b>{time_left}</b>\n"
-                f"  ◆ 🎯 ᴛᴏᴛᴀʟ ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{total_attacks}</b>\n\n"
-                + commands_block
-                + "╔═══════════════════════════════════╗\n"
-                "║     🎩 ʀᴇᴀᴅʏ ᴛᴏ ᴀᴛᴛᴀᴄᴋ 🧪          ║\n"
-                "╚═══════════════════════════════════╝"
-            )
-        else:
-            text = header + f"\n👋 <b>ᴡᴇʟᴄᴏᴍᴇ, {escape_html(name)}!</b>\n\n" + commands_block
 
         if is_new:
             def notify_owner():
@@ -1013,28 +953,20 @@ def cmd_start(msg):
                     print(f"Owner notification error: {e}")
             threading.Thread(target=notify_owner, daemon=True).start()
 
-        # ★★★ FIXED: Sticker 5 sec dikhega → phir message → 1.5 sec baad sticker delete ★★★
+        # ★★★ Sticker 5 sec dikhega → phir message → 1.5 sec baad sticker delete ★★★
         def send_with_sticker():
             try:
                 if sticker_msg:
-                    # ★ Sticker already sent. 5 second wait karo ★
                     time.sleep(5.0)
-
-                    # ★ Final message bhejo ★
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
                     print("✅ Final message sent")
-
-                    # ★ 1.5 second aur wait karo ★
                     time.sleep(1.5)
-
-                    # ★ Ab sticker delete karo ★
                     try:
                         bot.delete_message(cid, sticker_msg.message_id)
                         print("🗑️ Sticker deleted successfully")
                     except Exception as del_err:
                         print(f"⚠️ Sticker delete failed: {del_err}")
                 else:
-                    # Sticker nahi hai to seedha message bhejo
                     safe_send(cid, text, reply_markup=kb_main(uid), parse_mode="HTML")
             except Exception as e:
                 print(f"send_with_sticker error: {e}")
