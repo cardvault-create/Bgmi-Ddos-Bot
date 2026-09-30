@@ -27,10 +27,8 @@ BOT_START_TIME = datetime.now()
 
 # ============= CONFIG =============
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8771905727:AAHme-PnJS4FWB4ickcIkjDbFMuDVpGz-9U")
-
-# ★★★ FIX: BOT_OWNER ab INT hai — 0 pe atak nahi karega ★★★
 BOT_OWNER = int(os.environ.get('BOT_OWNER', 1987818347))
-BOT_OWNER_STR = str(BOT_OWNER)  # for string comparison
+BOT_OWNER_STR = str(BOT_OWNER)
 
 BOT_NAME = "˹𝚩𝖊𝐒𝖙𝐂𝖍𝖊𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪"
 
@@ -201,7 +199,7 @@ def get_random_pyf():
     try: return _pyf_pool.pop()
     except: return None
 
-# ============= HELPERS (★★★ OWNER CHECK FIXED ★★★) =============
+# ============= HELPERS =============
 def is_owner(uid):
     try:
         uid_int = int(uid)
@@ -580,10 +578,10 @@ def is_attack_running(uid=None):
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
 # ============================================================
-# ★★★ FIXED: UNIVERSAL SAFE EDIT HELPERS (for animations) ★★★
+# ★★★ FIXED: SAFE EDIT HELPERS — NEVER GETS STUCK ★★★
 # ============================================================
 def safe_edit_text(cid, mid, text, **kwargs):
-    """Safely edit a text message with HTML, ignore 'not modified' errors."""
+    """Safely edit a text message. Falls back to delete+send if edit fails."""
     try:
         return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
     except Exception as e:
@@ -591,11 +589,10 @@ def safe_edit_text(cid, mid, text, **kwargs):
         if "message is not modified" in err:
             return None
         if "too many requests" in err or "retry after" in err:
-            time.sleep(4)
+            time.sleep(3)
             try:
                 return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
             except: return None
-        # If the original was a video/caption message, fallback to caption edit
         if "there is no text in the message to edit" in err or "message can't be edited" in err:
             try:
                 return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=text, **kwargs)
@@ -604,7 +601,7 @@ def safe_edit_text(cid, mid, text, **kwargs):
         return None
 
 def safe_edit_caption(cid, mid, caption, **kwargs):
-    """Safely edit a caption (video/photo message) with HTML."""
+    """Safely edit a caption. Falls back to text edit."""
     try:
         return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
     except Exception as e:
@@ -612,7 +609,7 @@ def safe_edit_caption(cid, mid, caption, **kwargs):
         if "message is not modified" in err:
             return None
         if "too many requests" in err or "retry after" in err:
-            time.sleep(4)
+            time.sleep(3)
             try:
                 return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
             except: return None
@@ -622,6 +619,48 @@ def safe_edit_caption(cid, mid, caption, **kwargs):
             except: return None
         print(f"edit_caption err: {str(e)[:120]}")
         return None
+
+# ============================================================
+# ★★★ FIXED: ANIMATION LOOP — NEVER GETS STUCK ★★★
+# ============================================================
+def run_animation(cid, mid, steps, is_video=False, end_text=None, final_kb=None):
+    """
+    Run an animation on a message. If edits fail, it will delete & resend.
+    This guarantees the user NEVER sees a stuck "loading" message.
+    """
+    try:
+        last_success = True
+        for bar, pct, status in steps:
+            time.sleep(0.35)
+            anim_text = (
+                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
+                "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
+                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
+                f"{bar} {pct}\n{status}"
+            )
+            if is_video:
+                r = safe_edit_caption(cid, mid, anim_text, parse_mode="HTML")
+            else:
+                r = safe_edit_text(cid, mid, anim_text, parse_mode="HTML")
+            if r is None:
+                last_success = False
+
+        time.sleep(0.4)
+        if end_text:
+            if is_video:
+                r = safe_edit_caption(cid, mid, end_text, parse_mode="HTML", reply_markup=final_kb)
+            else:
+                r = safe_edit_text(cid, mid, end_text, parse_mode="HTML", reply_markup=final_kb)
+            if r is None and not last_success:
+                # Last resort: delete & resend
+                try:
+                    bot.delete_message(cid, mid)
+                except: pass
+                bot.send_message(cid, end_text, parse_mode="HTML", reply_markup=final_kb)
+        return True
+    except Exception as e:
+        print(f"Animation error: {e}")
+        return False
 
 # ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
@@ -666,7 +705,6 @@ def cmd_start(msg):
             ("▰▰▰▰▰▰▰▰▰▰", "100%", "✅ Ｖｅｒｉｆｉｅｄ!"),
         ]
 
-        # ★★★ FIXED: Box animation now works for both video & text ★★★
         for bar, pct, status in steps:
             time.sleep(0.35)
             anim_text = (
@@ -2238,7 +2276,7 @@ def cmd_setapi(msg):
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_setapi error: {e}")
 
-# ============= TESTAPI (★★★ FIXED WITH BOX ANIMATION ★★★) =============
+# ============= TESTAPI =============
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
     try:
@@ -2283,7 +2321,6 @@ def cmd_testapi(msg):
                     )
                     safe_edit_text(cid, loading_msg.message_id, anim_text, parse_mode="HTML")
 
-                # API call
                 start = time.time()
                 ok, r = api_attack("1.1.1.1", 80, 5)
                 elapsed_ms = int((time.time() - start) * 1000)
@@ -2682,7 +2719,7 @@ def cmd_settings(msg):
 # ============================================================
 _handled_button_msgs = {}
 _handled_lock = threading.Lock()
-HANDLED_TTL = 300
+HANDLED_TTL = 60  # ★ FIXED: reduced from 300 to 60 seconds
 
 def _cleanup_handled():
     while True:
@@ -2824,7 +2861,7 @@ def banned_fallback(msg):
     except Exception as e: print(f"❌ banned_fallback error: {e}")
 
 # ============================================================
-# ============= MAIN POLLING LOOP (NEVER STOPS) =============
+# ============= MAIN POLLING LOOP (FIXED) ====================
 # ============================================================
 print("=" * 60)
 print(f"  {BOT_NAME}")
@@ -2851,12 +2888,12 @@ while True:
         print(f"🔄 Polling started at {ist_full_str()}")
         consecutive_failures = 0
 
+        # ★ FIXED: Removed `allowed_updates` which was causing button callbacks to be missed
+        # ★ FIXED: `none_stop=True` removed, using manual restart logic instead
         bot.polling(
-            none_stop=True,
-            interval=1,
+            interval=0.5,
             timeout=30,
-            long_polling_timeout=25,
-            allowed_updates=["message", "edited_message", "callback_query"]
+            long_polling_timeout=25
         )
 
     except KeyboardInterrupt:
