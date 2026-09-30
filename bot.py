@@ -2,6 +2,7 @@
 """
 ˹𝚩𝖊𝐒𝖙𝐂𝖍𝖊𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪
 Owner: 1987818347
+Full Fixed Version - No More Stuck/Button/Broadcast Issues
 """
 
 import telebot
@@ -578,18 +579,43 @@ def is_attack_running(uid=None):
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
 # ============================================================
-# ★★★ FIXED: SAFE EDIT HELPERS — NEVER GETS STUCK ★★★
+# ★★★ FIXED: GLOBAL RATE LIMITER — NO MORE FLOOD ERRORS ★★★
 # ============================================================
+_edit_lock = threading.Lock()
+_last_edit_time = [0.0]
+MIN_EDIT_INTERVAL = 1.5  # seconds between any two edits globally
+
+def _wait_for_rate_limit():
+    """Ensure at least MIN_EDIT_INTERVAL between edits globally."""
+    with _edit_lock:
+        now = time.time()
+        diff = now - _last_edit_time[0]
+        if diff < MIN_EDIT_INTERVAL:
+            time.sleep(MIN_EDIT_INTERVAL - diff)
+        _last_edit_time[0] = time.time()
+
+def _handle_flood_error(e):
+    """Extract wait time from Telegram flood error."""
+    err_str = str(e)
+    m = re.search(r'retry after (\d+)', err_str, re.IGNORECASE)
+    if m:
+        wait = int(m.group(1))
+        print(f"⚠️ Flood wait: {wait}s")
+        time.sleep(wait + 1)
+        return True
+    return False
+
 def safe_edit_text(cid, mid, text, **kwargs):
-    """Safely edit a text message. Falls back to delete+send if edit fails."""
+    """Edit text safely with rate limit + fallback."""
+    _wait_for_rate_limit()
     try:
         return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
     except Exception as e:
         err = str(e).lower()
         if "message is not modified" in err:
-            return None
+            return "NOT_MODIFIED"
         if "too many requests" in err or "retry after" in err:
-            time.sleep(3)
+            _handle_flood_error(e)
             try:
                 return bot.edit_message_text(chat_id=cid, message_id=mid, text=text, **kwargs)
             except: return None
@@ -601,15 +627,16 @@ def safe_edit_text(cid, mid, text, **kwargs):
         return None
 
 def safe_edit_caption(cid, mid, caption, **kwargs):
-    """Safely edit a caption. Falls back to text edit."""
+    """Edit caption safely."""
+    _wait_for_rate_limit()
     try:
         return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
     except Exception as e:
         err = str(e).lower()
         if "message is not modified" in err:
-            return None
+            return "NOT_MODIFIED"
         if "too many requests" in err or "retry after" in err:
-            time.sleep(3)
+            _handle_flood_error(e)
             try:
                 return bot.edit_message_caption(chat_id=cid, message_id=mid, caption=caption, **kwargs)
             except: return None
@@ -619,48 +646,6 @@ def safe_edit_caption(cid, mid, caption, **kwargs):
             except: return None
         print(f"edit_caption err: {str(e)[:120]}")
         return None
-
-# ============================================================
-# ★★★ FIXED: ANIMATION LOOP — NEVER GETS STUCK ★★★
-# ============================================================
-def run_animation(cid, mid, steps, is_video=False, end_text=None, final_kb=None):
-    """
-    Run an animation on a message. If edits fail, it will delete & resend.
-    This guarantees the user NEVER sees a stuck "loading" message.
-    """
-    try:
-        last_success = True
-        for bar, pct, status in steps:
-            time.sleep(0.35)
-            anim_text = (
-                "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
-                "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                f"{bar} {pct}\n{status}"
-            )
-            if is_video:
-                r = safe_edit_caption(cid, mid, anim_text, parse_mode="HTML")
-            else:
-                r = safe_edit_text(cid, mid, anim_text, parse_mode="HTML")
-            if r is None:
-                last_success = False
-
-        time.sleep(0.4)
-        if end_text:
-            if is_video:
-                r = safe_edit_caption(cid, mid, end_text, parse_mode="HTML", reply_markup=final_kb)
-            else:
-                r = safe_edit_text(cid, mid, end_text, parse_mode="HTML", reply_markup=final_kb)
-            if r is None and not last_success:
-                # Last resort: delete & resend
-                try:
-                    bot.delete_message(cid, mid)
-                except: pass
-                bot.send_message(cid, end_text, parse_mode="HTML", reply_markup=final_kb)
-        return True
-    except Exception as e:
-        print(f"Animation error: {e}")
-        return False
 
 # ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
@@ -706,7 +691,7 @@ def cmd_start(msg):
         ]
 
         for bar, pct, status in steps:
-            time.sleep(0.35)
+            time.sleep(0.4)
             anim_text = (
                 "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
                 "▌   ☀ ᴄʜᴇᴄᴋɪɴɢ ▱ ɪᴅᴇɴᴛɪᴛʏ ♡               ▐\n"
@@ -772,12 +757,9 @@ def cmd_start(msg):
                 "┣ 🚫 <code>/ban ID REASON</code> — ʙᴀɴ ᴜꜱᴇʀ\n"
                 "┣ ✅ <code>/unban ID</code> — ᴜɴʙᴀɴ ᴜꜱᴇʀ\n"
                 "┣ ⚙️ <code>/feedback on</code> — ꜰᴇᴇᴅʙᴀᴄᴋ ᴏɴ\n"
-                "┣ ⚙️ <code>/feedback off</code> — ꜰᴇᴇᴅʙᴀᴄᴋ ᴏꜰꜰ\n"
                 "┣ 🔧 <code>/maintenance</code> — ᴛᴏɢɢʟᴇ ᴍᴏᴅᴇ\n"
                 "┣ 📡 <code>/setapi URL TOKEN</code> — ꜱᴇᴛ ᴀᴘɪ\n"
                 "┣ 🧪 <code>/testapi</code> — ᴛᴇꜱᴛ ᴀᴘɪ\n"
-                "┣ ⏱️ <code>/setmaxtime SEC</code>\n"
-                "┣ ⏸️ <code>/setcooldown SEC</code>\n"
                 "┗ ⚙️ <code>/settings</code> — ᴀʟʟ ʜᴇʟᴘ\n\n"
             )
         else:
@@ -1340,8 +1322,8 @@ def cmd_attack(msg):
 
         def auto_update_attack():
             last_text = None
-            for _ in range(dur // 3 + 5):
-                time.sleep(3)
+            for _ in range(dur // 5 + 5):
+                time.sleep(5)
                 if _stop_flags.get(attack_id, False): break
                 now = ist_now()
                 if now >= end_time: break
@@ -1441,6 +1423,8 @@ def do_status(msg):
             status_msg = bot.send_message(cid, "📊 ʟᴏᴀᴅɪɴɢ ꜱᴛᴀᴛᴜꜱ...")
         except Exception as e:
             print(f"Status send error: {e}"); return
+
+        current_mid = [status_msg.message_id]  # mutable holder
 
         def build_status():
             try:
@@ -1603,18 +1587,37 @@ def do_status(msg):
                 traceback.print_exc()
                 return "⚠️ <b>ꜱᴛᴀᴛᴜꜱ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ</b>"
 
-        safe_edit_text(cid, status_msg.message_id, build_status(), parse_mode="HTML")
+        r = safe_edit_text(cid, current_mid[0], build_status(), parse_mode="HTML")
+        if r is None:
+            # Fallback: delete + resend
+            try: bot.delete_message(cid, current_mid[0])
+            except: pass
+            try:
+                nm = bot.send_message(cid, build_status(), parse_mode="HTML")
+                current_mid[0] = nm.message_id
+            except: return
 
         def auto_update():
             last_text = None
-            for _ in range(400):
-                time.sleep(3)
+            for _ in range(2000):
+                time.sleep(5)  # ★★★ 5 SECOND AUTO-UPDATE ★★★
                 try:
                     new_text = build_status()
                     if new_text != last_text:
-                        safe_edit_text(cid, status_msg.message_id, new_text, parse_mode="HTML")
-                        last_text = new_text
-                except: break
+                        r = safe_edit_text(cid, current_mid[0], new_text, parse_mode="HTML")
+                        if r is None:
+                            # Fallback: delete + resend
+                            try: bot.delete_message(cid, current_mid[0])
+                            except: pass
+                            try:
+                                nm = bot.send_message(cid, new_text, parse_mode="HTML")
+                                current_mid[0] = nm.message_id
+                            except: pass
+                        elif r != "NOT_MODIFIED":
+                            last_text = new_text
+                except Exception as e:
+                    print(f"auto_update_status err: {e}")
+                    time.sleep(2)
 
         threading.Thread(target=auto_update, daemon=True).start()
     except Exception as e:
@@ -1635,6 +1638,8 @@ def do_profile(msg):
 
         try: profile_msg = bot.send_message(cid, "👤 ʟᴏᴀᴅɪɴɢ ᴘʀᴏꜰɪʟᴇ...")
         except Exception as e: print(f"Profile send error: {e}"); return
+
+        current_mid = [profile_msg.message_id]
 
         def build_profile():
             try:
@@ -1721,18 +1726,35 @@ def do_profile(msg):
                 print(f"Build Profile Error: {e}"); traceback.print_exc()
                 return "⚠️ <b>ᴘʀᴏꜰɪʟᴇ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ</b>"
 
-        safe_edit_text(cid, profile_msg.message_id, build_profile(), parse_mode="HTML")
+        r = safe_edit_text(cid, current_mid[0], build_profile(), parse_mode="HTML")
+        if r is None:
+            try: bot.delete_message(cid, current_mid[0])
+            except: pass
+            try:
+                nm = bot.send_message(cid, build_profile(), parse_mode="HTML")
+                current_mid[0] = nm.message_id
+            except: return
 
         def auto_update_profile():
             last_text = None
-            for _ in range(400):
-                time.sleep(3)
+            for _ in range(2000):
+                time.sleep(5)  # ★★★ 5 SECOND ★★★
                 try:
                     new_text = build_profile()
                     if new_text != last_text:
-                        safe_edit_text(cid, profile_msg.message_id, new_text, parse_mode="HTML")
-                        last_text = new_text
-                except: break
+                        r = safe_edit_text(cid, current_mid[0], new_text, parse_mode="HTML")
+                        if r is None:
+                            try: bot.delete_message(cid, current_mid[0])
+                            except: pass
+                            try:
+                                nm = bot.send_message(cid, new_text, parse_mode="HTML")
+                                current_mid[0] = nm.message_id
+                            except: pass
+                        elif r != "NOT_MODIFIED":
+                            last_text = new_text
+                except Exception as e:
+                    print(f"auto_update_profile err: {e}")
+                    time.sleep(2)
 
         threading.Thread(target=auto_update_profile, daemon=True).start()
     except Exception as e:
@@ -1954,6 +1976,8 @@ def do_users(msg):
         users_msg = safe_send(msg.chat.id, "👥 ʟᴏᴀᴅɪɴɢ ʟɪᴠᴇ ᴜꜱᴇʀꜱ...")
         if not users_msg: return
 
+        current_mid = [users_msg.message_id]
+
         def build_users_live():
             try:
                 now = ist_now()
@@ -1998,18 +2022,35 @@ def do_users(msg):
             except Exception as e:
                 print(f"Build users error: {e}"); return "⚠️ ᴜꜱᴇʀꜱ ᴛᴇᴍᴘᴏʀᴀʀɪʟʏ ᴜɴᴀᴠᴀɪʟᴀʙʟᴇ"
 
-        safe_edit_text(users_msg.chat.id, users_msg.message_id, build_users_live(), parse_mode="HTML")
+        r = safe_edit_text(users_msg.chat.id, current_mid[0], build_users_live(), parse_mode="HTML")
+        if r is None:
+            try: bot.delete_message(users_msg.chat.id, current_mid[0])
+            except: pass
+            try:
+                nm = bot.send_message(users_msg.chat.id, build_users_live(), parse_mode="HTML")
+                current_mid[0] = nm.message_id
+            except: return
 
         def auto_update_users():
             last_text = None
-            for _ in range(200):
-                time.sleep(3)
+            for _ in range(1000):
+                time.sleep(5)  # ★★★ 5 SECOND ★★★
                 try:
                     new_text = build_users_live()
                     if new_text != last_text:
-                        safe_edit_text(users_msg.chat.id, users_msg.message_id, new_text, parse_mode="HTML")
-                        last_text = new_text
-                except: break
+                        r = safe_edit_text(users_msg.chat.id, current_mid[0], new_text, parse_mode="HTML")
+                        if r is None:
+                            try: bot.delete_message(users_msg.chat.id, current_mid[0])
+                            except: pass
+                            try:
+                                nm = bot.send_message(users_msg.chat.id, new_text, parse_mode="HTML")
+                                current_mid[0] = nm.message_id
+                            except: pass
+                        elif r != "NOT_MODIFIED":
+                            last_text = new_text
+                except Exception as e:
+                    print(f"auto_update_users err: {e}")
+                    time.sleep(2)
 
         threading.Thread(target=auto_update_users, daemon=True).start()
     except Exception as e:
@@ -2018,7 +2059,9 @@ def do_users(msg):
 @bot.message_handler(commands=['users'])
 def cmd_users(msg): do_users(msg)
 
-# ============= BROADCAST =============
+# ============================================================
+# ★★★ FIXED BROADCAST — RETRY + DELAY + FLOOD HANDLING ★★★
+# ============================================================
 @bot.message_handler(commands=['broadcast'])
 def cmd_broadcast(msg):
     try:
@@ -2037,7 +2080,6 @@ def cmd_broadcast(msg):
 
         text = p[1]
         total = len(ensure_dict(data.get("users", {})))
-        sent = 0; failed = 0; banned_skip = 0
 
         broadcast_header = (
             "╔══════════════════════════════╗\n"
@@ -2057,23 +2099,52 @@ def cmd_broadcast(msg):
             parse_mode="HTML")
 
         def do_broadcast():
-            nonlocal sent, failed, banned_skip
-            for i, uid_str in enumerate(list(ensure_dict(data.get("users", {})).keys()), 1):
+            sent = 0
+            failed = 0
+            banned_skip = 0
+            all_uids = list(ensure_dict(data.get("users", {})).keys())
+
+            for i, uid_str in enumerate(all_uids, 1):
                 try:
                     uid_int = int(uid_str)
                 except (ValueError, TypeError):
                     failed += 1
                     continue
 
+                # Skip banned
                 if uid_str in ensure_dict(data.get("banned_users", {})):
-                    banned_skip += 1; continue
+                    banned_skip += 1
+                    continue
 
-                try:
-                    bot.send_message(uid_int, full_message, parse_mode="HTML")
-                    sent += 1
-                except Exception as e:
+                # ★★★ RETRY LOGIC: 3 attempts per user ★★★
+                success = False
+                for attempt in range(3):
+                    try:
+                        bot.send_message(uid_int, full_message, parse_mode="HTML")
+                        success = True
+                        sent += 1
+                        break
+                    except Exception as e:
+                        err_str = str(e).lower()
+                        # If user blocked bot / chat not found → don't retry
+                        if "blocked" in err_str or "chat not found" in err_str or "user is deactivated" in err_str or "kicked" in err_str:
+                            failed += 1
+                            break
+                        # If flood → wait and retry
+                        if "too many requests" in err_str or "retry after" in err_str:
+                            m = re.search(r'retry after (\d+)', err_str)
+                            wait = int(m.group(1)) if m else 5
+                            print(f"⚠️ Broadcast flood, waiting {wait}s")
+                            time.sleep(wait + 1)
+                            continue
+                        # Other error → don't retry
+                        failed += 1
+                        break
+
+                if not success and attempt == 2:
                     failed += 1
 
+                # ★★★ Update status every 5 users ★★★
                 if i % 5 == 0 or i == total:
                     try:
                         safe_edit_text(status_msg.chat.id, status_msg.message_id,
@@ -2083,7 +2154,9 @@ def cmd_broadcast(msg):
                             f"🚫 ʙᴀɴɴᴇᴅ: {banned_skip}",
                             parse_mode="HTML")
                     except: pass
-                time.sleep(0.1)
+
+                # ★★★ 0.5s delay between users (safe rate) ★★★
+                time.sleep(0.5)
 
             try:
                 safe_edit_text(status_msg.chat.id, status_msg.message_id,
@@ -2231,31 +2304,8 @@ def cmd_setapi(msg):
                 "╔══════════════════════════════╗\n"
                 "║       📡 𝗔𝗣𝗜 𝗦𝗘𝗧𝗨𝗣 𝗚𝗨𝗜𝗗𝗘 📡            ║\n"
                 "╚══════════════════════════════╝\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         📌 𝗨𝗦𝗔𝗚𝗘 𝗙𝗢𝗥𝗠𝗔𝗧\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                 "<code>/setapi URL TOKEN [METHOD] [GEO]</code>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         🔗 𝗖𝗨𝗥𝗟 𝗘𝗫𝗔𝗠𝗣𝗟𝗘\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "<code>https://stresser.works/api/start?token=TOKEN&host=1.2.3.4&port=80&time=2&method=UDP-BIG&geolocation=ALL</code>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         🔑 𝗪𝗛𝗔𝗧 𝗧𝗢 𝗣𝗔𝗦𝗦\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "┣ 🌐 <b>URL</b> ➪ <code>https://stresser.works/api/start</code>\n"
-                "┣ 🔐 <b>TOKEN</b> ➪ <code>a05d4ed4...747a</code>\n"
-                "┣ 🎯 <b>METHOD</b> ➪ <code>UDP-BIG</code>\n"
-                "┗ 🌍 <b>GEO</b> ➪ <code>ALL</code>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         ✅ 𝗘𝗫𝗔𝗠𝗣𝗟𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "<code>/setapi https://stresser.works/api/start a05d4ed492744534ab9307b8d9930c2f6a3a8ffa6eea85d07825ec150215747a UDP-BIG ALL</code>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃         📋 𝗠𝗘𝗧𝗛𝗢𝗗𝗦 & 𝗚𝗘𝗢\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "┣ UDP-BIG, UDP, TCP, HTTP\n"
-                "┣ MIX, GAME, AMP\n"
-                "┗ ALL, INDIA, US, EU, ASIA",
+                "<code>/setapi https://stresser.works/api/start a05d4ed4... UDP-BIG ALL</code>",
                 parse_mode="HTML")
             return
 
@@ -2270,9 +2320,7 @@ def cmd_setapi(msg):
             f"┣ 🌐 ᴜʀʟ ➪ <code>{escape_html(p[1])}</code>\n"
             f"┣ 🔐 ᴛᴏᴋᴇɴ ➪ <code>{escape_html(p[2][:25])}...</code>\n"
             f"┣ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n"
-            f"┗ 🌍 ɢᴇᴏ ➪ <code>{escape_html(get_setting('api_geolocation','ALL'))}</code>\n\n"
-            "📌 <b>ᴀᴘɪ ᴛᴇꜱᴛ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ:</b>\n"
-            "➤ <code>/testapi</code>",
+            f"┗ 🌍 ɢᴇᴏ ➪ <code>{escape_html(get_setting('api_geolocation','ALL'))}</code>",
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_setapi error: {e}")
 
@@ -2281,12 +2329,9 @@ def cmd_setapi(msg):
 def cmd_testapi(msg):
     try:
         uid = msg.from_user.id
-        print(f"🧪 /testapi from {uid} | BOT_OWNER={BOT_OWNER} | is_owner={is_owner(uid)}")
-
         if not is_owner(uid):
             safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!", parse_mode="HTML")
             return
-
         cid = msg.chat.id
 
         try:
@@ -2297,9 +2342,7 @@ def cmd_testapi(msg):
                 "▱▱▱▱▱▱▱▱▱▱ 0%\n"
                 "⏳ 𝐒𝐭𝐚𝐫𝐭𝐢𝐧𝐠...", 
                 parse_mode="HTML")
-        except Exception as e:
-            print(f"❌ Initial test reply failed: {e}")
-            return
+        except: return
 
         def run_test():
             try:
@@ -2310,7 +2353,6 @@ def cmd_testapi(msg):
                     ("▰▰▰▰▰▰▰▱▱▱", "70%", "⚙️ ʟᴏᴀᴅɪɴɢ ʀᴇꜱᴘᴏɴꜱᴇ..."),
                     ("▰▰▰▰▰▰▰▰▰▱", "90%", "🔄 ᴘʀᴏᴄᴇꜱꜱɪɴɢ ᴅᴀᴛᴀ..."),
                 ]
-                
                 for bar, pct, status in steps:
                     time.sleep(0.7)
                     anim_text = (
@@ -2324,76 +2366,39 @@ def cmd_testapi(msg):
                 start = time.time()
                 ok, r = api_attack("1.1.1.1", 80, 5)
                 elapsed_ms = int((time.time() - start) * 1000)
-                print(f"🧪 API test result: ok={ok} | elapsed={elapsed_ms}ms | resp={r[:100]}")
 
                 time.sleep(0.8)
-
-                final_anim = (
-                    "▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜\n"
-                    "▌   🧪 ᴛᴇꜱᴛɪɴɢ ▱ ᴀᴘɪ ♡                  ▐\n"
-                    "▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟\n\n"
-                    "▰▰▰▰▰▰▰▰▰▰ 100%\n"
-                    "✅ Ｔｅｓｔ Ｃｏｍｐｌｅｔｅ!"
-                )
-                safe_edit_text(cid, loading_msg.message_id, final_anim, parse_mode="HTML")
-
-                time.sleep(0.5)
 
                 if ok:
                     final_text = (
                         "╔══════════════════════════╗\n"
                         "║       ✅ 𝗔𝗣𝗜 𝗧𝗘𝗦𝗧 𝗣𝗔𝗦𝗦 ✅        ║\n"
                         "╚══════════════════════════╝\n\n"
-                        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                        "┃  💎 𝗔𝗣𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 💎\n"
-                        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                         f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🟢 <b>ᴏɴʟɪɴᴇ</b>\n"
                         f"┣ ⏱️ ʟᴀᴛᴇɴᴄʏ ➪ <b>{elapsed_ms}ᴍꜱ</b>\n"
-                        f"┣ 📡 ᴛᴇꜱᴛ ɪᴘ ➪ <code>1.1.1.1:80</code>\n"
-                        f"┗ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n\n"
-                        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                        "┃  📩 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 𝗗𝗔𝗧𝗔\n"
-                        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                        f"<code>{escape_html(r[:400])}</code>\n\n"
-                        "╔══════════════════════════╗\n"
-                        "║      🟢 𝗔𝗣𝗜 𝗪𝗢𝗥𝗞𝗜𝗡𝗚 🟢       ║\n"
-                        "╚══════════════════════════╝"
+                        f"┗ 📩 ʀᴇꜱᴘᴏɴꜱᴇ ➪ <code>{escape_html(r[:200])}</code>"
                     )
                 else:
                     final_text = (
                         "╔══════════════════════════╗\n"
-                        "║                  ❌ 𝗔𝗣𝗜 𝗧𝗘𝗦𝗧 𝗙𝗔𝗜𝗟 🧩             ║\n"
+                        "║       ❌ 𝗔𝗣𝗜 𝗧𝗘𝗦𝗧 𝗙𝗔𝗜𝗟 ❌        ║\n"
                         "╚══════════════════════════╝\n\n"
-                        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                        "┃                 🪬 𝗔𝗣𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘 📈\n"
-                        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                         f"┣ ⚡ ꜱᴛᴀᴛᴜꜱ ➪ 🔴 <b>ꜰᴀɪʟᴇᴅ</b>\n"
                         f"┣ ⏱️ ʟᴀᴛᴇɴᴄʏ ➪ <b>{elapsed_ms}ᴍꜱ</b>\n"
-                        f"┣ 📡 ᴛᴇꜱᴛ ɪᴘ ➪ <code>1.1.1.1:80</code>\n"
-                        f"┗ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n\n"
-                        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                        "┃                  📩 𝗘𝗥𝗥𝗢𝗥 𝗗𝗔𝗧𝗔\n"
-                        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                        f"<code>{escape_html(r[:400])}</code>\n\n"
-                        "╔══════════════════════════╗\n"
-                        "║                🔴 𝗔𝗣𝗜 𝗕𝗥𝗢𝗞𝗘𝗡 ⚫                  ║\n"
-                        "╚══════════════════════════╝"
+                        f"┗ 📩 ᴇʀʀᴏʀ ➪ <code>{escape_html(r[:200])}</code>"
                     )
 
-                safe_edit_text(cid, loading_msg.message_id, final_text, parse_mode="HTML")
+                r2 = safe_edit_text(cid, loading_msg.message_id, final_text, parse_mode="HTML")
+                if r2 is None:
+                    try:
+                        bot.send_message(cid, final_text, parse_mode="HTML")
+                    except: pass
             except Exception as e:
                 print(f"❌ Testapi thread error: {e}")
-                traceback.print_exc()
-                try:
-                    bot.send_message(cid, f"❌ ᴛᴇꜱᴛ ᴇʀʀᴏʀ: <code>{escape_html(str(e)[:200])}</code>", parse_mode="HTML")
-                except: pass
 
         threading.Thread(target=run_test, daemon=True).start()
-        print(f"✅ Testapi thread started for {uid}")
-        
     except Exception as e: 
         print(f"❌ cmd_testapi error: {e}")
-        traceback.print_exc()
 
 @bot.message_handler(commands=['setmaxtime'])
 def cmd_setmaxtime(msg):
@@ -2426,19 +2431,9 @@ def cmd_maintenance(msg):
         cur = get_setting('maintenance_mode', False)
         set_setting("maintenance_mode", not cur)
         if not cur:
-            safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║             📟 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 𝗢𝗡 📡          ║\n"
-                "╚══════════════════════════╝\n\n"
-                "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴇɴᴀʙʟᴇᴅ!</b>",
-                parse_mode="HTML")
+            safe_reply(msg, "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴇɴᴀʙʟᴇᴅ!</b>", parse_mode="HTML")
         else:
-            safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║            🥎 𝗠𝗔𝗜𝗡𝗧𝗘𝗡𝗔𝗡𝗖𝗘 𝗢𝗙𝗙 🪅         ║\n"
-                "╚══════════════════════════╝\n\n"
-                "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴅɪꜱᴀʙʟᴇᴅ!</b>",
-                parse_mode="HTML")
+            safe_reply(msg, "✅ <b>ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ᴅɪꜱᴀʙʟᴇᴅ!</b>", parse_mode="HTML")
     except Exception as e: print(f"❌ maintenance error: {e}")
 
 # ============= STICKER/VIDEO =============
@@ -2450,7 +2445,6 @@ def cmd_liststickers(msg):
         if not stickers: safe_reply(msg, "❄ ᴋᴏɪ ꜱᴛɪᴄᴋᴇʀ ɴᴀʜɪ."); return
         txt = "❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥𝗦\n"
         for i, s in enumerate(stickers, 1): txt += f"{i}. {s}\n"
-        txt += f"\n🔹 ᴛᴏᴛᴀʟ {len(stickers)}"
         safe_reply(msg, txt)
     except Exception as e: print(f"❌ liststickers error: {e}")
 
@@ -2689,24 +2683,6 @@ def cmd_settings(msg):
             "┣ /status ➪ ʟɪᴠᴇ ꜱᴛᴀᴛᴜꜱ\n"
             "┣ /profile ➪ ʏᴏᴜʀ ᴘʀᴏꜰɪʟᴇ\n"
             "┗ /attack IP PORT TIME ➪ ᴀᴛᴛᴀᴄᴋ\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃              ❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "┣ ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ ➪ ᴀᴅᴅ\n"
-            "┣ /removesticker NUM\n"
-            "┗ /liststickers\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃                 📹 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "┣ ꜱᴇɴᴅ ᴠɪᴅᴇᴏ ➪ ᴀᴅᴅ\n"
-            "┣ /listvideo\n"
-            "┗ /delvideo NUM\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃                       🎬 𝗣𝗬𝗙 𝗩𝗜𝗗𝗘𝗢\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "┣ /addpyf ➪ ᴀᴅᴅ ᴘʏꜰ\n"
-            "┣ /listpyf ➪ ʟɪꜱᴛ\n"
-            "┗ /delpyf NUM ➪ ᴅᴇʟᴇᴛᴇ\n\n"
             "╔══════════════════════════╗\n"
             "║                🦪 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠              ║\n"
             "╚══════════════════════════╝"
@@ -2715,33 +2691,8 @@ def cmd_settings(msg):
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
 # ============================================================
-# ========== UNIVERSAL BUTTON HANDLER (FULLY FIXED) ==========
+# ★★★ UNIVERSAL BUTTON HANDLER — SIMPLIFIED, NO STUCK ★★★
 # ============================================================
-_handled_button_msgs = {}
-_handled_lock = threading.Lock()
-HANDLED_TTL = 60  # ★ FIXED: reduced from 300 to 60 seconds
-
-def _cleanup_handled():
-    while True:
-        try:
-            time.sleep(60)
-            now = time.time()
-            with _handled_lock:
-                expired = [k for k, t in _handled_button_msgs.items() if now - t > HANDLED_TTL]
-                for k in expired:
-                    _handled_button_msgs.pop(k, None)
-        except Exception as e:
-            print(f"cleanup error: {e}")
-
-threading.Thread(target=_cleanup_handled, daemon=True).start()
-
-def _is_already_handled(msg_key):
-    with _handled_lock:
-        if msg_key in _handled_button_msgs:
-            return True
-        _handled_button_msgs[msg_key] = time.time()
-        return False
-
 @bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
     try:
@@ -2753,10 +2704,6 @@ def universal_button_handler(msg):
         if not btype:
             return
 
-        msg_key = (msg.chat.id, msg.message_id)
-        if _is_already_handled(msg_key):
-            return
-
         print(f"🔘 BUTTON: uid={uid} type={btype}")
 
         if is_banned(uid):
@@ -2765,13 +2712,8 @@ def universal_button_handler(msg):
 
         if btype == "ATTACK":
             safe_reply(msg,
-                "┌┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┐\n"
-                "┊  🪼 𝐀𝐓𝐓𝐀𝐂𝐊 𝐂𝐎𝐌𝐌𝐀𝐍𝐃    ┊\n"
-                "└┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┘\n\n"
-                "📌 <b>ᴜꜱᴀɢᴇ</b> ➪ \n"
-                "<code>/attack IP PORT TIME</code>\n\n"
-                "📝 <b>ᴇxᴀᴍᴘʟᴇ</b> ➪ \n"
-                "<code>/attack 1.2.3.4 80 60</code>",
+                "📌 <b>ᴜꜱᴀɢᴇ:</b> <code>/attack IP PORT TIME</code>\n"
+                "📝 <b>ᴇxᴀᴍᴘʟᴇ:</b> <code>/attack 1.2.3.4 80 60</code>",
                 parse_mode="HTML")
             return
 
@@ -2785,21 +2727,13 @@ def universal_button_handler(msg):
             if not is_owner(uid):
                 safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║          📊 🅾︎🆆︎🅽︎🅴︎🆁︎ 🅿︎🅰︎🅽︎🅴︎🅻︎ 🔓       ║\n"
-                "╚══════════════════════════╝\n\n"
-                "✅ <b>ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ</b>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃                ⚡ ᴜꜱᴇ ʙᴜᴛᴛᴏɴꜱ ʙᴇʟᴏᴡ\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+                "📊 <b>ᴏᴡɴᴇʀ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ</b>\n"
+                "⚡ ᴜꜱᴇ ʙᴜᴛᴛᴏɴꜱ ʙᴇʟᴏᴡ",
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
         if btype == "REDEEM":
             safe_reply(msg,
-                "╔══════════════════════════════╗\n"
-                "║   🔑 𝗥𝗘𝗗𝗘𝗘𝗠 𝗞𝗘𝗬 🔑               ║\n"
-                "╚══════════════════════════════╝\n\n"
                 "📝 <code>/redeem YOUR-KEY</code>",
                 parse_mode="HTML")
             return
@@ -2808,13 +2742,9 @@ def universal_button_handler(msg):
             if not is_owner(uid):
                 safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║       🔑 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗞𝗘𝗬 𝗠𝗔𝗞𝗘𝗥 🎛️          ║\n"
-                "╚══════════════════════════╝\n\n"
-                "📝 <code>/genkey 𝗗𝗨𝗥𝗔𝗧𝗜𝗢𝗡 [𝗔𝗠𝗢𝗨𝗡𝗧] [𝗡𝗔𝗠𝗘]</code>\n\n"
-                "📌 ᴇxᴀᴍᴘʟᴇꜱ:\n"
-                "<code>/genkey 1d 5</code>\n"
-                "<code>/genkey 1month 10 VIP</code>",
+                "📝 <code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
+                "📌 <code>/genkey 1d 5</code>\n"
+                "📌 <code>/genkey 1month 10 VIP</code>",
                 parse_mode="HTML")
             return
 
@@ -2832,11 +2762,7 @@ def universal_button_handler(msg):
             if not is_owner(uid):
                 safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║       📢 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 📢        ║\n"
-                "╚══════════════════════════╝\n\n"
-                "📝 <code>/broadcast YOUR MESSAGE</code>\n\n"
-                "📌 <code>/broadcast 🔥 New update!</code>",
+                "📝 <code>/broadcast YOUR MESSAGE</code>",
                 parse_mode="HTML")
             return
 
@@ -2852,71 +2778,74 @@ def universal_button_handler(msg):
         HEALTH["total_errors"] += 1
         print(f"❌ universal_button_handler error: {e}")
         traceback.print_exc()
-        try: safe_reply(msg, "❌ ᴇʀʀᴏʀ, ᴛʀʏ ᴀɢᴀɪɴ")
-        except: pass
 
-@bot.message_handler(func=lambda m: is_banned(m.from_user.id), content_types=['text'])
-def banned_fallback(msg):
-    try: check_ban(msg)
-    except Exception as e: print(f"❌ banned_fallback error: {e}")
-
-# ============================================================
-# ============= MAIN POLLING LOOP (FIXED) ====================
-# ============================================================
+# ============= MAIN POLLING (THREAD-BASED, NEVER STOPS) =============
 print("=" * 60)
 print(f"  {BOT_NAME}")
 print("=" * 60)
-print(f"  👑 Owner: {BOT_OWNER} (type: {type(BOT_OWNER).__name__})")
+print(f"  👑 Owner: {BOT_OWNER}")
 print(f"  🔑 Token: {get_setting('api_token', DEFAULT_API_TOKEN)[:20]}...")
 print(f"  🎯 Method: {get_setting('api_method', 'UDP-BIG')}")
 print(f"  🕐 IST Time: {ist_full_str()}")
-print(f"  ✅ Owner check test: {is_owner(BOT_OWNER)}")
+print(f"  ✅ Owner check: {is_owner(BOT_OWNER)}")
 print("=" * 60)
 print("  ✅ Bot running")
 print("=" * 60)
 
-consecutive_failures = 0
-
-while True:
-    try:
+def polling_worker():
+    """Main polling in a separate thread with auto-restart."""
+    consecutive_failures = 0
+    while True:
         try:
-            bot.remove_webhook()
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"⚠️ Webhook remove warning: {str(e)[:100]}")
-
-        print(f"🔄 Polling started at {ist_full_str()}")
-        consecutive_failures = 0
-
-        # ★ FIXED: Removed `allowed_updates` which was causing button callbacks to be missed
-        # ★ FIXED: `none_stop=True` removed, using manual restart logic instead
-        bot.polling(
-            interval=0.5,
-            timeout=30,
-            long_polling_timeout=25
-        )
-
-    except KeyboardInterrupt:
-        print("\n🛑 Bot stopped by user (Ctrl+C).")
-        break
-    except Exception as e:
-        consecutive_failures += 1
-        print(f"⚠️ Polling Error #{consecutive_failures}: {str(e)[:200]}")
-        traceback.print_exc()
-
-        if consecutive_failures < 3:
-            sleep_time = 2
-        elif consecutive_failures < 10:
-            sleep_time = 5
-        else:
-            sleep_time = 15
-
-        print(f"⏳ Restarting in {sleep_time}s...")
-        time.sleep(sleep_time)
-
-        if consecutive_failures % 20 == 0:
             try:
-                bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
-                print("🔧 Bot instance re-initialized")
-            except Exception as reinit_err:
-                print(f"❌ Re-init failed: {reinit_err}")
+                bot.remove_webhook()
+                time.sleep(0.5)
+            except Exception as e:
+                print(f"⚠️ Webhook remove warning: {str(e)[:100]}")
+
+            print(f"🔄 Polling started at {ist_full_str()}")
+            consecutive_failures = 0
+
+            # ★★★ FIXED: No allowed_updates, no none_stop ★★★
+            bot.polling(
+                interval=0.5,
+                timeout=30,
+                long_polling_timeout=25
+            )
+
+        except Exception as e:
+            consecutive_failures += 1
+            print(f"⚠️ Polling Error #{consecutive_failures}: {str(e)[:200]}")
+
+            if consecutive_failures < 3:
+                sleep_time = 1
+            elif consecutive_failures < 10:
+                sleep_time = 3
+            else:
+                sleep_time = 10
+
+            print(f"⏳ Restarting in {sleep_time}s...")
+            time.sleep(sleep_time)
+
+            if consecutive_failures % 20 == 0:
+                try:
+                    global bot
+                    bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
+                    print("🔧 Bot re-initialized")
+                except Exception as reinit_err:
+                    print(f"❌ Re-init failed: {reinit_err}")
+
+# Start polling in background thread
+polling_thread = threading.Thread(target=polling_worker, daemon=True)
+polling_thread.start()
+
+# Keep main thread alive
+try:
+    while True:
+        time.sleep(60)
+        if not polling_thread.is_alive():
+            print("⚠️ Polling thread died, restarting...")
+            polling_thread = threading.Thread(target=polling_worker, daemon=True)
+            polling_thread.start()
+except KeyboardInterrupt:
+    print("\n🛑 Bot stopped by user.")
