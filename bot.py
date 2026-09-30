@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙄𝚇˼ ♪
+˹𝚩𝖊𝐒𝖙𝐂𝖍𝐄𝖆𝐓 ✘ 𝙳𝐃𝙾𝚂 𝙾𝙉𝙸𝚇˼ ♪
 Owner: 1987818347
 """
 
@@ -13,6 +13,7 @@ import sys
 import json
 import random
 import string
+import unicodedata
 from datetime import datetime, timedelta
 import time
 import requests
@@ -40,12 +41,8 @@ DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟�
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
 
 def dev_btn_kb():
-    """Return inline keyboard with developer contact button"""
     kb = InlineKeyboardMarkup()
-    kb.add(InlineKeyboardButton(
-        DEV_BUTTON_TEXT,
-        url=f"https://t.me/{DEVELOPER_USERNAME}"
-    ))
+    kb.add(InlineKeyboardButton(DEV_BUTTON_TEXT, url=f"https://t.me/{DEVELOPER_USERNAME}"))
     return kb
 
 HEALTH = {
@@ -283,68 +280,79 @@ def safe_send(cid, text, **kwargs):
         print(f"❌ Safe send error: {e}"); return None
 
 # ============================================================
-# ============= BUTTON MATCHING (FULLY FIXED) ================
+# ============= BUTTON MATCHING (UNICODE FIXED) =============
 # ============================================================
 def normalize_text(text):
-    """Remove invisible unicode chars and normalize for matching"""
+    """
+    Convert any Unicode bold/mathematical/fullwidth chars to plain ASCII.
+    Example: '🔥 𝐀𝐓𝐓𝐀𝐂𝐊'  →  '🔥 ATTACK'
+             '👑 𝐎𝐖𝐍𝐄𝐑 𝐏𝐀𝐍𝐄𝐋'  →  '👑 OWNER PANEL'
+    """
     if not text: return ""
     try:
-        # Remove all zero-width and invisible characters
-        for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0', '\u2028', '\u2029']:
+        # Step 1: Remove invisible / zero-width chars
+        for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0',
+                   '\u2028', '\u2029', '\u2060', '\u180e']:
             text = text.replace(ch, '')
+
+        # Step 2: NFKD normalize — this converts 𝐀 → A, 𝘼 → A, etc.
+        text = unicodedata.normalize('NFKD', text)
+
+        # Step 3: Drop combining marks (accents leftover)
+        text = ''.join(c for c in text if not unicodedata.combining(c))
+
+        # Step 4: Uppercase + strip
         return text.strip().upper()
-    except: return ""
+    except Exception as e:
+        print(f"normalize_text error: {e}")
+        return text.strip().upper() if text else ""
+
 
 def get_button_type(text):
     """
-    Robust button type detection using keyword matching.
-    Order matters: specific first, generic last.
+    Detect button by keywords. Order matters — specific first.
     """
     if not text: return None
     t = normalize_text(text)
 
-    # Helper: check if all keywords present
     def has(*kws):
         return all(k in t for k in kws)
 
-    # ====== OWNER PANEL (most specific) ======
+    # OWNER PANEL
     if has("OWNER", "PANEL"): return "OWNER_PANEL"
-    if has("ᴏᴡɴᴇʀ", "ᴘᴀɴᴇʟ"): return "OWNER_PANEL"
 
-    # ====== GENERATE KEY ======
+    # GENERATE KEY
     if has("GEN", "KEY"): return "GEN_KEY"
 
-    # ====== BROADCAST ======
+    # BROADCAST
     if "BROADCAST" in t: return "BROADCAST"
 
-    # ====== SETTINGS ======
+    # SETTINGS
     if "SETTINGS" in t: return "SETTINGS"
 
-    # ====== PROFILE ======
+    # PROFILE
     if "PROFILE" in t: return "PROFILE"
 
-    # ====== STATUS ======
+    # STATUS
     if "STATUS" in t: return "STATUS"
 
-    # ====== STATS ======
+    # STATS
     if "STATS" in t: return "STATS"
 
-    # ====== USERS ======
+    # USERS
     if "USERS" in t: return "USERS"
 
-    # ====== ATTACK (must NOT contain STATS) ======
+    # ATTACK (without STATS)
     if "ATTACK" in t and "STATS" not in t: return "ATTACK"
 
-    # ====== REDEEM ======
+    # REDEEM
     if "REDEEM" in t: return "REDEEM"
 
-    # ====== CLOSE ======
+    # CLOSE
     if "CLOSE" in t: return "CLOSE"
 
     return None
 
-# Global set to track recently handled button messages (anti double-fire)
-_handled_button_msgs = set()
 
 # ============= HEALTH MONITOR =============
 def api_health_check():
@@ -2179,8 +2187,10 @@ def cmd_settings(msg):
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
 # ============================================================
-# ========== UNIVERSAL BUTTON HANDLER (BUG FIXED) ============
+# ========== UNIVERSAL BUTTON HANDLER (FULLY FIXED) ==========
 # ============================================================
+_handled_button_msgs = set()
+
 @bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
     try:
@@ -2190,14 +2200,13 @@ def universal_button_handler(msg):
         btype = get_button_type(raw_text)
 
         if not btype:
-            return  # Should not happen since func filter, but safety
+            return
 
         # Anti double-fire
         msg_key = (msg.chat.id, msg.message_id)
         if msg_key in _handled_button_msgs:
             return
         _handled_button_msgs.add(msg_key)
-        # Keep set small
         if len(_handled_button_msgs) > 500:
             _handled_button_msgs.clear()
 
@@ -2215,9 +2224,9 @@ def universal_button_handler(msg):
                 "┊  🪼 𝐀𝐓𝐓𝐀𝐂𝐊 𝐂𝐎𝐌𝐌𝐀𝐍𝐃    ┊\n"
                 "└┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┘\n\n"
                 "📌 <b>ᴜꜱᴀɢᴇ</b> ➪ \n"
-                "<code>/attack 𝖨𝖯 𝖯𝖮𝖱𝖳 𝖳𝖨𝖬𝖤</code>\n\n"
+                "<code>/attack IP PORT TIME</code>\n\n"
                 "📝 <b>ᴇxᴀᴍᴘʟᴇ</b> ➪ \n"
-                "<code>/attack 𝟏.𝟐.𝟑.𝟒 𝟖𝟎 𝟔𝟎</code>",
+                "<code>/attack 1.2.3.4 80 60</code>",
                 parse_mode="HTML")
             return
 
