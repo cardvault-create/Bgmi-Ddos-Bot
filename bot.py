@@ -3327,7 +3327,7 @@ def universal_button_handler(msg):
 
         if btype == "ATTACK":
             safe_reply(msg,
-                "◆ 📌 <b>ᴜꜱᴀɢᴇ ➪</b> <code>/attack 𝐈𝐏 𝐏𝐎𝐑𝐓 𝐓𝐈𝐌𝐄</code>"
+                "◆ 📌 <b>ᴜꜱᴀɢᴇ ➪</b> <code>/attack 𝐈𝐏 𝐏𝐎𝐑𝐓 𝐓𝐈𝐌𝐄</code>\n"
                 "◆ 📝 <b>ᴇxᴀᴍᴘʟᴇ ➪</b> <code>/attack 𝟏.𝟐.𝟑.𝟒 𝟖𝟎 𝟔𝟎</code>",
                 parse_mode="HTML")
             return
@@ -3377,7 +3377,7 @@ def universal_button_handler(msg):
             if not is_owner(uid):
                 safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
             safe_reply(msg,
-                "  📝 <code>/broadcast YOUR MESSAGE</code>",
+                "  📝 <code>/broadcast Jᴏ Mᴇssᴀɢᴇ Bʜᴇɪɴᴀ Hᴀɪ Wᴏʜ Dᴀʟ Lᴀᴜᴅᴇ</code>",
                 parse_mode="HTML")
             return
 
