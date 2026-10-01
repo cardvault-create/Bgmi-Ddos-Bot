@@ -108,6 +108,34 @@ def send_reaction(chat_id, message_id, emoji=None):
     except Exception as e:
         print(f"❌ Reaction error: {e}")
         return False
+
+# ═══════════════════════════════════════════════════════════
+# ★★★ REACTION HELPER — HAR HANDLER MEIN USE HOGA ★★★
+# ═══════════════════════════════════════════════════════════
+_last_reaction_idx = [0]
+
+def get_next_reaction_emoji():
+    global _last_reaction_idx
+    _last_reaction_idx[0] = (_last_reaction_idx[0] + 1) % len(REACTION_EMOJIS)
+    return REACTION_EMOJIS[_last_reaction_idx[0]]
+
+def react_to_message(msg):
+    """Har handler ke pehli line mein call karo — reaction bhejega."""
+    try:
+        if not msg.from_user: return
+        try:
+            if msg.from_user.id == bot.get_me().id: return
+        except: pass
+        if is_banned(msg.from_user.id): return
+        emoji = get_next_reaction_emoji()
+        print(f"🎯 REACTION: msg_id={msg.message_id} | emoji={emoji}")
+        threading.Thread(
+            target=send_reaction,
+            args=(msg.chat.id, msg.message_id, emoji),
+            daemon=True
+        ).start()
+    except Exception as e:
+        print(f"❌ react_to_message error: {e}")
         
 # ============= SAFE HELPERS =============
 def safe_parse_dt(val):
@@ -763,6 +791,7 @@ def safe_edit_caption(cid, mid, caption, **kwargs):
 # ============= START COMMAND =============
 @bot.message_handler(commands=['start', 'help'])
 def cmd_start(msg):
+    react_to_message(msg)
     try:
         HEALTH["total_messages"] += 1
         if check_ban(msg): return
@@ -1290,6 +1319,7 @@ def handle_callbacks(call):
 # ============= ATTACK =============
 @bot.message_handler(commands=['attack'])
 def cmd_attack(msg):
+    react_to_message(msg)
     try:
         HEALTH["total_messages"] += 1
         HEALTH["total_commands"] += 1
@@ -1849,6 +1879,7 @@ def do_status(msg):
 
 @bot.message_handler(commands=['status'])
 def cmd_status(msg):
+    react_to_message(msg)
     do_status(msg)
 
 # ============= PROFILE =============
@@ -1993,6 +2024,7 @@ def do_profile(msg):
 
 @bot.message_handler(commands=['profile'])
 def cmd_profile(msg):
+    react_to_message(msg)
     do_profile(msg)
 
 # ============= KEY SYSTEM =============
@@ -2114,11 +2146,12 @@ def do_genkey(msg):
         print(f"❌ do_genkey error: {e}")
         
 @bot.message_handler(commands=['genkey', 'gen'])
-def cmd_gen(msg): do_genkey(msg)
+def cmd_gen(msg):react_to_message(msg) do_genkey(msg)react_to_message(msg)
 
 # ============= KEY DELETE SYSTEM ★★★ =============
 @bot.message_handler(commands=['listkeys'])
 def cmd_listkeys(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         keys = ensure_dict(data.get("keys", {}))
@@ -2185,6 +2218,7 @@ def cmd_listkeys(msg):
 
 @bot.message_handler(commands=['delkey'])
 def cmd_delkey(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2254,6 +2288,7 @@ def cmd_delkey(msg):
 
 @bot.message_handler(commands=['delallkeys'])
 def cmd_delallkeys(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2301,6 +2336,7 @@ def cmd_delallkeys(msg):
 
 @bot.message_handler(commands=['redeem'])
 def cmd_redeem(msg):
+    react_to_message(msg)
     try:
         if check_ban(msg): return
         uid = msg.from_user.id
@@ -2370,6 +2406,7 @@ def cmd_redeem(msg):
 # ============= OWNER PANEL — ALL COMMANDS ★★★ =============
 @bot.message_handler(commands=['panel'])
 def cmd_panel(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         safe_reply(msg,
@@ -2422,6 +2459,7 @@ def cmd_panel(msg):
 
 # ============= USERS LIVE =============
 def do_users(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         if not ensure_dict(data.get("users", {})):
@@ -2519,11 +2557,12 @@ def do_users(msg):
         print(f"❌ do_users error: {e}")
 
 @bot.message_handler(commands=['users'])
-def cmd_users(msg): do_users(msg)
+def cmd_users(msg):react_to_message(msg) do_users(msg)
 
 # ============= BROADCAST =============
 @bot.message_handler(commands=['broadcast'])
 def cmd_broadcast(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split(maxsplit=1)
@@ -2631,6 +2670,7 @@ def cmd_broadcast(msg):
 
 # ============= STATS =============
 def do_stats(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         used_keys = sum(1 for k, v in ensure_dict(data.get("keys", {})).items() if isinstance(v, dict) and v.get('used'))
@@ -2707,11 +2747,12 @@ def do_stats(msg):
     except Exception as e: print(f"❌ do_stats error: {e}")
 
 @bot.message_handler(commands=['stats'])
-def cmd_stats(msg): do_stats(msg)
+def cmd_stats(msg):react_to_message(msg) do_stats(msg)
 
 # ============= BAN/UNBAN =============
 @bot.message_handler(commands=['ban'])
 def cmd_ban(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split(maxsplit=2)
@@ -2734,6 +2775,7 @@ def cmd_ban(msg):
 
 @bot.message_handler(commands=['unban'])
 def cmd_unban(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2752,6 +2794,7 @@ def cmd_unban(msg):
 # ============= SETAPI =============
 @bot.message_handler(commands=['setapi'])
 def cmd_setapi(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2782,6 +2825,7 @@ def cmd_setapi(msg):
 # ============= TESTAPI =============
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
+    react_to_message(msg)
     try:
         uid = msg.from_user.id
         if not is_owner(uid):
@@ -2858,6 +2902,7 @@ def cmd_testapi(msg):
 
 @bot.message_handler(commands=['setmaxtime'])
 def cmd_setmaxtime(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2870,6 +2915,7 @@ def cmd_setmaxtime(msg):
 
 @bot.message_handler(commands=['setcooldown'])
 def cmd_setcooldown(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2882,6 +2928,7 @@ def cmd_setcooldown(msg):
 
 @bot.message_handler(commands=['maintenance'])
 def cmd_maintenance(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         cur = get_setting('maintenance_mode', False)
@@ -2895,6 +2942,7 @@ def cmd_maintenance(msg):
 # ============= ★★★ STICKER/VIDEO/PYF COMMANDS — FIXED ★★★ =============
 @bot.message_handler(commands=['liststickers'])
 def cmd_liststickers(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         stickers = ensure_list(data.get("stickers", []))
@@ -2931,6 +2979,7 @@ def cmd_liststickers(msg):
 
 @bot.message_handler(commands=['removesticker'])
 def cmd_removesticker(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -2968,6 +3017,7 @@ def cmd_removesticker(msg):
 
 @bot.message_handler(commands=['listvideo'])
 def cmd_listvideo(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         videos = ensure_list(data.get("videos", []))
@@ -3006,6 +3056,7 @@ def cmd_listvideo(msg):
 
 @bot.message_handler(commands=['delvideo'])
 def cmd_delvideo(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -3044,6 +3095,7 @@ _pending_pyf = {}
 
 @bot.message_handler(commands=['addpyf'])
 def cmd_addpyf(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         _pending_pyf[msg.from_user.id] = True
@@ -3061,6 +3113,7 @@ def cmd_addpyf(msg):
 
 @bot.message_handler(commands=['listpyf'])
 def cmd_listpyf(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         pyfs = ensure_list(data.get("pyf_videos", []))
@@ -3098,6 +3151,7 @@ def cmd_listpyf(msg):
 
 @bot.message_handler(commands=['delpyf'])
 def cmd_delpyf(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -3135,6 +3189,7 @@ def cmd_delpyf(msg):
 # ============= ★★★ CONTENT HANDLERS — STICKER/VIDEO AUTO ADD ★★★ =============
 @bot.message_handler(content_types=['sticker'])
 def auto_sticker(msg):
+    react_to_message(msg)
     try:
         uid = msg.from_user.id
         if is_banned(uid): return
@@ -3168,6 +3223,7 @@ def auto_sticker(msg):
 
 @bot.message_handler(content_types=['video'])
 def handle_video(msg):
+    react_to_message(msg)
     try:
         uid = msg.from_user.id
         if is_banned(uid): return
@@ -3216,6 +3272,7 @@ def handle_video(msg):
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(msg):
+    react_to_message(msg)
     try:
         uid = msg.from_user.id
         if is_banned(uid): return
@@ -3516,51 +3573,6 @@ print("=" * 60)
 print("  ✅ Bot running")
 print("=" * 60)
 
-
-# ═══════════════════════════════════════════════════════════
-# ★★★ AUTO REACTION HANDLER — POLLING SE PEHLE ★★★
-# ═══════════════════════════════════════════════════════════
-# ★ Track last used emoji to avoid repetition ★
-_last_reaction_idx = [0]
-
-def get_next_reaction_emoji():
-    """Cycle through all emojis, one by one (never same twice in a row)"""
-    global _last_reaction_idx
-    _last_reaction_idx[0] = (_last_reaction_idx[0] + 1) % len(REACTION_EMOJIS)
-    return REACTION_EMOJIS[_last_reaction_idx[0]]
-
-@bot.message_handler(
-    func=lambda m: True,
-    content_types=['text', 'photo', 'video', 'sticker', 'document', 'audio', 'voice']
-)
-def auto_reaction_handler(msg):
-    try:
-        # ★ Skip bot's own messages ★
-        try:
-            if msg.from_user.id == bot.get_me().id:
-                return
-        except: return
-        
-        uid = msg.from_user.id
-        
-        # ★ Skip banned users only ★
-        if is_banned(uid):
-            return
-        
-        # ★ SAB messages pe reaction — commands, buttons, kuch bhi ★
-        try:
-            emoji = get_next_reaction_emoji()
-            print(f"🎯 REACTION: msg_id={msg.message_id} | emoji={emoji}")
-            threading.Thread(
-                target=send_reaction,
-                args=(msg.chat.id, msg.message_id, emoji),
-                daemon=True
-            ).start()
-        except Exception as e:
-            print(f"❌ Reaction send error: {e}")
-    except Exception as e:
-        print(f"Auto reaction error: {e}")
-        
 def polling_worker():
     global bot
     consecutive_failures = 0
