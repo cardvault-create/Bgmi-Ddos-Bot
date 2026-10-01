@@ -78,13 +78,20 @@ HEALTH = {
 REACTION_EMOJIS = [
     "👍", "🔥", "❤️", "😍", "🎉", "⚡", "💯", "👏", "🚀", "😎",
     "🥰", "😘", "🤩", "💥", "✨", "🌟", "⭐", "🎯", "🏆", "🥇",
-    "💪", "🙌", "👊", "✌️", "🤝", "💐", "🌹", "🍀", "🌈", "☀️"
+    "💪", "🙌", "👊", "✌️", "🤝", "💐", "🌹", "🍀", "🌈", "☀️",
+    "🥳", "😻", "🤗", "🥲", "😇", "🤠", "👑", "💎", "🎁", "🎊",
+    "🥂", "🍾", "🎈", "🎂", "🍭", "🍬", "🧁", "🍕", "🍔", "🍟",
+    "🦄", "🐯", "🦁", "🐸", "🐼", "🐨", "🐵", "🦊", "🐺", "🦅"
 ]
 
 def send_reaction(chat_id, message_id, emoji=None):
     try:
         if emoji is None:
             emoji = random.choice(REACTION_EMOJIS)
+        
+        # ★ Small delay to avoid Telegram rate limit ★
+        time.sleep(0.3)
+        
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction"
         payload = {
             "chat_id": chat_id,
@@ -93,9 +100,14 @@ def send_reaction(chat_id, message_id, emoji=None):
             "is_big": False
         }
         r = requests.post(url, json=payload, timeout=5)
+        if r.status_code == 200:
+            print(f"✅ REACTION SENT: {emoji}")
+        else:
+            print(f"⚠️ REACTION FAILED: HTTP {r.status_code} | {r.text[:100]}")
         return r.status_code == 200
-    except:
-        return False  # Silent — no print, no crash
+    except Exception as e:
+        print(f"❌ Reaction error: {e}")
+        return False
         
 # ============= SAFE HELPERS =============
 def safe_parse_dt(val):
@@ -3508,6 +3520,7 @@ print("=" * 60)
 # ═══════════════════════════════════════════════════════════
 # ★★★ AUTO REACTION HANDLER — POLLING SE PEHLE ★★★
 # ═══════════════════════════════════════════════════════════
+# ★ Track last used emoji to avoid repetition ★
 _last_reaction_idx = [0]
 
 def get_next_reaction_emoji():
@@ -3522,6 +3535,7 @@ def get_next_reaction_emoji():
 )
 def auto_reaction_handler(msg):
     try:
+        # ★ Skip bot's own messages ★
         try:
             if msg.from_user.id == bot.get_me().id:
                 return
@@ -3529,29 +3543,24 @@ def auto_reaction_handler(msg):
         
         uid = msg.from_user.id
         
+        # ★ Skip banned users only ★
         if is_banned(uid):
             return
         
-        if msg.text and msg.text.startswith('/'):
-            return
-        
-        if msg.text:
-            try:
-                if get_button_type(msg.text) is not None:
-                    return
-            except: pass
-        
+        # ★ SAB messages pe reaction — commands, buttons, kuch bhi ★
         try:
             emoji = get_next_reaction_emoji()
+            print(f"🎯 REACTION: msg_id={msg.message_id} | emoji={emoji}")
             threading.Thread(
                 target=send_reaction,
                 args=(msg.chat.id, msg.message_id, emoji),
                 daemon=True
             ).start()
-        except: pass
+        except Exception as e:
+            print(f"❌ Reaction send error: {e}")
     except Exception as e:
         print(f"Auto reaction error: {e}")
-
+        
 def polling_worker():
     global bot
     consecutive_failures = 0
