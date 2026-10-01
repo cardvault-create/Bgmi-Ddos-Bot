@@ -2343,7 +2343,7 @@ def cmd_redeem(msg):
             f"  ◆ ⏰ ᴀᴅᴅᴇᴅ ➪ <b>+{human_readable(secs)}</b>\n"
             f"  ◆ 📅 ᴇxᴘɪʀᴇꜱ ➪ <code>{expiry_ist} IST</code>\n"
             f"  ◆ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{time_remaining(uid)}</b>",
-            parse_mode="HTML")
+            parse_mode="HTML",
             reply_markup=kb_main(uid))
     except Exception as e:
         print(f"❌ cmd_redeem error: {e}")
