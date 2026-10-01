@@ -2146,8 +2146,10 @@ def do_genkey(msg):
         print(f"❌ do_genkey error: {e}")
         
 @bot.message_handler(commands=['genkey', 'gen'])
-def cmd_gen(msg):react_to_message(msg) do_genkey(msg)react_to_message(msg)
-
+def cmd_gen(msg):
+    react_to_message(msg)
+    do_genkey(msg)
+    
 # ============= KEY DELETE SYSTEM ★★★ =============
 @bot.message_handler(commands=['listkeys'])
 def cmd_listkeys(msg):
@@ -2557,7 +2559,9 @@ def do_users(msg):
         print(f"❌ do_users error: {e}")
 
 @bot.message_handler(commands=['users'])
-def cmd_users(msg):react_to_message(msg) do_users(msg)
+def cmd_users(msg):
+    react_to_message(msg)
+    do_users(msg)
 
 # ============= BROADCAST =============
 @bot.message_handler(commands=['broadcast'])
@@ -2747,7 +2751,9 @@ def do_stats(msg):
     except Exception as e: print(f"❌ do_stats error: {e}")
 
 @bot.message_handler(commands=['stats'])
-def cmd_stats(msg):react_to_message(msg) do_stats(msg)
+def cmd_stats(msg):
+    react_to_message(msg)
+    do_stats(msg)
 
 # ============= BAN/UNBAN =============
 @bot.message_handler(commands=['ban'])
@@ -3352,6 +3358,7 @@ def handle_photo(msg):
 # ============= FEEDBACK =============
 @bot.message_handler(commands=['feedback'])
 def cmd_feedback(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -3397,6 +3404,7 @@ def cmd_feedback(msg):
 # ============= ★★★ SETTINGS — ALL COMMANDS SHOWN ★★★ =============
 @bot.message_handler(commands=['settings'])
 def cmd_settings(msg):
+    react_to_message(msg)
     try:
         if not is_owner(msg.from_user.id): return
         txt = (
@@ -3463,6 +3471,7 @@ def cmd_settings(msg):
 # ============================================================
 @bot.message_handler(content_types=['text'], func=lambda m: get_button_type(m.text) is not None)
 def universal_button_handler(msg):
+    react_to_message(msg)
     try:
         HEALTH["total_messages"] += 1
         uid = msg.from_user.id
