@@ -1187,29 +1187,29 @@ def handle_callbacks(call):
                             f"  ◆ 💬 ᴍꜱɢ ➪ <i>{escape_html(fb_text)}</i>\n"
                             f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>"
                         )
-                        bot.send_message(BOT_OWNER, owner_fb, parse_mode="HTML")
-                    except: pass
+            bot.send_message(BOT_OWNER, owner_fb, parse_mode="HTML")
+        except: pass
 
-try:
-    bot.edit_message_text(
-        chat_id=call.message.chat.id,
-        message_id=call.message.message_id,
-        text=(
-            "╔══════════════════════════╗\n"
-            "║          📸 𝗨𝗣𝗟𝗢𝗔𝗗 𝗡𝗢𝗪 📸          ║\n"
-            "╚══════════════════════════╝\n\n"
-            "  ⚠️ <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n"
-            "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
-            f"  ◆ 🆔 ꜰᴇᴇᴅʙᴀᴄᴋ ɪᴅ ➪ <code>{feedback_id}</code>\n"
-            f"  ◆ ⭐ ʀᴀᴛɪɴɢ ➪ <b>{rating}</b>/5\n\n"
-            "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "  📸 <b>ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴏ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ᴋᴇ ʟɪʏᴇ</b>"
-        ), parse_mode="HTML", reply_markup=None
-    )
-except: pass
-            except Exception as e:
-                print(f"Feedback callback error: {e}")
-            return
+        try:
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                text=(
+                    "╔══════════════════════════╗\n"
+                    "║          📸 𝗨𝗣𝗟𝗢𝗔𝗗 𝗡𝗢𝗪 📸          ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⚠️ <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n"
+                    "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
+                    f"  ◆ 🆔 ꜰᴇᴇᴅʙᴀᴄᴋ ɪᴅ ➪ <code>{feedback_id}</code>\n"
+                    f"  ◆ ⭐ ʀᴀᴛɪɴɢ ➪ <b>{rating}</b>/5\n\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "  📸 <b>ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴏ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ᴋᴇ ʟɪʏᴇ</b>"
+                ), parse_mode="HTML", reply_markup=None
+            )
+        except: pass
+except Exception as e:
+    print(f"Feedback callback error: {e}")
+return
 
         # ★★★ OWNER CHECK — Ban/Give15m ke liye ★★★
         if not is_owner(call.from_user.id):
@@ -1333,7 +1333,8 @@ def cmd_attack(msg):
                     "  📌 <b>ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪</b>\n"
                     "  ➤ <code>/redeem YOUR-KEY</code>",
                     parse_mode="HTML", reply_markup=dev_btn_kb())
-            return
+
+    return
 
 if data.get("feedback_enabled", False) and not is_owner(uid):
     if str(uid) in ensure_dict(data.get("pending_attacks", {})):
@@ -1348,7 +1349,7 @@ if data.get("feedback_enabled", False) and not is_owner(uid):
         safe_reply(msg, fb_prompt, parse_mode="HTML")
         return
 
-        parts = msg.text.split()[1:]
+parts = msg.text.split()[1:]
         if len(parts) != 3:
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
@@ -1517,103 +1518,103 @@ if data.get("feedback_enabled", False) and not is_owner(uid):
                         last_text = new_text
                 except: pass
 
-        threading.Thread(target=auto_update_attack, daemon=True).start()
+    threading.Thread(target=auto_update_attack, daemon=True).start()
 
-def done():
-    for _ in range(dur):
-        time.sleep(1)
-        if _stop_flags.get(attack_id, False):
-            print(f"⛔ Attack {attack_id} stopped early")
-            _stop_flags.pop(attack_id, None)
-            with attack_lock: active_attacks.pop(attack_id, None)
-            return
+    def done():
+        for _ in range(dur):
+            time.sleep(1)
+            if _stop_flags.get(attack_id, False):
+                print(f"⛔ Attack {attack_id} stopped early")
+                _stop_flags.pop(attack_id, None)
+                with attack_lock: active_attacks.pop(attack_id, None)
+                return
 
-    with attack_lock: active_attacks.pop(attack_id, None)
-    _stop_flags.pop(attack_id, None)
+        with attack_lock: active_attacks.pop(attack_id, None)
+        _stop_flags.pop(attack_id, None)
 
-    # ★ PENDING FEEDBACK SAVE ★
-    if data.get("feedback_enabled", False) and not is_owner(uid):
-        data["pending_attacks"][str(uid)] = {
-            "last_target": ip,
-            "last_port": port,
-            "last_duration": dur,
-            "attack_cmd": f"/attack {ip} {port} {dur}",
-            "completed_at": ist_now().isoformat()
-        }
-        save_data(data)
+        # ★ PENDING FEEDBACK SAVE ★
+        if data.get("feedback_enabled", False) and not is_owner(uid):
+            data["pending_attacks"][str(uid)] = {
+                "last_target": ip,
+                "last_port": port,
+                "last_duration": dur,
+                "attack_cmd": f"/attack {ip} {port} {dur}",
+                "completed_at": ist_now().isoformat()
+            }
+            save_data(data)
 
-    # ★ PURANA MESSAGE DELETE KARO ★
-    try:
-        bot.delete_message(cid, attack_msg.message_id)
-        print(f"🗑️ Purana attack message delete kiya")
-    except Exception as del_err:
-        print(f"⚠️ Delete failed: {del_err}")
-
-    # ★ NAYA PREMIUM COMPLETE MESSAGE ★
-    if data.get("feedback_enabled", False) and not is_owner(uid):
-        complete_caption = (
-            "╔══════════════════════════╗\n"
-            "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️           ║\n"
-            "╚══════════════════════════╝\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃              📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-            f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-            f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-            f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-            f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-            f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"  <code>/attack {ip} {port} {dur}</code>\n\n"
-            "╔══════════════════════════╗\n"
-            "║         📸 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸        ║\n"
-            "╚══════════════════════════╝\n\n"
-            "  ⚠️ <b>ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀɴᴇ ᴋᴇ ʟɪʏᴇ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n\n"
-            "  📌 <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇɪɴ</b>\n"
-            "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
-            "╔══════════════════════════╗\n"
-            "║        🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯         ║\n"
-            "╚══════════════════════════╝"
-        )
+        # ★ PURANA MESSAGE DELETE KARO ★
         try:
-            bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
-        except Exception as e:
-            print(f"Complete msg error: {e}")
-    else:
-        complete_caption = (
-            "╔══════════════════════════╗\n"
-            "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️           ║\n"
-            "╚══════════════════════════╝\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃              📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-            f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-            f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-            f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-            f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-            f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            f"  <code>/attack {ip} {port} {dur}</code>\n\n"
-            "╔══════════════════════════╗\n"
-            "║        🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯         ║\n"
-            "╚══════════════════════════╝"
-        )
-        try:
-            bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
-        except Exception as e:
-            print(f"Complete msg error: {e}")
+            bot.delete_message(cid, attack_msg.message_id)
+            print(f"🗑️ Purana attack message delete kiya")
+        except Exception as del_err:
+            print(f"⚠️ Delete failed: {del_err}")
 
-threading.Thread(target=done, daemon=True).start()
-    except Exception as e:
-        HEALTH["total_errors"] += 1
-        print(f"❌ cmd_attack error: {e}")
-        traceback.print_exc()
+        # ★ NAYA PREMIUM COMPLETE MESSAGE ★
+        if data.get("feedback_enabled", False) and not is_owner(uid):
+            complete_caption = (
+                "╔══════════════════════════╗\n"
+                "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃              📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+                f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+                f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+                f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+                f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+                f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  <code>/attack {ip} {port} {dur}</code>\n\n"
+                "╔══════════════════════════╗\n"
+                "║         📸 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸        ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⚠️ <b>ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀɴᴇ ᴋᴇ ʟɪʏᴇ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n\n"
+                "  📌 <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇɪɴ</b>\n"
+                "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
+                "╔══════════════════════════╗\n"
+                "║        🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯         ║\n"
+                "╚══════════════════════════╝"
+            )
+            try:
+                bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+            except Exception as e:
+                print(f"Complete msg error: {e}")
+        else:
+            complete_caption = (
+                "╔══════════════════════════╗\n"
+                "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃              📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+                f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+                f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+                f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+                f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+                f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  <code>/attack {ip} {port} {dur}</code>\n\n"
+                "╔══════════════════════════╗\n"
+                "║        🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯         ║\n"
+                "╚══════════════════════════╝"
+            )
+            try:
+                bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+            except Exception as e:
+                print(f"Complete msg error: {e}")
+
+    threading.Thread(target=done, daemon=True).start()
+except Exception as e:
+    HEALTH["total_errors"] += 1
+    print(f"❌ cmd_attack error: {e}")
+    traceback.print_exc()
 
 # ============= STATUS =============
 def do_status(msg):
