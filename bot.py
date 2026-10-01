@@ -3388,53 +3388,6 @@ def cmd_settings(msg):
         )
         safe_reply(msg, txt, parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_settings error: {e}")
-
-# ============= AUTO REACTION HANDLER ★★★ =============
-# ★★★ Track last used emoji to avoid repetition ★★★
-_last_reaction_idx = [0]
-
-def get_next_reaction_emoji():
-    """Cycle through all emojis, one by one (never same twice in a row)"""
-    global _last_reaction_idx
-    _last_reaction_idx[0] = (_last_reaction_idx[0] + 1) % len(REACTION_EMOJIS)
-    return REACTION_EMOJIS[_last_reaction_idx[0]]
-
-@bot.message_handler(
-    func=lambda m: True,
-    content_types=['text', 'photo', 'video', 'sticker', 'document', 'audio', 'voice']
-)
-def auto_reaction_handler(msg):
-    try:
-        # ★ Skip bot's own messages
-        try:
-            if msg.from_user.id == bot.get_me().id:
-                return
-        except: return
-        
-        uid = msg.from_user.id
-        
-        # ★ Skip banned users
-        if is_banned(uid):
-            return
-        
-        # ★ Skip commands
-        if msg.text and msg.text.startswith('/'):
-            return
-        
-        # ★ Skip button texts — use try/except
-        if msg.text:
-            try:
-                if get_button_type(msg.text) is not None:
-                    return
-            except: pass
-        
-        # ★ Send cycling emoji
-        try:
-            emoji = get_next_reaction_emoji()
-            send_reaction(msg.chat.id, msg.message_id, emoji)
-        except: pass
-    except Exception as e:
-        print(f"Auto reaction error: {e}")
         
 # ============================================================
 # ★★★ UNIVERSAL BUTTON HANDLER ★★★
@@ -3604,3 +3557,56 @@ try:
             polling_thread.start()
 except KeyboardInterrupt:
     print("\n🛑 Bot stopped by user.")
+
+# ═══════════════════════════════════════════════════════════
+# ★★★ AUTO REACTION HANDLER — MOVED TO END (RUNS LAST) ★★★
+# ═══════════════════════════════════════════════════════════
+# ★★★ Track last used emoji to avoid repetition ★★★
+_last_reaction_idx = [0]
+
+def get_next_reaction_emoji():
+    """Cycle through all emojis, one by one (never same twice in a row)"""
+    global _last_reaction_idx
+    _last_reaction_idx[0] = (_last_reaction_idx[0] + 1) % len(REACTION_EMOJIS)
+    return REACTION_EMOJIS[_last_reaction_idx[0]]
+
+@bot.message_handler(
+    func=lambda m: True,
+    content_types=['text', 'photo', 'video', 'sticker', 'document', 'audio', 'voice']
+)
+def auto_reaction_handler(msg):
+    try:
+        # ★ Skip bot's own messages
+        try:
+            if msg.from_user.id == bot.get_me().id:
+                return
+        except: return
+        
+        uid = msg.from_user.id
+        
+        # ★ Skip banned users
+        if is_banned(uid):
+            return
+        
+        # ★ Skip commands
+        if msg.text and msg.text.startswith('/'):
+            return
+        
+        # ★ Skip button texts
+        if msg.text:
+            try:
+                if get_button_type(msg.text) is not None:
+                    return
+            except: pass
+        
+        # ★ Send cycling emoji in background thread (NON-BLOCKING)
+        try:
+            emoji = get_next_reaction_emoji()
+            threading.Thread(
+                target=send_reaction,
+                args=(msg.chat.id, msg.message_id, emoji),
+                daemon=True
+            ).start()
+        except: pass
+    except Exception as e:
+        print(f"Auto reaction error: {e}")
