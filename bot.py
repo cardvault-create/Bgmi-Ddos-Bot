@@ -1053,7 +1053,7 @@ def cmd_start(msg):
         traceback.print_exc()
         
 # ============= CALLBACKS =============
-@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "stopatk_", "fb_", "copykey_", "redeeminfo_")))
+@bot.callback_query_handler(func=lambda call: call.data.startswith(("ban_", "give15m_", "fb_", "copykey_", "redeeminfo_")))
 def handle_callbacks(call):
     try:
         # ★★★ COPY KEY BUTTON HANDLER ★★★
@@ -1456,8 +1456,7 @@ parts = msg.text.split()[1:]
                 )
             except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
 
-        stop_kb = InlineKeyboardMarkup()
-        stop_kb.add(InlineKeyboardButton("⛔ 𝐒𝐓𝐎𝐏 𝐀𝐓𝐓𝐀𝐂𝐊 📉", callback_data=f"stopatk_{attack_id}"))
+        stop_kb = None
 
         # ★★★ VIDEO ATTACK — RANDOM VIDEO SEND ★★★
         chosen_video = get_random_video()
@@ -1467,18 +1466,18 @@ parts = msg.text.split()[1:]
         if chosen_video:
             try:
                 print(f"📹 Sending video for attack...")
-                attack_msg = bot.send_video(cid, chosen_video, caption=build_attack_caption(), parse_mode="HTML", reply_markup=stop_kb)
+                attack_msg = bot.send_video(cid, chosen_video, caption=build_attack_caption(), parse_mode="HTML")
                 is_video = True
                 print(f"✅ Attack video sent")
             except Exception as e:
                 print(f"❌ Video attack send failed: {e}, falling back to text")
                 try:
-                    attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML", reply_markup=stop_kb)
+                    attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
                 except Exception as e2:
                     print(f"❌ Fallback also failed: {e2}")
                     return
         else:
-            attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML", reply_markup=stop_kb)
+            attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
 
         data["attack_logs"].append({
             'user_id': uid, 'username': name, 'target': ip, 'port': port,
@@ -1512,9 +1511,9 @@ parts = msg.text.split()[1:]
                     new_text = build_attack_caption()
                     if new_text != last_text:
                         if is_video:
-                            safe_edit_caption(cid, attack_msg.message_id, new_text, parse_mode="HTML", reply_markup=stop_kb)
+                            safe_edit_caption(cid, attack_msg.message_id, new_text, parse_mode="HTML")
                         else:
-                            safe_edit_text(cid, attack_msg.message_id, new_text, parse_mode="HTML", reply_markup=stop_kb)
+                            safe_edit_text(cid, attack_msg.message_id, new_text, parse_mode="HTML")
                         last_text = new_text
                 except: pass
 
