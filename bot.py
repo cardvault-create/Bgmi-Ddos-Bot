@@ -2524,15 +2524,18 @@ def cmd_broadcast(msg):
         total = len(ensure_dict(data.get("users", {})))
 
         broadcast_header = (
-            "╔══════════════════════════╗\n"
-            "║      📢 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟 𝗠𝗘𝗦𝗦𝗔𝗚𝗘 📢        ║\n"
-            "╚══════════════════════════╝\n\n"
+          "╔══════════════════════════╗\n"
+          "║                ⚠️ 𝗡𝗢𝗧𝗜𝗖𝗘 𝗕𝗢𝗔𝗥𝗗 🚫            ║\n"
+          "╚══════════════════════════╝\n\n"
         )
         broadcast_footer = (
-            "\n\n╔══════════════════════════╗\n"
-            "║       👑 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 👑            ║\n"
-            "╚══════════════════════════╝\n"
-            f"  🕐 <code>{ist_time_str()} IST</code>"
+          "\n\n█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█\n"
+          "█   ▸  ˹Iɴғᴏʀᴍ BY˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞 ◂  █\n"
+          "█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█\n"
+          " \n"
+          "╭──────────────────────╮\n"
+          f"│               🕰️ {ist_time_str()} 𝙸𝚂𝚃         │\n"
+          "╰──────────────────────╯"
         )
         full_message = broadcast_header + text + broadcast_footer
 
@@ -2596,7 +2599,7 @@ def cmd_broadcast(msg):
             try:
                 safe_edit_text(status_msg.chat.id, status_msg.message_id,
                     f"╔══════════════════════════╗\n"
-                    f"║     ✅ 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗗𝗢𝗡𝗘 ✅         ║\n"
+                    f"║             ☑️ 𝗕𝗥𝗢𝗔𝗗𝗖𝗔𝗦𝗧 𝗗𝗢𝗡𝗘 ☑️         ║\n"
                     f"╚══════════════════════════╝\n\n"
                     f"  ◆ ✅ ꜱᴇɴᴛ ➪ <b>{sent}</b>\n"
                     f"  ◆ ❌ ꜰᴀɪʟᴇᴅ ➪ <b>{failed}</b>\n"
@@ -3235,7 +3238,7 @@ def cmd_feedback(msg):
             cur = "🟢 ᴏɴ" if data.get("feedback_enabled", False) else "🔴 ᴏꜰꜰ"
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
-                "┃           🍇 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 𝗦𝗬𝗦𝗧𝗘𝗠 🥪       ┃\n"
+                "┃             🍇 𝗙𝗘𝗘𝗗𝗕𝗔𝗖𝗞 𝗦𝗬𝗦𝗧𝗘𝗠 🥪        ┃\n"
                 "╚══════════════════════════╝\n\n"
                 f"  ◆ 📊 ᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ ➪ {cur}\n\n"
                 "  ◆ 📝 <code>/feedback on</code>\n"
@@ -3328,7 +3331,7 @@ def cmd_settings(msg):
             "  ◆ /listpyf ➪ ᴘʏꜰ ʟɪꜱᴛ ᴅᴇᴋʜᴏ\n"
             "  ◆ /delpyf NUM ➪ ʀᴇᴍᴏᴠᴇ\n\n"
             "╔══════════════════════════╗\n"
-            "║                   🦪 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠            ║\n"
+            "║                🍄 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠              ║\n"
             "╚══════════════════════════╝"
         )
         safe_reply(msg, txt, parse_mode="HTML")
