@@ -1082,67 +1082,6 @@ def handle_callbacks(call):
                 print(f"Redeem info callback error: {e}")
             return
 
-        # ★★★ STOP ATTACK HANDLER ★★★
-        if call.data.startswith("stopatk_"):
-            attack_id = call.data.replace("stopatk_", "", 1)
-            caller_uid = call.from_user.id
-            print(f"⛔ STOP ʙᴜᴛᴛᴏɴ ᴘʀᴇssᴇᴅ ʙʏ {caller_uid} ғᴏʀ ᴀᴛᴛᴀᴄᴋ {attack_id}")
-
-            with attack_lock:
-                atk = active_attacks.get(attack_id)
-                if not atk:
-                    try: bot.answer_callback_query(call.id, "⚠️ Aᴛᴛᴀᴄᴋ ᴀʟʀᴇᴀᴅʏ ғɪɴɪsʜᴇᴅ ᴏʀ ɴᴏᴛ ғᴏᴜɴᴅ", show_alert=True)
-                    except: pass
-                    try:
-                        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-                    except: pass
-                    return
-
-                owner_uid = atk.get('user_id')
-                if caller_uid != owner_uid and not is_owner(caller_uid):
-                    try: bot.answer_callback_query(call.id, "🚫 ʏᴇʜ ᴛᴜᴍʜᴀʀᴀ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ʜᴀɪ!", show_alert=True)
-                    except: pass
-                    return
-
-                _stop_flags[attack_id] = True
-                active_attacks.pop(attack_id, None)
-
-            print(f"✅ Aᴛᴛᴀᴄᴋ {attack_id} sᴛᴏᴘᴘᴇᴅ")
-
-            try: bot.answer_callback_query(call.id, "⛔ ᴀᴛᴛᴀᴄᴋ ꜱᴛᴏᴘᴘᴇᴅ!", show_alert=True)
-            except: pass
-
-            stop_text = (
-                "╔══════════════════════════╗\n"
-                "║       ⛔ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗢𝗣𝗣𝗘𝗗 ⛔        ║\n"
-                "╚══════════════════════════╝\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃       🛑 𝗦𝗧𝗢𝗣 𝗥𝗘𝗣𝗢𝗥𝗧 🛑          ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
-                f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{escape_html(atk.get('target','N/A'))}:{atk.get('port','N/A')}</code>\n"
-                f"  ◆ 🛑 ꜱᴛᴏᴘᴘᴇᴅ ʙʏ ➪ <b>@{escape_html(call.from_user.username or call.from_user.first_name or 'User')}</b>\n"
-                f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
-                "╔══════════════════════════╗\n"
-                "║      🪦 𝗔𝗧𝗧𝗔𝗖𝗞 𝗘𝗡𝗗𝗘𝗗 🔞           ║\n"
-                "╚══════════════════════════╝"
-            )
-
-            try:
-                bot.edit_message_caption(
-                    chat_id=call.message.chat.id,
-                    message_id=call.message.message_id,
-                    caption=stop_text, parse_mode="HTML", reply_markup=None
-                )
-            except:
-                try:
-                    bot.edit_message_text(
-                        chat_id=call.message.chat.id,
-                        message_id=call.message.message_id,
-                        text=stop_text, parse_mode="HTML", reply_markup=None
-                    )
-                except: pass
-            return
-
         # ★★★ FEEDBACK HANDLER ★★★
         if call.data.startswith("fb_"):
             try:
@@ -1187,43 +1126,44 @@ def handle_callbacks(call):
                             f"  ◆ 💬 ᴍꜱɢ ➪ <i>{escape_html(fb_text)}</i>\n"
                             f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>"
                         )
-            bot.send_message(BOT_OWNER, owner_fb, parse_mode="HTML")
-        except: pass
+                        bot.send_message(BOT_OWNER, owner_fb, parse_mode="HTML")
+                    except: pass
 
-    try:
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text=(
-                "╔══════════════════════════╗\n"
-                "║          📸 𝗨𝗣𝗟𝗢𝗔𝗗 𝗡𝗢𝗪 📸          ║\n"
-                "╚══════════════════════════╝\n\n"
-                "  ⚠️ <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n"
-                "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
-                f"  ◆ 🆔 ꜰᴇᴇᴅʙᴀᴄᴋ ɪᴅ ➪ <code>{feedback_id}</code>\n"
-                f"  ◆ ⭐ ʀᴀᴛɪɴɢ ➪ <b>{rating}</b>/5\n\n"
-                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "  📸 <b>ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴏ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ᴋᴇ ʟɪʏᴇ</b>"
-            ), parse_mode="HTML", reply_markup=None
-        )
-    except: pass
-except Exception as e:
-    print(f"Feedback callback error: {e}")
+                    try:
+                        bot.edit_message_text(
+                            chat_id=call.message.chat.id,
+                            message_id=call.message.message_id,
+                            text=(
+                                "╔══════════════════════════╗\n"
+                                "║          📸 𝗨𝗣𝗟𝗢𝗔𝗗 𝗡𝗢𝗪 📸          ║\n"
+                                "╚══════════════════════════╝\n\n"
+                                "  ⚠️ <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n"
+                                "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
+                                f"  ◆ 🆔 ꜰᴇᴇᴅʙᴀᴄᴋ ɪᴅ ➪ <code>{feedback_id}</code>\n"
+                                f"  ◆ ⭐ ʀᴀᴛɪɴɢ ➪ <b>{rating}</b>/5\n\n"
+                                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                                "  📸 <b>ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴏ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ᴋᴇ ʟɪʏᴇ</b>"
+                            ), parse_mode="HTML", reply_markup=None
+                        )
+                    except: pass
+            except Exception as e:
+                print(f"Feedback callback error: {e}")
+            return
 
-# ★★★ OWNER CHECK — Ban/Give15m ke liye ★★★
-if not is_owner(call.from_user.id):
-    try: bot.answer_callback_query(call.id, "🚫 BᴏT FᴀTʜᴇR OɴʟY!", show_alert=True)
-    except: pass
-    return
+        # ★★★ OWNER CHECK — Ban/Give15m ke liye ★★★
+        if not is_owner(call.from_user.id):
+            try: bot.answer_callback_query(call.id, "🚫 BᴏT FᴀTʜᴇR OɴʟY!", show_alert=True)
+            except: pass
+            return
 
-data_parts = call.data.split("_", 1)
-action = data_parts[0]
-target_uid = data_parts[1] if len(data_parts) > 1 else None
+        data_parts = call.data.split("_", 1)
+        action = data_parts[0]
+        target_uid = data_parts[1] if len(data_parts) > 1 else None
 
-if not target_uid:
-    try: bot.answer_callback_query(call.id, "❌ IɴVᴀʟɪD")
-    except: pass
-    return
+        if not target_uid:
+            try: bot.answer_callback_query(call.id, "❌ IɴVᴀʟɪD")
+            except: pass
+            return
 
         if action == "ban":
             target_uid_str = str(target_uid)
