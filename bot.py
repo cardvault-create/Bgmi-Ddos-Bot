@@ -92,12 +92,11 @@ def send_reaction(chat_id, message_id, emoji=None):
             "reaction": [{"type": "emoji", "emoji": emoji}],
             "is_big": False
         }
-        r = requests.post(url, json=payload, timeout=10)
+        r = requests.post(url, json=payload, timeout=5)
         return r.status_code == 200
-    except Exception as e:
-        print(f"❌ Reaction error: {e}")
-        return False
-
+    except:
+        return False  # Silent — no print, no crash
+        
 # ============= SAFE HELPERS =============
 def safe_parse_dt(val):
     if isinstance(val, datetime): return val
@@ -453,28 +452,33 @@ def normalize_text(text):
         return text.strip().upper() if text else ""
 
 def get_button_type(text):
-    if not text: return None
-    stripped = text.strip()
-    if stripped.startswith('/'): return None
+    try:
+        if not text: return None
+        stripped = text.strip()
+        if stripped.startswith('/'): return None
 
-    t = normalize_text(text)
-    t_clean = re.sub(r'[^A-Z0-9]', '', t)
+        t = normalize_text(text)
+        if not t: return None
+        t_clean = re.sub(r'[^A-Z0-9]', '', t)
 
-    def has(*kws):
-        return all(k in t_clean for k in kws)
+        def has(*kws):
+            return all(k in t_clean for k in kws)
 
-    if has("OWNER", "PANEL"): return "OWNER_PANEL"
-    if has("GEN", "KEY"): return "GEN_KEY"
-    if "BROADCAST" in t_clean: return "BROADCAST"
-    if "SETTINGS" in t_clean: return "SETTINGS"
-    if "PROFILE" in t_clean: return "PROFILE"
-    if "STATUS" in t_clean: return "STATUS"
-    if "STATS" in t_clean: return "STATS"
-    if "USERS" in t_clean: return "USERS"
-    if "ATTACK" in t_clean and "STATS" not in t_clean: return "ATTACK"
-    if "REDEEM" in t_clean: return "REDEEM"
-    if "CLOSE" in t_clean: return "CLOSE"
-    return None
+        if has("OWNER", "PANEL"): return "OWNER_PANEL"
+        if has("GEN", "KEY"): return "GEN_KEY"
+        if "BROADCAST" in t_clean: return "BROADCAST"
+        if "SETTINGS" in t_clean: return "SETTINGS"
+        if "PROFILE" in t_clean: return "PROFILE"
+        if "STATUS" in t_clean: return "STATUS"
+        if "STATS" in t_clean: return "STATS"
+        if "USERS" in t_clean: return "USERS"
+        if "ATTACK" in t_clean and "STATS" not in t_clean: return "ATTACK"
+        if "REDEEM" in t_clean: return "REDEEM"
+        if "CLOSE" in t_clean: return "CLOSE"
+        return None
+    except Exception as e:
+        print(f"get_button_type error: {e}")
+        return None
 
 # ============= HEALTH MONITOR =============
 def api_health_check():
@@ -3401,25 +3405,37 @@ def get_next_reaction_emoji():
 )
 def auto_reaction_handler(msg):
     try:
-        if msg.from_user.id == bot.get_me().id:
-            return
+        # ★ Skip bot's own messages
+        try:
+            if msg.from_user.id == bot.get_me().id:
+                return
+        except: return
+        
         uid = msg.from_user.id
+        
+        # ★ Skip banned users
         if is_banned(uid):
             return
         
-        # ★★★ Skip reactions for command messages and button texts ★★★
+        # ★ Skip commands
         if msg.text and msg.text.startswith('/'):
-            return  # Don't react to commands
+            return
         
-        if msg.text and get_button_type(msg.text) is not None:
-            return  # Don't react to button texts
+        # ★ Skip button texts — use try/except
+        if msg.text:
+            try:
+                if get_button_type(msg.text) is not None:
+                    return
+            except: pass
         
-        # ★★★ Use cycling emoji (never same twice) ★★★
-        emoji = get_next_reaction_emoji()
-        send_reaction(msg.chat.id, msg.message_id, emoji)
+        # ★ Send cycling emoji
+        try:
+            emoji = get_next_reaction_emoji()
+            send_reaction(msg.chat.id, msg.message_id, emoji)
+        except: pass
     except Exception as e:
         print(f"Auto reaction error: {e}")
-
+        
 # ============================================================
 # ★★★ UNIVERSAL BUTTON HANDLER ★★★
 # ============================================================
@@ -3431,10 +3447,13 @@ def universal_button_handler(msg):
         raw_text = msg.text or ""
         btype = get_button_type(raw_text)
 
+        # ★ DEBUG PRINT — Raw text + normalized + type
+        print(f"🔘 BUTTON RAW: {repr(raw_text)}")
+        print(f"🔘 BUTTON NORMALIZED: {repr(normalize_text(raw_text))}")
+        print(f"🔘 BUTTON TYPE: {btype}")
+
         if not btype:
             return
-
-        print(f"🔘 BUTTON: uid={uid} type={btype}")
 
         if is_banned(uid):
             check_ban(msg)
