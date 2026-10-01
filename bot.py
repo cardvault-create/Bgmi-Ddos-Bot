@@ -3359,8 +3359,13 @@ def universal_button_handler(msg):
 
         if btype == "ATTACK":
             safe_reply(msg,
-                "◆ 📌 <b>ᴜꜱᴀɢᴇ ➪</b> <code>/attack 𝐈𝐏 𝐏𝐎𝐑𝐓 𝐓𝐈𝐌𝐄</code>\n"
-                "◆ 📝 <b>ᴇxᴀᴍᴘʟᴇ ➪</b> <code>/attack 𝟏.𝟐.𝟑.𝟒 𝟖𝟎 𝟔𝟎</code>",
+                "┌┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┐\n"
+                "┊  🪼 𝐀𝐓𝐓𝐀𝐂𝐊 𝐂𝐎𝐌𝐌𝐀𝐍𝐃    ┊\n"
+                "└┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┘\n\n"       
+                "📌 ᴜꜱᴀɢᴇ ➪ \n"
+                "◆ /attack 𝐈𝐏 𝐏𝐎𝐑𝐓 𝐓𝐈𝐌𝐄\n\n"
+                "📝 ᴇxᴀᴍᴘʟᴇ ➪ \n"
+                "◆ /attack 𝟏.𝟐.𝟑.𝟒 𝟖𝟎 𝟔𝟎",
                 parse_mode="HTML")
             return
 
