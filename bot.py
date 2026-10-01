@@ -403,12 +403,47 @@ def safe_send(cid, text, **kwargs):
 def normalize_text(text):
     if not text: return ""
     try:
+        # Remove zero-width and control characters
         for ch in ['\u200b', '\u200c', '\u200d', '\ufeff', '\u00a0',
                    '\u2028', '\u2029', '\u2060', '\u180e']:
             text = text.replace(ch, '')
+        
+        # Normalize unicode (handles bold/italic math letters)
         text = unicodedata.normalize('NFKD', text)
+        
+        # Remove combining marks
         text = ''.join(c for c in text if not unicodedata.combining(c))
-        return text.strip().upper()
+        
+        # ★★★ ADD THIS: Convert math bold/italic letters to normal ★★★
+        # Map Mathematical Alphanumeric Symbols to normal A-Z0-9
+        result = []
+        for c in text:
+            cp = ord(c)
+            # Mathematical Bold Capital A-Z (U+1D400 - U+1D419)
+            if 0x1D400 <= cp <= 0x1D419:
+                result.append(chr(ord('A') + (cp - 0x1D400)))
+            # Mathematical Bold Small a-z (U+1D41A - U+1D433)
+            elif 0x1D41A <= cp <= 0x1D433:
+                result.append(chr(ord('a') + (cp - 0x1D41A)))
+            # Mathematical Bold Digits 0-9 (U+1D7CE - U+1D7D7)
+            elif 0x1D7CE <= cp <= 0x1D7D7:
+                result.append(chr(ord('0') + (cp - 0x1D7CE)))
+            # Mathematical Italic Capital A-Z (U+1D434 - U+1D44D)
+            elif 0x1D434 <= cp <= 0x1D44D:
+                result.append(chr(ord('A') + (cp - 0x1D434)))
+            # Mathematical Italic Small a-z (U+1D44E - U+1D467)
+            elif 0x1D44E <= cp <= 0x1D467:
+                result.append(chr(ord('a') + (cp - 0x1D44E)))
+            # Mathematical Sans-Serif Bold Capital (U+1D5D4 - U+1D5ED)
+            elif 0x1D5D4 <= cp <= 0x1D5ED:
+                result.append(chr(ord('A') + (cp - 0x1D5D4)))
+            # Mathematical Sans-Serif Bold Small (U+1D5EE - U+1D607)
+            elif 0x1D5EE <= cp <= 0x1D607:
+                result.append(chr(ord('a') + (cp - 0x1D5EE)))
+            else:
+                result.append(c)
+        
+        return ''.join(result).strip().upper()
     except Exception as e:
         print(f"normalize_text error: {e}")
         return text.strip().upper() if text else ""
@@ -3347,6 +3382,15 @@ def cmd_settings(msg):
     except Exception as e: print(f"❌ cmd_settings error: {e}")
 
 # ============= AUTO REACTION HANDLER ★★★ =============
+# ★★★ Track last used emoji to avoid repetition ★★★
+_last_reaction_idx = [0]
+
+def get_next_reaction_emoji():
+    """Cycle through all emojis, one by one (never same twice in a row)"""
+    global _last_reaction_idx
+    _last_reaction_idx[0] = (_last_reaction_idx[0] + 1) % len(REACTION_EMOJIS)
+    return REACTION_EMOJIS[_last_reaction_idx[0]]
+
 @bot.message_handler(
     func=lambda m: True,
     content_types=['text', 'photo', 'video', 'sticker', 'document', 'audio', 'voice']
@@ -3358,7 +3402,16 @@ def auto_reaction_handler(msg):
         uid = msg.from_user.id
         if is_banned(uid):
             return
-        emoji = random.choice(REACTION_EMOJIS)
+        
+        # ★★★ Skip reactions for command messages and button texts ★★★
+        if msg.text and msg.text.startswith('/'):
+            return  # Don't react to commands
+        
+        if msg.text and get_button_type(msg.text) is not None:
+            return  # Don't react to button texts
+        
+        # ★★★ Use cycling emoji (never same twice) ★★★
+        emoji = get_next_reaction_emoji()
         send_reaction(msg.chat.id, msg.message_id, emoji)
     except Exception as e:
         print(f"Auto reaction error: {e}")
