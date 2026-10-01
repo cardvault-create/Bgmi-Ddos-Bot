@@ -907,7 +907,6 @@ def cmd_start(msg):
             text += "🔑 ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ ➪ <code>/redeem ʏᴏᴜʀ-ᴋᴇʏ</code>\n"
 
         text += (
-                "\n\n"
                 "◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣◢◣\n"
                 "▓▓              /attack   ♯    /profile             ▓▓\n"
                 "     ▓▓       /status    ⌬  /redeem        ▓▓\n"
