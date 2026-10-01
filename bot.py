@@ -586,7 +586,7 @@ def check_key_expiry_notifications():
                                 )
                                 bot.send_message(int(uid_str), expire_msg, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
                                 print(f"🔒 Key expired for {uid_str} — Keyboard removed")
-                              except Exception as e:
+                              except Exception as e:            # ✅ Sahi indent
                                 print(f"Expiry notify error {uid_str}: {e}")
                 except: pass
         except Exception as e:
