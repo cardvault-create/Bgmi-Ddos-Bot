@@ -2117,7 +2117,7 @@ def do_genkey(msg):
                 f"  ◆ ⏰ ᴅᴜʀᴀᴛɪᴏɴ ➪ <code>{dur_text}</code>\n"
                 f"  ◆ 🎭 ᴛʏᴘᴇ ➪ <code>{'ᴘʀᴇᴍɪᴜᴍ' if custom_name else 'ꜱᴛᴀɴᴅᴀʀᴅ'}</code>\n\n"
                 "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃                   🦄 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬 🪩                 ┃┃\n"
+                "┃                   🦄 𝗬𝗢𝗨𝗥 𝗞𝗘𝗬 🪩                 ┃\n"
                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
                 f"  <code>{key}</code>\n\n"
                 "  ⬆️ <b>ᴋᴇʏ ᴘᴇ ʟᴏɴɢ ᴘʀᴇꜱꜱ ᴋᴀʀᴋᴇ ᴄᴏᴘʏ ᴋᴀʀᴏ</b>\n\n"
@@ -2454,7 +2454,7 @@ def cmd_panel(msg):
             "  ◆ 📋 /listpyf ➪ ʟɪꜱᴛ\n"
             "  ◆ 🗑️ /delpyf NUM ➪ ʀᴇᴍᴏᴠᴇ\n\n"
             "╔══════════════════════════╗\n"
-            "║              🦪 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠              ║\n"
+            "║                🦪 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠              ║\n"
             "╚══════════════════════════╝",
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_panel error: {e}")
