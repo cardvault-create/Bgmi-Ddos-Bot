@@ -1,2 +1,2 @@
-pyTelegramBotAPI
-requests
+python-telegram-bot>=22.0
+requests>=2.31.0
