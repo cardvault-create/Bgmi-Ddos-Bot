@@ -687,7 +687,11 @@ def check_key_expiry_notifications():
                                     "║                  🔥 ɢᴇᴛ ɴᴇᴡ ᴋᴇʏ 🍑                   ║\n"
                                     "╚══════════════════════════╝"
                                 )
-                                bot.send_message(int(uid_str), expire_msg, parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
+                                # STEP 1: Keyboard remove karne ke liye chhota message
+                                bot.send_message(int(uid_str), "🔒 ᴋᴇʏ ᴇxᴘɪʀᴇᴅ — ᴋᴇʏʙᴏᴀʀᴅ ʀᴇᴍᴏᴠᴇᴅ", reply_markup=ReplyKeyboardRemove())
+
+                                # STEP 2: Expire message
+                                bot.send_message(int(uid_str), expire_msg, parse_mode="HTML"))
                                 print(f"🔒 Key expired for {uid_str} — Keyboard removed")
                             except Exception as e:
                                 print(f"Expiry notify error {uid_str}: {e}")
