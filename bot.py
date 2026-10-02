@@ -18,6 +18,7 @@ import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 import time
+import math
 import requests
 import traceback
 
@@ -717,7 +718,7 @@ def get_cd_remaining(uid):
     if uid in user_cooldown:
         r = user_cooldown[uid] - time.time()
         if r > 0:
-            return int(r) + 1
+            return int(math.ceil(r))
         else:
             del user_cooldown[uid]
             return 0
@@ -725,7 +726,9 @@ def get_cd_remaining(uid):
 
 def set_cd(uid):
     cd = get_setting('user_cooldown', 5)
-    if cd > 0: user_cooldown[uid] = time.time() + cd
+    if cd > 0:
+        user_cooldown[uid] = time.time() + cd + 0.5
+        print(f"⏱️ Cooldown set for {uid}: {cd}s")
 
 def is_attack_running(uid=None):
     with attack_lock:
@@ -1669,10 +1672,10 @@ def cmd_attack(msg):
             if data.get("feedback_enabled", False) and not is_owner(uid):
                 complete_caption = (
                     "╔══════════════════════════╗\n"
-                    "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️         ║\n"
+                    "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️      ║\n"
                     "╚══════════════════════════╝\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+                    "┃                ♻️ 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                     f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
                     f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
@@ -1681,18 +1684,18 @@ def cmd_attack(msg):
                     f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
                     f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃               📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+                    "┃               📟 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                     f"  <code>/attack {ip} {port} {dur}</code>\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║      📸 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸     ║\n"
-                    "╚══════════════════════════╝\n\n"
+                    "╔═════════════════════════╗\n"
+                    "║      🎞️ 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸  ║\n"
+                    "╚═════════════════════════╝\n\n"
                     "  ⚠️ <b>ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀɴᴇ ᴋᴇ ʟɪʏᴇ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n\n"
                     "  📌 <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇɪɴ</b>\n"
                     "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
-                    "╚══════════════════════════╝"
+                    "╔═════════════════════════╗\n"
+                    "║             🗼 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🧿       ║\n"
+                    "╚═════════════════════════╝"
                 )
                 if complete_video:
                     try:
@@ -1712,10 +1715,10 @@ def cmd_attack(msg):
             else:
                 complete_caption = (
                     "╔══════════════════════════╗\n"
-                    "║              ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️       ║\n"
+                    "║              🌼 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️       ║\n"
                     "╚══════════════════════════╝\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+                    "┃                🚮 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                     f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
                     f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
@@ -1724,11 +1727,11 @@ def cmd_attack(msg):
                     f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
                     f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+                    "┃           ☢️ ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                     f"  <code>/attack {ip} {port} {dur}</code>\n\n"
                     "╔══════════════════════════╗\n"
-                    "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
+                    "║             💛 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
                     "╚══════════════════════════╝"
                 )
                 if complete_video:
