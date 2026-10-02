@@ -280,30 +280,22 @@ def get_random_video():
         print(f"❌ Video pop error ➪ {e}")
         return None
 
-# ★ Per-user PYF rotation
-_pyf_user_index = {}  # {user_id: next_index}
+# ★ GLOBAL PYF rotation — sab users ke liye common
+_pyf_global_index = [0]
 
 def get_random_pyf(user_id=None):
-    """Get random PYF video with PROPER rotation (per-user)."""
+    """Get PYF video with GLOBAL rotation — same video dobara nahi jab tak sab cover na ho."""
     pyfs = ensure_list(data.get("pyf_videos", []))
     if not pyfs:
         print("⚠️ Nᴏ PYF ᴠɪᴅᴇᴏs ɪɴ ᴅᴀᴛᴀʙᴀsᴇ")
         return None
 
-    # Agar user_id nahi diya, toh random
-    if user_id is None:
-        return random.choice(pyfs)
-
-    # Per-user rotation — user ke liye next index
-    global _pyf_user_index
-    if user_id not in _pyf_user_index:
-        _pyf_user_index[user_id] = 0
-
-    idx = _pyf_user_index[user_id] % len(pyfs)
+    # GLOBAL rotation — har user ko alag video milegi
+    idx = _pyf_global_index[0] % len(pyfs)
     chosen = pyfs[idx]
-    _pyf_user_index[user_id] = (idx + 1) % len(pyfs)
+    _pyf_global_index[0] = (idx + 1) % len(pyfs)
 
-    print(f"✅ PYF for user {user_id}: index={idx} → {chosen[:30]}...")
+    print(f"✅ PYF (global): index={idx}/{len(pyfs)-1} → {chosen[:30]}...")
     return chosen
 
 # ============= HELPERS =============
@@ -847,7 +839,7 @@ def cmd_start(msg):
 
         check = None
         is_video_msg = False
-        chosen_pyf_start = get_random_pyf(user_id=uid)
+        chosen_pyf_start = get_random_pyf()
         if chosen_pyf_start:
             try:
                 print(f"📹 Sending PYF video for /start...")
@@ -3350,8 +3342,9 @@ def cmd_delpyf(msg):
             if 0 <= idx < len(pyfs):
                 pyfs.pop(idx)
                 save_data(data)
-                global _pyf_pool
-                _pyf_pool = []
+                # Reset global PYF rotation
+                global _pyf_global_index
+                _pyf_global_index = [0]
                 safe_reply(msg,
                     "╔══════════════════════════╗\n"
                     "┃                ✅ 𝗣𝗬𝗙 𝗥𝗘𝗠𝗢𝗩𝗘𝗗 ✅               ┃\n"
@@ -3414,8 +3407,9 @@ def handle_video(msg):
             if file_id not in pyfs:
                 data["pyf_videos"].append(file_id)
                 save_data(data)
-                global _pyf_pool
-                _pyf_pool = []
+                # Reset global PYF rotation
+                global _pyf_global_index
+                _pyf_global_index = [0]
                 safe_reply(msg,
                     "╔══════════════════════════╗\n"
                     "┃            ✅ 𝗣𝗬𝗙 𝗩𝗜𝗗𝗘𝗢 𝗔𝗗𝗗𝗘𝗗 ✅            ┃\n"
