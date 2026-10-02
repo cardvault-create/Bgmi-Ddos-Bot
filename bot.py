@@ -1402,12 +1402,12 @@ def cmd_attack(msg):
             if dur < 1: safe_reply(msg, "❌ ᴍɪɴ 1ꜱ!"); return
             if dur > get_setting('max_attack_time', 300) and not is_owner(uid):
                 safe_reply(msg, f"❌ ᴍᴀx {get_setting('max_attack_time', 300)}ꜱ!"); return
-        except:
-            safe_reply(msg, "❌ ɪɴᴠᴀʟɪᴅ ᴘᴏʀᴛ/ᴛɪᴍᴇ!"); return
+except:
+    safe_reply(msg, "❌ ɪɴᴠᴀʟɪᴅ ᴘᴏʀᴛ/ᴛɪᴍᴇ!"); return
 
+# ★★★ COOLDOWN CHECK WITH LIVE COUNTDOWN ★★★
 cd = get_cd_remaining(uid)
 if cd > 0 and not is_owner(uid):
-    # ★★★ LIVE COOLDOWN COUNTDOWN ★★★
     try:
         cooldown_msg = bot.reply_to(msg,
             "╔══════════════════════════╗\n"
@@ -1421,22 +1421,18 @@ if cd > 0 and not is_owner(uid):
         print(f"⚠️ Cooldown message error: {cd_err}")
         cooldown_msg = None
 
-    # ★ LIVE COUNTDOWN THREAD ★
     def live_cooldown_countdown():
         try:
             while True:
                 time.sleep(1)
                 remaining = get_cd_remaining(uid)
                 if remaining <= 0:
-                    # Cooldown khatam — message delete kar do
                     if cooldown_msg:
                         try:
                             bot.delete_message(cid, cooldown_msg.message_id)
                         except: pass
                     print(f"✅ Cooldown complete for {uid}")
                     return
-
-                # Har second update karo
                 if cooldown_msg:
                     try:
                         bot.edit_message_text(
@@ -1454,9 +1450,7 @@ if cd > 0 and not is_owner(uid):
                         )
                     except Exception as edit_err:
                         err_str = str(edit_err).lower()
-                        if "message is not modified" in err_str:
-                            pass  # Same text, koi issue nahi
-                        else:
+                        if "message is not modified" not in err_str:
                             print(f"⚠️ Cooldown edit error: {edit_err}")
         except Exception as e:
             print(f"⚠️ Cooldown countdown error: {e}")
@@ -1464,7 +1458,7 @@ if cd > 0 and not is_owner(uid):
     threading.Thread(target=live_cooldown_countdown, daemon=True).start()
     return
 
-        if is_attack_running(uid):
+if is_attack_running(uid):
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "║              🛑 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🚷         ║\n"
