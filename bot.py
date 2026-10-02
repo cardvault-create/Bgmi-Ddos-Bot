@@ -44,7 +44,7 @@ DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟�
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
 
 # ============= RUNTIME SETTINGS =============
-UPDATE_INTERVAL = 5
+UPDATE_INTERVAL = 10
 AUTO_STOP_AFTER = 120
 
 # ============= IST TIMEZONE =============
@@ -239,46 +239,36 @@ def generate_feedback_id():
     return "FB-" + uuid.uuid4().hex[:10].upper()
 
 # ============= ★★★ FIXED ROTATION SYSTEM ★★★ =============
-_sticker_pool = []
-_video_pool = []
+_sticker_global_index = [0]
+_video_global_index = [0]
 
 def get_random_sticker():
-    """Get random sticker with proper rotation."""
-    global _sticker_pool
+    """Get sticker with GLOBAL rotation — same sticker dobara nahi jab tak sab cover na ho."""
     stickers = ensure_list(data.get("stickers", []))
     if not stickers:
         print("⚠️ Nᴏ Sᴛɪᴄᴋᴇʀs Iɴ Dᴀᴛᴀʙᴀsᴇ")
         return None
-    if not _sticker_pool:
-        _sticker_pool = stickers.copy()
-        random.shuffle(_sticker_pool)
-        print(f"🔄 Sᴛɪᴄᴋᴇʀ ᴘᴏᴏʟ ʀᴇғɪʟʟᴇᴅ ({len(_sticker_pool)} ɪᴛᴇᴍs)")
-    try:
-        chosen = _sticker_pool.pop()
-        print(f"✅ Sᴇʟᴇᴄᴛᴇᴅ sᴛɪᴄᴋᴇʀ ➪ {chosen[:30]}...")
-        return chosen
-    except Exception as e:
-        print(f"❌ Sticker pop error ➪ {e}")
-        return None
+
+    idx = _sticker_global_index[0] % len(stickers)
+    chosen = stickers[idx]
+    _sticker_global_index[0] = (idx + 1) % len(stickers)
+
+    print(f"✅ STICKER (global): index={idx}/{len(stickers)-1} → {chosen[:30]}...")
+    return chosen
 
 def get_random_video():
-    """Get random video with proper rotation."""
-    global _video_pool
+    """Get video with GLOBAL rotation — same video dobara nahi jab tak sab cover na ho."""
     videos = ensure_list(data.get("videos", []))
     if not videos:
         print("⚠️ Nᴏ ᴠɪᴅᴇᴏs ɪɴ ᴅᴀᴛᴀʙᴀsᴇ")
         return None
-    if not _video_pool:
-        _video_pool = videos.copy()
-        random.shuffle(_video_pool)
-        print(f"🔄 Vɪᴅᴇᴏ ᴘᴏᴏʟ ʀᴇғɪʟʟᴇᴅ ({len(_video_pool)} ɪᴛᴇᴍs)")
-    try:
-        chosen = _video_pool.pop()
-        print(f"✅ Sᴇʟᴇᴄᴛᴇᴅ ᴠɪᴅᴇᴏ ➪ {chosen[:30]}...")
-        return chosen
-    except Exception as e:
-        print(f"❌ Video pop error ➪ {e}")
-        return None
+
+    idx = _video_global_index[0] % len(videos)
+    chosen = videos[idx]
+    _video_global_index[0] = (idx + 1) % len(videos)
+
+    print(f"✅ VIDEO (global): index={idx}/{len(videos)-1} → {chosen[:30]}...")
+    return chosen
 
 # ★ GLOBAL PYF rotation — sab users ke liye common
 _pyf_global_index = [0]
@@ -3170,9 +3160,9 @@ def cmd_removesticker(msg):
             if 0 <= idx < len(stickers):
                 removed = stickers.pop(idx)
                 save_data(data)
-                # Reset pool so it refills
-                global _sticker_pool
-                _sticker_pool = []
+                # Reset global sticker rotation
+                global _sticker_global_index
+                _sticker_global_index = [0]
                 safe_reply(msg,
                     "╔══════════════════════════╗\n"
                     "║           ✅ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗥𝗘𝗠𝗢𝗩𝗘𝗗 ✅           ║\n"
@@ -3247,8 +3237,8 @@ def cmd_delvideo(msg):
             if 0 <= idx < len(videos):
                 videos.pop(idx)
                 save_data(data)
-                global _video_pool
-                _video_pool = []
+                global _video_global_index
+                _video_global_index = [0]
                 safe_reply(msg,
                     "╔══════════════════════════╗\n"
                     "┃              ✅ 𝗩𝗜𝗗𝗘𝗢 𝗥𝗘𝗠𝗢𝗩𝗘𝗗 ✅            ┃\n"
@@ -3371,9 +3361,9 @@ def auto_sticker(msg):
         if file_id not in stickers:
             data["stickers"].append(file_id)
             save_data(data)
-            # ★ RESET POOL SO NEW STICKER IS INCLUDED ★
-            global _sticker_pool
-            _sticker_pool = []
+            # ★ Reset global sticker rotation ★
+            global _sticker_global_index
+            _sticker_global_index = [0]
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
                 "┃              ✅ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗔𝗗𝗗𝗘𝗗 ✅             ┃\n"
@@ -3427,8 +3417,8 @@ def handle_video(msg):
             if file_id not in videos:
                 data["videos"].append(file_id)
                 save_data(data)
-                global _video_pool
-                _video_pool = []
+                global _video_global_index
+                _video_global_index = [0]
                 safe_reply(msg,
                     "╔══════════════════════════╗\n"
                     "┃                  ✅ 𝗩𝗜𝗗𝗘𝗢 𝗔𝗗𝗗𝗘𝗗 ✅              ┃\n"
