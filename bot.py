@@ -2259,18 +2259,41 @@ def cmd_delkey(msg):
         key_info = keys.pop(key)
         save_data(data)
 
-        # Agar yeh key kisi user ne use ki hai toh user ka key bhi hata do
-        used_by = key_info.get('used_by') if isinstance(key_info, dict) else None
-        user_cleared = False
-        if used_by:
-            uid_str = str(used_by)
-            if uid_str in ensure_dict(data.get("users", {})):
-                # User ka key_expiry check karo
-                if isinstance(data["users"][uid_str], dict):
-                    data["users"][uid_str]["key_expiry"] = None
-                    data["users"][uid_str]["key_activated"] = None
-                    user_cleared = True
-                    save_data(data)
+# Agar yeh key kisi user ne use ki hai toh user ka key bhi hata do
+used_by = key_info.get('used_by') if isinstance(key_info, dict) else None
+user_cleared = False
+if used_by:
+    uid_str = str(used_by)
+    if uid_str in ensure_dict(data.get("users", {})):
+        # User ka key_expiry check karo
+        if isinstance(data["users"][uid_str], dict):
+            data["users"][uid_str]["key_expiry"] = None
+            data["users"][uid_str]["key_activated"] = None
+            user_cleared = True
+            save_data(data)
+        # ★ NAYA — User ko notify + keyboard remove ★
+        try:
+            bot.send_message(
+                int(uid_str),
+                "🔒 ᴋᴇʏ ᴅᴇʟᴇᴛᴇᴅ — ᴋᴇʏʙᴏᴀʀᴅ ʀᴇᴍᴏᴠᴇᴅ",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            bot.send_message(
+                int(uid_str),
+                "╔══════════════════════════╗\n"
+                "║              🗑️ 𝗞𝗘𝗬 𝗗𝗘𝗟𝗘𝗧𝗘𝗗 🗑️             ║\n"
+                "╚══════════════════════════╝\n\n"
+                "🔒 <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ ᴋᴀʀ ᴅɪ ɢᴀʏɪ ʜᴀɪ</b>\n\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "⚠️ <b>ᴀᴀᴘ ᴀʙ ᴀᴛᴛᴀᴄᴋ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n\n"
+                "📌 <b>ɴᴀʏᴀ ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
+                "➤ <code>/redeem YOUR-KEY</code>\n\n"
+                f"👑 <b>ᴏᴡɴᴇʀ:</b> <code>{BOT_OWNER}</code>",
+                parse_mode="HTML"
+            )
+            print(f"🗑️ Key deleted for {uid_str} — Keyboard removed")
+        except Exception as notify_err:
+            print(f"⚠️ Key delete notify failed {uid_str}: {notify_err}")
 
         msg_text = (
             "╔══════════════════════════╗\n"
@@ -2318,14 +2341,43 @@ def cmd_delallkeys(msg):
                 parse_mode="HTML")
             return
 
-        # Confirmed — delete all UNUSED keys
-        keys = ensure_dict(data.get("keys", {}))
-        to_delete = [k for k, v in keys.items() if isinstance(v, dict) and not v.get('used')]
-        deleted_count = 0
-        for k in to_delete:
-            keys.pop(k, None)
-            deleted_count += 1
-        save_data(data)
+# Confirmed — delete all UNUSED keys
+keys = ensure_dict(data.get("keys", {}))
+to_delete = [k for k, v in keys.items() if isinstance(v, dict) and not v.get('used')]
+deleted_count = 0
+# ★ NAYA — Affected users collect karo ★
+affected_users = []
+for k in to_delete:
+    key_info = keys.get(k)
+    if isinstance(key_info, dict):
+        used_by = key_info.get('used_by')
+        if used_by and str(used_by) not in affected_users:
+            affected_users.append(str(used_by))
+    keys.pop(k, None)
+    deleted_count += 1
+save_data(data)
+# ★ NAYA — Affected users ko notify + keyboard remove ★
+for uid_str in affected_users:
+    try:
+        bot.send_message(
+            int(uid_str),
+            "🔒 ᴋᴇʏ ᴅᴇʟᴇᴛᴇᴅ — ᴋᴇʏʙᴏᴀʀᴅ ʀᴇᴍᴏᴠᴇᴅ",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        bot.send_message(
+            int(uid_str),
+            "╔══════════════════════════╗\n"
+            "║              🗑️ 𝗞𝗘𝗬 𝗗𝗘𝗟𝗘𝗧𝗘𝗗 🗑️             ║\n"
+            "╚══════════════════════════╝\n\n"
+            "🔒 <b>ᴀᴀᴘᴋɪ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ ᴋᴀʀ ᴅɪ ɢᴀʏɪ ʜᴀɪ</b>\n\n"
+            "📌 <b>ɴᴀʏᴀ ᴋᴇʏ ʀᴇᴅᴇᴇᴍ ᴋᴀʀᴏ:</b>\n"
+            "➤ <code>/redeem YOUR-KEY</code>\n\n"
+            f"👑 <b>ᴏᴡɴᴇʀ:</b> <code>{BOT_OWNER}</code>",
+            parse_mode="HTML"
+        )
+        print(f"🗑️ Key deleted for {uid_str} — Keyboard removed")
+    except Exception as notify_err:
+        print(f"⚠️ Key delete notify failed {uid_str}: {notify_err}")
 
         safe_reply(msg,
             "╔══════════════════════════╗\n"
