@@ -710,8 +710,11 @@ _stop_flags = {}
 def get_cd_remaining(uid):
     if uid in user_cooldown:
         r = user_cooldown[uid] - time.time()
-        if r > 0: return int(r)
-        del user_cooldown[uid]
+        if r > 0:
+            return int(r) + 1
+        else:
+            del user_cooldown[uid]
+            return 0
     return 0
 
 def set_cd(uid):
@@ -732,7 +735,7 @@ def is_attack_running(uid=None):
 # ============================================================
 _edit_lock = threading.Lock()
 _last_edit_time = [0.0]
-MIN_EDIT_INTERVAL = 1.5
+MIN_EDIT_INTERVAL = 2.5
 
 def _wait_for_rate_limit():
     with _edit_lock:
@@ -1402,16 +1405,64 @@ def cmd_attack(msg):
         except:
             safe_reply(msg, "❌ ɪɴᴠᴀʟɪᴅ ᴘᴏʀᴛ/ᴛɪᴍᴇ!"); return
 
-        cd = get_cd_remaining(uid)
-        if cd > 0 and not is_owner(uid):
-            safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║            ☢️ 𝗖𝗢𝗢𝗟𝗗𝗢𝗪𝗡 𝗔𝗖𝗧𝗜𝗩𝗘 🚧        ║\n"
-                "╚══════════════════════════╝\n\n"
-                f"  ◆ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{cd} ꜱᴇᴄᴏɴᴅꜱ</b>\n"
-                f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>",
-                parse_mode="HTML")
-            return
+cd = get_cd_remaining(uid)
+if cd > 0 and not is_owner(uid):
+    # ★★★ LIVE COOLDOWN COUNTDOWN ★★★
+    try:
+        cooldown_msg = bot.reply_to(msg,
+            "╔══════════════════════════╗\n"
+            "║            ☢️ 𝗖𝗢𝗢𝗟𝗗𝗢𝗪𝗡 𝗔𝗖𝗧𝗜𝗩𝗘 🚧        ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  ◆ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{cd} ꜱᴇᴄᴏɴᴅꜱ</b>\n"
+            f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
+            "  ⚠️ <b>ᴋʀɪᴘʏᴀ ᴄᴏᴏʟᴅᴏᴡɴ ᴋᴀ ɪɴᴛᴇᴢᴀᴀʀ ᴋᴀʀᴏ</b>",
+            parse_mode="HTML")
+    except Exception as cd_err:
+        print(f"⚠️ Cooldown message error: {cd_err}")
+        cooldown_msg = None
+
+    # ★ LIVE COUNTDOWN THREAD ★
+    def live_cooldown_countdown():
+        try:
+            while True:
+                time.sleep(1)
+                remaining = get_cd_remaining(uid)
+                if remaining <= 0:
+                    # Cooldown khatam — message delete kar do
+                    if cooldown_msg:
+                        try:
+                            bot.delete_message(cid, cooldown_msg.message_id)
+                        except: pass
+                    print(f"✅ Cooldown complete for {uid}")
+                    return
+
+                # Har second update karo
+                if cooldown_msg:
+                    try:
+                        bot.edit_message_text(
+                            chat_id=cid,
+                            message_id=cooldown_msg.message_id,
+                            text=(
+                                "╔══════════════════════════╗\n"
+                                "║            ☢️ 𝗖𝗢𝗢𝗟𝗗𝗢𝗪𝗡 𝗔𝗖𝗧𝗜𝗩𝗘 🚧        ║\n"
+                                "╚══════════════════════════╝\n\n"
+                                f"  ◆ ⏳ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{remaining} ꜱᴇᴄᴏɴᴅꜱ</b>\n"
+                                f"  ◆ 📅 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
+                                "  ⚠️ <b>ᴋʀɪᴘʏᴀ ᴄᴏᴏʟᴅᴏᴡɴ ᴋᴀ ɪɴᴛᴇᴢᴀᴀʀ ᴋᴀʀᴏ</b>"
+                            ),
+                            parse_mode="HTML"
+                        )
+                    except Exception as edit_err:
+                        err_str = str(edit_err).lower()
+                        if "message is not modified" in err_str:
+                            pass  # Same text, koi issue nahi
+                        else:
+                            print(f"⚠️ Cooldown edit error: {edit_err}")
+        except Exception as e:
+            print(f"⚠️ Cooldown countdown error: {e}")
+
+    threading.Thread(target=live_cooldown_countdown, daemon=True).start()
+    return
 
         if is_attack_running(uid):
             safe_reply(msg,
@@ -1483,25 +1534,29 @@ def cmd_attack(msg):
                 )
             except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
 
-        chosen_video = get_random_video()
-        attack_msg = None
-        is_video = False
+chosen_video = get_random_video()
+attack_msg = None
+is_video = False
 
-        if chosen_video:
-            try:
-                print(f"📹 Sending video for attack...")
-                attack_msg = bot.send_video(cid, chosen_video, caption=build_attack_caption(), parse_mode="HTML")
-                is_video = True
-                print(f"✅ Attack video sent")
-            except Exception as e:
-                print(f"❌ Video attack send failed: {e}, falling back to text")
-                try:
-                    attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
-                except Exception as e2:
-                    print(f"❌ Fallback also failed: {e2}")
-                    return
-        else:
+# ★★★ NAYA: Attack start wali video save karo ★★★
+start_video_id = chosen_video if chosen_video else None
+print(f"🎬 START VIDEO: {start_video_id[:30] if start_video_id else 'None'}...")
+
+if chosen_video:
+    try:
+        print(f"📹 Sending video for attack...")
+        attack_msg = bot.send_video(cid, chosen_video, caption=build_attack_caption(), parse_mode="HTML")
+        is_video = True
+        print(f"✅ Attack video sent")
+    except Exception as e:
+        print(f"❌ Video attack send failed: {e}, falling back to text")
+        try:
             attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
+        except Exception as e2:
+            print(f"❌ Fallback also failed: {e2}")
+            return
+else:
+    attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
 
         data["attack_logs"].append({
             'user_id': uid, 'username': name, 'target': ip, 'port': port,
@@ -1519,119 +1574,186 @@ def cmd_attack(msg):
                 'end_time': end_time, 'start_time': start_time
             }
 
-        def auto_update_attack():
-            last_text = None
-            max_loops = dur + 10
-            for _ in range(max_loops):
-                time.sleep(UPDATE_INTERVAL)
-                if _stop_flags.get(attack_id, False):
-                    print(f"⛔ Attack {attack_id} stopped by flag")
-                    return
-                now = ist_now()
-                if now >= end_time:
-                    print(f"✅ Attack {attack_id} time complete")
-                    return
-                try:
-                    new_text = build_attack_caption()
-                    if new_text != last_text:
+def auto_update_attack():
+    last_text = None
+    while True:
+        # Attack complete hone tak chalao
+        now = ist_now()
+        if now >= end_time:
+            print(f"✅ Attack {attack_id} time complete")
+            return
+        if _stop_flags.get(attack_id, False):
+            print(f"⛔ Attack {attack_id} stopped by flag")
+            return
+
+        time.sleep(UPDATE_INTERVAL)
+
+        # Sleep ke baad dobara check
+        now = ist_now()
+        if now >= end_time:
+            print(f"✅ Attack {attack_id} time complete")
+            return
+        if _stop_flags.get(attack_id, False):
+            return
+
+        try:
+            new_text = build_attack_caption()
+            if new_text != last_text:
+                # ★ 3 baar retry karega agar flood/error aaye
+                success = False
+                for _attempt in range(3):
+                    try:
                         if is_video:
-                            safe_edit_caption(cid, attack_msg.message_id, new_text, parse_mode="HTML")
+                            r = safe_edit_caption(cid, attack_msg.message_id, new_text, parse_mode="HTML")
                         else:
-                            safe_edit_text(cid, attack_msg.message_id, new_text, parse_mode="HTML")
-                        last_text = new_text
-                except: pass
+                            r = safe_edit_text(cid, attack_msg.message_id, new_text, parse_mode="HTML")
 
-        threading.Thread(target=auto_update_attack, daemon=True).start()
+                        if r is not None and r != "NOT_MODIFIED":
+                            success = True
+                            last_text = new_text
+                            break
+                        elif r == "NOT_MODIFIED":
+                            success = True
+                            last_text = new_text
+                            break
+                    except Exception as inner_e:
+                        print(f"⚠️ Attack update attempt {_attempt+1}: {inner_e}")
+                        time.sleep(1)
 
-        def done():
-            for _ in range(dur):
-                time.sleep(1)
-                if _stop_flags.get(attack_id, False):
-                    print(f"⛔ Attack {attack_id} stopped early")
-                    _stop_flags.pop(attack_id, None)
-                    with attack_lock: active_attacks.pop(attack_id, None)
-                    return
+                if not success:
+                    print(f"⚠️ Attack {attack_id} update skipped this cycle")
+        except Exception as e:
+            print(f"⚠️ auto_update_attack error: {e}")
+            time.sleep(1)
 
-            with attack_lock: active_attacks.pop(attack_id, None)
+threading.Thread(target=auto_update_attack, daemon=True).start()
+
+def done():
+    for _ in range(dur):
+        time.sleep(1)
+        if _stop_flags.get(attack_id, False):
+            print(f"⛔ Attack {attack_id} stopped early")
             _stop_flags.pop(attack_id, None)
+            with attack_lock: active_attacks.pop(attack_id, None)
+            return
 
-            if data.get("feedback_enabled", False) and not is_owner(uid):
-                data["pending_attacks"][str(uid)] = {
-                    "last_target": ip,
-                    "last_port": port,
-                    "last_duration": dur,
-                    "attack_cmd": f"/attack {ip} {port} {dur}",
-                    "completed_at": ist_now().isoformat()
-                }
-                save_data(data)
+    with attack_lock: active_attacks.pop(attack_id, None)
+    _stop_flags.pop(attack_id, None)
 
+    # ★★★ NAYA: Complete video pick karo — start wali se ALAG ★★★
+    complete_video = None
+    for _try in range(10):
+        _candidate = get_random_video()
+        if _candidate and _candidate != start_video_id:
+            complete_video = _candidate
+            break
+        elif _candidate and len(ensure_list(data.get("videos", []))) == 1:
+            complete_video = _candidate
+            break
+        time.sleep(0.1)
+    print(f"🎬 COMPLETE VIDEO: {complete_video[:30] if complete_video else 'None'}...")
+
+    if data.get("feedback_enabled", False) and not is_owner(uid):
+        data["pending_attacks"][str(uid)] = {
+            "last_target": ip,
+            "last_port": port,
+            "last_duration": dur,
+            "attack_cmd": f"/attack {ip} {port} {dur}",
+            "completed_at": ist_now().isoformat()
+        }
+        save_data(data)
+
+    try:
+        bot.delete_message(cid, attack_msg.message_id)
+        print(f"🗑️ Purana attack message delete kiya")
+    except Exception as del_err:
+        print(f"⚠️ Delete failed: {del_err}")
+
+    if data.get("feedback_enabled", False) and not is_owner(uid):
+        complete_caption = (
+            "╔══════════════════════════╗\n"
+            "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️         ║\n"
+            "╚══════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+            f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+            f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+            f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+            f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+            f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃               📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  <code>/attack {ip} {port} {dur}</code>\n\n"
+            "╔══════════════════════════╗\n"
+            "║      📸 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸     ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  ⚠️ <b>ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀɴᴇ ᴋᴇ ʟɪʏᴇ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n\n"
+            "  📌 <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇɪɴ</b>\n"
+            "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
+            "╔══════════════════════════╗\n"
+            "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
+            "╚══════════════════════════╝"
+        )
+        # ★★★ NAYA: Video bhejo ★★★
+        if complete_video:
             try:
-                bot.delete_message(cid, attack_msg.message_id)
-                print(f"🗑️ Purana attack message delete kiya")
-            except Exception as del_err:
-                print(f"⚠️ Delete failed: {del_err}")
-
-            if data.get("feedback_enabled", False) and not is_owner(uid):
-                complete_caption = (
-                    "╔══════════════════════════╗\n"
-                    "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️         ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-                    f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-                    f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-                    f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-                    f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-                    f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃               📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  <code>/attack {ip} {port} {dur}</code>\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║      📸 𝗦𝗖𝗥𝗘𝗘𝗡𝗦𝗛𝗢𝗧 𝗥𝗘𝗤𝗨𝗜𝗥𝗘𝗗 📸     ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "  ⚠️ <b>ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀɴᴇ ᴋᴇ ʟɪʏᴇ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇ</b>\n\n"
-                    "  📌 <b>ᴀᴀᴘ ᴇꜱ ᴀᴛᴛᴀᴄᴋ ᴋᴀ ꜱᴄʀᴇᴇɴꜱʜᴏᴛ ʙʜᴇᴊᴇɪɴ</b>\n"
-                    "  📌 <b>ᴛᴀʙʜɪ ɴᴇxᴛ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
-                    "╚══════════════════════════╝"
-                )
+                bot.send_video(cid, complete_video, caption=complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+                print(f"✅ Complete video sent")
+            except Exception as e:
+                print(f"❌ Complete video failed: {e}, falling back to text")
                 try:
                     bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
-                except Exception as e:
-                    print(f"Complete msg error: {e}")
-            else:
-                complete_caption = (
-                    "╔══════════════════════════╗\n"
-                    "║              ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️       ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-                    f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-                    f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-                    f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-                    f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-                    f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
-                    "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
-                    "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  <code>/attack {ip} {port} {dur}</code>\n\n"
-                    "╔══════════════════════════╗\n"
-                    "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
-                    "╚══════════════════════════╝"
-                )
+                except Exception as e2:
+                    print(f"Complete msg error: {e2}")
+        else:
+            try:
+                bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+            except Exception as e:
+                print(f"Complete msg error: {e}")
+    else:
+        complete_caption = (
+            "╔══════════════════════════╗\n"
+            "║              ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️       ║\n"
+            "╚══════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃                📊 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 📊            ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+            f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+            f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+            f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+            f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+            f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃           📋 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  <code>/attack {ip} {port} {dur}</code>\n\n"
+            "╔══════════════════════════╗\n"
+            "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
+            "╚══════════════════════════╝"
+        )
+        # ★★★ NAYA: Video bhejo ★★★
+        if complete_video:
+            try:
+                bot.send_video(cid, complete_video, caption=complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+                print(f"✅ Complete video sent")
+            except Exception as e:
+                print(f"❌ Complete video failed: {e}, falling back to text")
                 try:
                     bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
-                except Exception as e:
-                    print(f"Complete msg error: {e}")
+                except Exception as e2:
+                    print(f"Complete msg error: {e2}")
+        else:
+            try:
+                bot.send_message(cid, complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
+            except Exception as e:
+                print(f"Complete msg error: {e}")
 
-        threading.Thread(target=done, daemon=True).start()
-
+threading.Thread(target=done, daemon=True).start()
+    
     except Exception as e:
         HEALTH["total_errors"] += 1
         print(f"❌ cmd_attack error: {e}")
