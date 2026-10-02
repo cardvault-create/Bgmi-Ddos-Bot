@@ -1400,11 +1400,11 @@ def cmd_attack(msg):
             port = int(ps); dur = int(ds)
             if not (1 <= port <= 65535): safe_reply(msg, "❌ ᴘᴏʀᴛ 1-65535!"); return
             if dur < 1: safe_reply(msg, "❌ ᴍɪɴ 1ꜱ!"); return
-            if dur > get_setting('max_attack_time', 300) and not is_owner(uid):
-                safe_reply(msg, f"❌ ᴍᴀx {get_setting('max_attack_time', 300)}ꜱ!"); return
+    if dur > get_setting('max_attack_time', 300) and not is_owner(uid):
+        safe_reply(msg, f"❌ ᴍᴀx {get_setting('max_attack_time', 300)}ꜱ!"); return
 except:
     safe_reply(msg, "❌ ɪɴᴠᴀʟɪᴅ ᴘᴏʀᴛ/ᴛɪᴍᴇ!"); return
-
+    
 # ★★★ COOLDOWN CHECK WITH LIVE COUNTDOWN ★★★
 cd = get_cd_remaining(uid)
 if cd > 0 and not is_owner(uid):
@@ -1552,26 +1552,25 @@ if chosen_video:
 else:
     attack_msg = bot.reply_to(msg, build_attack_caption(), parse_mode="HTML")
 
-        data["attack_logs"].append({
-            'user_id': uid, 'username': name, 'target': ip, 'port': port,
-            'duration': dur, 'timestamp': ist_now().isoformat()
-        })
-        if str(uid) in ensure_dict(data.get("users", {})):
-            if isinstance(data["users"][str(uid)], dict):
-                data["users"][str(uid)]["total_attacks"] = safe_int(data["users"][str(uid)].get("total_attacks", 0)) + 1
-        save_data(data)
+data["attack_logs"].append({
+    'user_id': uid, 'username': name, 'target': ip, 'port': port,
+    'duration': dur, 'timestamp': ist_now().isoformat()
+})
+if str(uid) in ensure_dict(data.get("users", {})):
+    if isinstance(data["users"][str(uid)], dict):
+        data["users"][str(uid)]["total_attacks"] = safe_int(data["users"][str(uid)].get("total_attacks", 0)) + 1
+save_data(data)
 
-        with attack_lock:
-            active_attacks[attack_id] = {
-                'target': ip, 'port': port, 'duration': dur,
-                'user_id': uid, 'username': name,
-                'end_time': end_time, 'start_time': start_time
-            }
+with attack_lock:
+    active_attacks[attack_id] = {
+        'target': ip, 'port': port, 'duration': dur,
+        'user_id': uid, 'username': name,
+        'end_time': end_time, 'start_time': start_time
+    }
 
 def auto_update_attack():
     last_text = None
     while True:
-        # Attack complete hone tak chalao
         now = ist_now()
         if now >= end_time:
             print(f"✅ Attack {attack_id} time complete")
@@ -1582,7 +1581,6 @@ def auto_update_attack():
 
         time.sleep(UPDATE_INTERVAL)
 
-        # Sleep ke baad dobara check
         now = ist_now()
         if now >= end_time:
             print(f"✅ Attack {attack_id} time complete")
@@ -1593,7 +1591,6 @@ def auto_update_attack():
         try:
             new_text = build_attack_caption()
             if new_text != last_text:
-                # ★ 3 baar retry karega agar flood/error aaye
                 success = False
                 for _attempt in range(3):
                     try:
@@ -1691,7 +1688,6 @@ def done():
             "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
             "╚══════════════════════════╝"
         )
-        # ★★★ NAYA: Video bhejo ★★★
         if complete_video:
             try:
                 bot.send_video(cid, complete_video, caption=complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
@@ -1729,7 +1725,6 @@ def done():
             "║             🎯 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎯          ║\n"
             "╚══════════════════════════╝"
         )
-        # ★★★ NAYA: Video bhejo ★★★
         if complete_video:
             try:
                 bot.send_video(cid, complete_video, caption=complete_caption, parse_mode="HTML", reply_to_message_id=msg.message_id)
@@ -1747,11 +1742,11 @@ def done():
                 print(f"Complete msg error: {e}")
 
 threading.Thread(target=done, daemon=True).start()
-    
-    except Exception as e:
-        HEALTH["total_errors"] += 1
-        print(f"❌ cmd_attack error: {e}")
-        traceback.print_exc()
+
+except Exception as e:
+    HEALTH["total_errors"] += 1
+    print(f"❌ cmd_attack error: {e}")
+    traceback.print_exc()
 
 
 # ============= STATUS =============
