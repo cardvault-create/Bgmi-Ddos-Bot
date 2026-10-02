@@ -240,7 +240,6 @@ def generate_feedback_id():
 # ============= ★★★ FIXED ROTATION SYSTEM ★★★ =============
 _sticker_pool = []
 _video_pool = []
-_pyf_pool = []
 
 def get_random_sticker():
     """Get random sticker with proper rotation."""
@@ -280,24 +279,31 @@ def get_random_video():
         print(f"❌ Video pop error ➪ {e}")
         return None
 
-def get_random_pyf():
-    """Get random PYF video with proper rotation."""
-    global _pyf_pool
+# ★ Per-user PYF rotation
+_pyf_user_index = {}  # {user_id: next_index}
+
+def get_random_pyf(user_id=None):
+    """Get random PYF video with PROPER rotation (per-user)."""
     pyfs = ensure_list(data.get("pyf_videos", []))
     if not pyfs:
         print("⚠️ Nᴏ PYF ᴠɪᴅᴇᴏs ɪɴ ᴅᴀᴛᴀʙᴀsᴇ")
         return None
-    if not _pyf_pool:
-        _pyf_pool = pyfs.copy()
-        random.shuffle(_pyf_pool)
-        print(f"🔄 PYF ᴘᴏᴏʟ ʀᴇғɪʟʟᴇᴅ ({len(_pyf_pool)} ɪᴛᴇᴍs)")
-    try:
-        chosen = _pyf_pool.pop()
-        print(f"✅ Selected PYF ➪ {chosen[:30]}...")
-        return chosen
-    except Exception as e:
-        print(f"❌ PYF pop error ➪ {e}")
-        return None
+
+    # Agar user_id nahi diya, toh random
+    if user_id is None:
+        return random.choice(pyfs)
+
+    # Per-user rotation — user ke liye next index
+    global _pyf_user_index
+    if user_id not in _pyf_user_index:
+        _pyf_user_index[user_id] = 0
+
+    idx = _pyf_user_index[user_id] % len(pyfs)
+    chosen = pyfs[idx]
+    _pyf_user_index[user_id] = (idx + 1) % len(pyfs)
+
+    print(f"✅ PYF for user {user_id}: index={idx} → {chosen[:30]}...")
+    return chosen
 
 # ============= HELPERS =============
 def is_owner(uid):
@@ -838,7 +844,7 @@ def cmd_start(msg):
 
         check = None
         is_video_msg = False
-        chosen_pyf_start = get_random_pyf()
+        chosen_pyf_start = get_random_pyf(user_id=uid)
         if chosen_pyf_start:
             try:
                 print(f"📹 Sending PYF video for /start...")
