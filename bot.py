@@ -39,6 +39,7 @@ DEFAULT_API_GEOLOCATION = "ALL"
 
 DATA_FILE = "bot_data.json"
 FEEDBACK_FILE = "feedback_data.json"
+RUNTIME_FILE = "runtime_state.json"
 
 DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞"
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
@@ -218,6 +219,190 @@ def save_data(d):
 data = load_data()
 save_data(data)
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
+
+# ═══════════════════════════════════════════════════════════
+# ★★★ RUNTIME STATE PERSISTENCE ★★★
+# ═══════════════════════════════════════════════════════════
+_attack_messages = {}
+
+def save_runtime_state():
+    try:
+        state = {
+            "active_attacks": {},
+            "attack_messages": {},
+            "expiry_notified": {},
+            "sticker_global_index": _sticker_global_index[0],
+            "video_global_index": _video_global_index[0],
+            "pyf_global_index": _pyf_global_index[0],
+            "user_cooldown": {},
+            "saved_at": ist_now().isoformat()
+        }
+        with attack_lock:
+            for aid, atk in list(active_attacks.items()):
+                if not isinstance(atk, dict): continue
+                atk_copy = dict(atk)
+                if isinstance(atk_copy.get('end_time'), datetime):
+                    atk_copy['end_time'] = atk_copy['end_time'].isoformat()
+                if isinstance(atk_copy.get('start_time'), datetime):
+                    atk_copy['start_time'] = atk_copy['start_time'].isoformat()
+                state["active_attacks"][aid] = atk_copy
+        state["attack_messages"] = dict(_attack_messages)
+        state["expiry_notified"] = dict(_expiry_notified)
+        now = time.time()
+        for uid, cd_time in user_cooldown.items():
+            if cd_time > now:
+                state["user_cooldown"][str(uid)] = cd_time
+        with open(RUNTIME_FILE, 'w') as f:
+            json.dump(state, f, indent=2, default=str)
+        print(f"💾 Runtime saved: {len(state['active_attacks'])} attacks")
+    except Exception as e:
+        print(f"⚠️ Save runtime error: {e}")
+
+
+def load_runtime_state():
+    global _sticker_global_index, _video_global_index, _pyf_global_index
+    if not os.path.exists(RUNTIME_FILE):
+        print("📂 No runtime file — fresh start")
+        return
+    try:
+        with open(RUNTIME_FILE, "r") as f:
+            state = json.load(f)
+        if not isinstance(state, dict): return
+        now = ist_now()
+        restored = 0
+        for aid, atk in ensure_dict(state.get("active_attacks", {})).items():
+            if not isinstance(atk, dict): continue
+            end_time = safe_parse_dt(atk.get('end_time'))
+            start_time = safe_parse_dt(atk.get('start_time'))
+            if not end_time or not start_time: continue
+            if end_time <= now: continue
+            atk['end_time'] = end_time
+            atk['start_time'] = start_time
+            with attack_lock:
+                active_attacks[aid] = atk
+            _stop_flags[aid] = False
+            restored += 1
+            print(f"🔄 Attack restored: {aid}")
+        for aid, msg_info in ensure_dict(state.get("attack_messages", {})).items():
+            if isinstance(msg_info, dict):
+                _attack_messages[aid] = msg_info
+        for uid_str, val in ensure_dict(state.get("expiry_notified", {})).items():
+            _expiry_notified[uid_str] = val
+        _sticker_global_index[0] = safe_int(state.get("sticker_global_index", 0), 0)
+        _video_global_index[0] = safe_int(state.get("video_global_index", 0), 0)
+        _pyf_global_index[0] = safe_int(state.get("pyf_global_index", 0), 0)
+        current_time = time.time()
+        for uid_str, cd_time in ensure_dict(state.get("user_cooldown", {})).items():
+            try:
+                cd_val = float(cd_time)
+                if cd_val > current_time:
+                    user_cooldown[int(uid_str)] = cd_val
+            except: pass
+        print(f"✅ Runtime loaded: {restored} attacks restored")
+        for aid, atk in list(active_attacks.items()):
+            try: _auto_resume_attack(aid, atk)
+            except Exception as e: print(f"⚠️ Resume err: {e}")
+    except Exception as e:
+        print(f"⚠️ Load runtime error: {e}")
+
+
+def _auto_resume_attack(attack_id, atk):
+    try:
+        user_id = atk.get('user_id')
+        username = atk.get('username', 'Unknown')
+        target = atk.get('target', 'N/A')
+        port = atk.get('port', 'N/A')
+        duration = safe_int(atk.get('duration', 60), 60)
+        start_time = atk.get('start_time')
+        end_time = atk.get('end_time')
+        if not isinstance(start_time, datetime) or not isinstance(end_time, datetime): return
+        msg_info = _attack_messages.get(attack_id)
+        if not msg_info: return
+        chat_id = msg_info.get('chat_id')
+        message_id = msg_info.get('message_id')
+        is_video = msg_info.get('is_video', False)
+        if not chat_id or not message_id: return
+
+        def build_caption():
+            try:
+                now = ist_now()
+                elapsed = int((now - start_time).total_seconds())
+                rem = max(0, duration - elapsed)
+                pct = min(100, int((elapsed / duration) * 100)) if duration > 0 else 0
+                filled = int(pct / 10)
+                bar = "▰" * filled + "▱" * (10 - filled)
+                if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
+                elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
+                elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
+                elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
+                else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+                rem_m = rem // 60; rem_s = rem % 60
+                return (
+                    "╔═════════════════════════╗\n"
+                    "║         🐣 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 🦜         ║\n"
+                    "╚═════════════════════════╝\n\n"
+                    f"  {bar} {pct}%\n  {st}\n\n"
+                    f"  ◆ 👤 @{escape_html(username)}\n"
+                    f"  ◆ 🎯 {target}:{port}\n"
+                    f"  ◆ ⏱️ {duration}ꜱ\n"
+                    f"  ◆ ▶️ {ist_time_str(start_time)} IST\n"
+                    f"  ◆ ⏹️ {ist_time_str(end_time)} IST\n"
+                    f"  ◆ ⏳ {elapsed}ꜱ\n"
+                    f"  ◆ ⏱️ {rem_m}ᴍ {rem_s}ꜱ\n\n"
+                    "╔═════════════════════════╗\n"
+                    "║           🍭 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🥂          ║\n"
+                    "╚═════════════════════════╝"
+                )
+            except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
+
+        def loop():
+            last_text = None
+            while True:
+                now = ist_now()
+                if now >= end_time: break
+                if _stop_flags.get(attack_id, False): break
+                time.sleep(UPDATE_INTERVAL)
+                now = ist_now()
+                if now >= end_time: break
+                if _stop_flags.get(attack_id, False): break
+                try:
+                    new_text = build_caption()
+                    if new_text != last_text:
+                        if is_video:
+                            r = safe_edit_caption(chat_id, message_id, new_text, parse_mode="HTML")
+                        else:
+                            r = safe_edit_text(chat_id, message_id, new_text, parse_mode="HTML")
+                        if r and r != "NOT_MODIFIED":
+                            last_text = new_text
+                except Exception as e:
+                    print(f"⚠️ Resume loop: {e}")
+                    time.sleep(2)
+            try:
+                with attack_lock: active_attacks.pop(attack_id, None)
+                _stop_flags.pop(attack_id, None)
+                _attack_messages.pop(attack_id, None)
+                save_runtime_state()
+                try: bot.delete_message(chat_id, message_id)
+                except: pass
+                rem_dur = safe_int(atk.get('duration', 60), 60)
+                complete_caption = (
+                    "╔═════════════════════════╗\n"
+                    "║            ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️      ║\n"
+                    "╚═════════════════════════╝\n\n"
+                    f"  ◆ 👤 @{escape_html(username)}\n"
+                    f"  ◆ 🎯 {target}\n"
+                    f"  ◆ 🚪 {port}\n"
+                    f"  ◆ ⏱️ {rem_dur}ꜱ\n"
+                )
+                try:
+                    bot.send_message(chat_id, complete_caption, parse_mode="HTML")
+                except: pass
+            except Exception as e:
+                print(f"⚠️ Resume cleanup: {e}")
+
+        threading.Thread(target=loop, daemon=True).start()
+    except Exception as e:
+        print(f"⚠️ _auto_resume_attack: {e}")
 
 # ============= FEEDBACK DB =============
 def load_feedback_db():
@@ -728,6 +913,17 @@ def check_key_expiry_notifications():
             print(f"Expiry check error: {e}")
 
 threading.Thread(target=check_key_expiry_notifications, daemon=True).start()
+
+# ============= AUTO-SAVE RUNTIME STATE =============
+def auto_save_runtime_loop():
+    while True:
+        try:
+            time.sleep(10)
+            save_runtime_state()
+        except Exception as e:
+            print(f"⚠️ Auto-save error: {e}")
+
+threading.Thread(target=auto_save_runtime_loop, daemon=True).start()
 
 # ============= ACTIVE ATTACKS & COOLDOWN =============
 user_cooldown = {}
@@ -1613,6 +1809,15 @@ def cmd_attack(msg):
                 'end_time': end_time, 'start_time': start_time
             }
 
+        _attack_messages[attack_id] = {
+            'chat_id': cid,
+            'message_id': attack_msg.message_id,
+            'is_video': is_video,
+            'original_msg_id': msg.message_id,
+            'start_video_id': start_video_id
+        }
+        save_runtime_state()
+
         def auto_update_attack():
             last_text = None
             while True:
@@ -1675,6 +1880,8 @@ def cmd_attack(msg):
 
             with attack_lock: active_attacks.pop(attack_id, None)
             _stop_flags.pop(attack_id, None)
+            _attack_messages.pop(attack_id, None)
+            save_runtime_state()
 
             # ★ Complete video pick karo — start wali se ALAG
             complete_video = None
@@ -4136,6 +4343,14 @@ def universal_button_handler(msg):
         print(f"❌ universal_button_handler error: {e}")
         traceback.print_exc()
 
+# ═══════════════════════════════════════════════════════
+# ★★★ LOAD RUNTIME STATE — Restart pe data wapas ★★★
+# ═══════════════════════════════════════════════════════
+print("🔄 Loading runtime state...")
+load_runtime_state()
+print("✅ Runtime state loaded")
+print("=" * 60)
+
 # ============= MAIN POLLING =============
 print("=" * 60)
 print(f"  {BOT_NAME}")
@@ -4207,3 +4422,7 @@ try:
             polling_thread.start()
 except KeyboardInterrupt:
     print("\n🛑 Bot stopped by user.")
+    print("💾 Saving runtime state...")
+    save_runtime_state()
+    save_data(data)
+    print("✅ All data saved! Restart karo — same point se resume hoga!")
