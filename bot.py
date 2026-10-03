@@ -37,9 +37,16 @@ DEFAULT_API_TOKEN = "a05d4ed492744534ab9307b8d9930c2f6a3a8ffa6eea85d07825ec15021
 DEFAULT_API_METHOD = "UDP-BIG"
 DEFAULT_API_GEOLOCATION = "ALL"
 
-DATA_FILE = "bot_data.json"
-FEEDBACK_FILE = "feedback_data.json"
-RUNTIME_FILE = "runtime_state.json"
+# ★★★ FIX: Absolute path — bot ke saath same folder mein save hoga ★★★
+import pathlib
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+DATA_FILE = str(BASE_DIR / "bot_data.json")
+FEEDBACK_FILE = str(BASE_DIR / "feedback_data.json")
+RUNTIME_FILE = str(BASE_DIR / "runtime_state.json")
+BACKUP_DIR = BASE_DIR / "backups"
+BACKUP_DIR.mkdir(exist_ok=True)
+
+print(f"📂 Data folder: {BASE_DIR}")
 
 DEV_BUTTON_TEXT = "˹ᴅᴇᴠᴇʟᴏᴩᴇʀ˼ 🪽 ➪ 𝜝𝜣𝜯 𝑭𝜟𝜯𝜢𝜮𝜞"
 DEVELOPER_USERNAME = "BeStChEaT_OwNeR"
@@ -158,8 +165,8 @@ def ensure_list(obj):
     return obj if isinstance(obj, list) else []
 
 # ============= DATA =============
-def load_data():
-    default = {
+def _get_default_data():
+    return {
         "users": {}, "keys": {}, "resellers": {},
         "admins": {BOT_OWNER_STR: {"added_at": ist_now().isoformat()}},
         "super_admins": {BOT_OWNER_STR: {"added_at": ist_now().isoformat(), "added_by": "system"}},
@@ -186,44 +193,98 @@ def load_data():
             "active_slot": "0"
         }
     }
+
+
+def _migrate_data(d):
+    """Existing data ko naye format mein lao"""
+    default = _get_default_data()
+    if not isinstance(d, dict):
+        return default
+    for k, v in default.items():
+        d.setdefault(k, v)
+    for key in ["users", "keys", "resellers", "admins", "super_admins",
+                "banned_users", "feedback_required", "pending_attacks"]:
+        if not isinstance(d.get(key), dict): d[key] = {}
+    for key in ["attack_logs", "admin_logs", "stickers", "videos",
+                "pyf_videos", "feedbacks"]:
+        if not isinstance(d.get(key), list): d[key] = []
+    if not isinstance(d.get("settings"), dict):
+        d["settings"] = default["settings"]
+    for sk, sv in default["settings"].items():
+        d["settings"].setdefault(sk, sv)
+    if not d["settings"].get("api_token") or len(str(d["settings"].get("api_token", ""))) < 10:
+        d["settings"]["api_token"] = DEFAULT_API_TOKEN
+    if not d["settings"].get("api_url") or not str(d["settings"].get("api_url", "")).startswith("http"):
+        d["settings"]["api_url"] = DEFAULT_API_URL
+    if not d["settings"].get("api_method"):
+        d["settings"]["api_method"] = DEFAULT_API_METHOD
+    if not d["settings"].get("api_geolocation"):
+        d["settings"]["api_geolocation"] = DEFAULT_API_GEOLOCATION
+    if BOT_OWNER_STR not in d["admins"]:
+        d["admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat()}
+    if BOT_OWNER_STR not in d["super_admins"]:
+        d["super_admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat(), "added_by": "system"}
+    return d
+
+
+def load_data():
+    """★★★ FIXED: Multiple backup files check karo — data kabhi na khoye ★★★"""
+    # STEP 1: Main file try karo
     if os.path.exists(DATA_FILE):
         try:
-            with open(DATA_FILE, "r") as f:
+            with open(DATA_FILE, "r", encoding='utf-8') as f:
                 d = json.load(f)
-                if isinstance(d, dict):
-                    for k, v in default.items():
-                        d.setdefault(k, v)
-                    for key in ["users", "keys", "resellers", "admins", "super_admins", "banned_users", "feedback_required", "pending_attacks"]:
-                        if not isinstance(d.get(key), dict): d[key] = {}
-                    for key in ["attack_logs", "admin_logs", "stickers", "videos", "pyf_videos", "feedbacks"]:
-                        if not isinstance(d.get(key), list): d[key] = []
-                    if not isinstance(d.get("settings"), dict):
-                        d["settings"] = default["settings"]
-                    for sk, sv in default["settings"].items():
-                        d["settings"].setdefault(sk, sv)
-                    if not d["settings"].get("api_token") or len(str(d["settings"].get("api_token", ""))) < 10:
-                        d["settings"]["api_token"] = DEFAULT_API_TOKEN
-                    if not d["settings"].get("api_url") or not str(d["settings"].get("api_url", "")).startswith("http"):
-                        d["settings"]["api_url"] = DEFAULT_API_URL
-                    if not d["settings"].get("api_method"):
-                        d["settings"]["api_method"] = DEFAULT_API_METHOD
-                    if not d["settings"].get("api_geolocation"):
-                        d["settings"]["api_geolocation"] = DEFAULT_API_GEOLOCATION
-                    if BOT_OWNER_STR not in d["admins"]:
-                        d["admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat()}
-                    if BOT_OWNER_STR not in d["super_admins"]:
-                        d["super_admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat(), "added_by": "system"}
-                    return d
+            if isinstance(d, dict) and (d.get("users") or d.get("keys") or d.get("admins")):
+                print(f"✅ Data loaded from main file: {len(d.get('users', {}))} users")
+                return _migrate_data(d)
+            else:
+                print("⚠️ Main file empty/invalid — backup try kar rahe hain")
         except Exception as e:
-            print(f"⚠️ Load data error: {e}")
-    return default
+            print(f"⚠️ Main file load error: {e}")
 
+    # STEP 2: Backup files se restore karo (newest first)
+    if BACKUP_DIR.exists():
+        backups = sorted(BACKUP_DIR.glob("bot_data_*.json"), reverse=True)
+        for backup_file in backups:
+            try:
+                with open(backup_file, "r", encoding='utf-8') as f:
+                    d = json.load(f)
+                if isinstance(d, dict) and (d.get("users") or d.get("keys")):
+                    print(f"🔄 RESTORED from backup: {backup_file.name}")
+                    return _migrate_data(d)
+            except Exception as be:
+                print(f"⚠️ Backup load failed {backup_file.name}: {be}")
+
+    print("🆕 No valid data found — starting fresh")
+    return _get_default_data()
+    
 def save_data(d):
+    """★★★ FIXED: Atomic write + auto backup ★★★"""
     try:
-        with open(DATA_FILE, 'w') as f:
-            json.dump(d, f, indent=2, default=str)
+        # Atomic write: pehle temp file, phir rename
+        tmp_file = DATA_FILE + ".tmp"
+        with open(tmp_file, 'w', encoding='utf-8') as f:
+            json.dump(d, f, indent=2, default=str, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())  # Disk pe force write
+        os.replace(tmp_file, DATA_FILE)  # Atomic rename
+
+        # Backup har save pe (max 5 backups)
+        try:
+            ts = ist_now().strftime("%Y%m%d_%H%M%S")
+            backup_file = BACKUP_DIR / f"bot_data_{ts}.json"
+            with open(backup_file, 'w', encoding='utf-8') as f:
+                json.dump(d, f, indent=2, default=str, ensure_ascii=False)
+            # Purane backups delete karo (sirf 5 rakho)
+            backups = sorted(BACKUP_DIR.glob("bot_data_*.json"))
+            for old in backups[:-5]:
+                old.unlink()
+        except Exception as be:
+            print(f"⚠️ Backup failed: {be}")
+
     except Exception as e:
-        print(f"⚠️ Save data error: {e}")
+        print(f"❌❌❌ CRITICAL SAVE ERROR: {e}")
+        traceback.print_exc()
 
 data = load_data()
 save_data(data)
