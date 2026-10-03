@@ -990,6 +990,69 @@ def is_attack_running(uid=None):
             return len(active_attacks) > 0
         return any(a.get('user_id') == uid for a in active_attacks.values())
 
+# ═══════════════════════════════════════════════════════════
+# ★★★ SLOT MANAGEMENT — Har slot = Ek user ★★★
+# ═══════════════════════════════════════════════════════════
+def get_free_slot():
+    """Free slot dhundo — jo abhi kisi attack mein use nahi ho raha.
+    Returns: slot number (str) ya None agar sab busy hain."""
+    try:
+        settings = ensure_dict(data.get("settings", {}))
+        api_slots = ensure_dict(settings.get("api_slots", {}))
+
+        if not api_slots:
+            return None  # Koi slot hi nahi hai
+
+        # Abhi ke busy slots nikaalo (jin pe attacks chal rahi hain)
+        busy_slots = set()
+        with attack_lock:
+            now = ist_now()
+            for aid, atk in list(active_attacks.items()):
+                if not isinstance(atk, dict): continue
+                end_t = atk.get('end_time')
+                if not isinstance(end_t, datetime): continue
+                if end_t > now:  # Abhi bhi chal raha hai
+                    busy_slots.add(str(atk.get('slot', '0')))
+
+        # Free slot dhundo (sequential order mein)
+        all_slots = sorted(api_slots.keys(), key=lambda x: int(x) if str(x).isdigit() else 0)
+        for slot in all_slots:
+            if str(slot) not in busy_slots:
+                print(f"✅ FREE SLOT FOUND: {slot} (busy={busy_slots})")
+                return str(slot)
+
+        # Sab busy
+        print(f"⚠️ ALL SLOTS BUSY: {busy_slots}")
+        return None
+    except Exception as e:
+        print(f"❌ get_free_slot error: {e}")
+        return None
+
+
+def get_total_slots():
+    """Total slots count karo"""
+    try:
+        settings = ensure_dict(data.get("settings", {}))
+        api_slots = ensure_dict(settings.get("api_slots", {}))
+        return len(api_slots)
+    except: return 0
+
+
+def get_busy_slots_count():
+    """Kitne slots busy hain count karo"""
+    try:
+        busy = 0
+        with attack_lock:
+            now = ist_now()
+            for aid, atk in list(active_attacks.items()):
+                if not isinstance(atk, dict): continue
+                end_t = atk.get('end_time')
+                if not isinstance(end_t, datetime): continue
+                if end_t > now:
+                    busy += 1
+        return busy
+    except: return 0
+
 # ============================================================
 # ★★★ RATE LIMITER ★★★
 # ============================================================
@@ -1680,6 +1743,18 @@ def cmd_attack(msg):
         except:
             safe_reply(msg, "❌ ɪɴᴠᴀʟɪᴅ ᴘᴏʀᴛ/ᴛɪᴍᴇ!"); return
 
+        # ★★★ ATTACK RUNNING CHECK — Same user ka ek hi attack ★★★
+        if is_attack_running(uid):
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║              🛑 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🚷         ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⚠️ <b>ᴀᴀᴘᴋᴀ ᴇᴋ ᴀᴛᴛᴀᴄᴋ ᴀʟʀᴇᴀᴅʏ ʀᴜɴɴɪɴɢ ʜᴀɪ!</b>\n\n"
+                "  📌 <b>ᴘᴀʜʟᴇ ᴀᴛᴛᴀᴄᴋ ᴋʜᴀᴛᴍ ʜᴏɴᴇ ᴅᴏ</b>\n"
+                "  📌 <b>ᴜꜱᴋᴇ ʙᴀᴀᴅ ɴᴀʏᴀ ᴀᴛᴛᴀᴄᴋ ʟᴀɢᴀ ꜱᴀᴋᴛᴇ ʜᴏ</b>",
+                parse_mode="HTML")
+            return
+
         # ★★★ COOLDOWN CHECK WITH LIVE COUNTDOWN ★★★
         cd = get_cd_remaining(uid)
         if cd > 0 and not is_owner(uid):
@@ -1733,27 +1808,48 @@ def cmd_attack(msg):
             threading.Thread(target=live_cooldown_countdown, daemon=True).start()
             return
 
-        if is_attack_running(uid):
+        # ★★★ SLOT CHECK — Free slot dhundo ★★★
+        free_slot = get_free_slot()
+
+        if free_slot is None:
+            total_slots = get_total_slots()
+            busy_slots = get_busy_slots_count()
             safe_reply(msg,
                 "╔══════════════════════════╗\n"
-                "║              🛑 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🚷         ║\n"
+                "║             🚫 𝗔𝗟𝗟 𝗦𝗟𝗢𝗧𝗦 𝗕𝗨𝗦𝗬 🚫          ║\n"
                 "╚══════════════════════════╝\n\n"
-                "  ⚠️ <b>ᴀᴀᴘᴋᴀ ᴇᴋ ᴀᴛᴛᴀᴄᴋ ᴀʟʀᴇᴀᴅʏ ʀᴜɴɴɪɴɢ ʜᴀɪ!</b>",
+                f"  ◆ 📊 ᴛᴏᴛᴀʟ ꜱʟᴏᴛꜱ ➪ <b>{total_slots}</b>\n"
+                f"  ◆ ⚡ ʙᴜꜱʏ ➪ <b>{busy_slots}/{total_slots}</b>\n"
+                f"  ◆ 🆓 ꜰʀᴇᴇ ➪ <b>0</b>\n\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "  ⚠️ <b>ꜱᴀʀᴇ ꜱʟᴏᴛꜱ ʙᴜꜱʏ ʜᴀɪɴ</b>\n"
+                "  ⚠️ <b>ᴋʀɪᴘʏᴀ ᴛʜᴏᴅɪ ᴅᴇʀ ʙᴀᴀᴅ ᴛʀʏ ᴋᴀʀᴏ</b>\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"  ◆ 🕐 ᴛɪᴍᴇ ➪ <code>{ist_time_str()} IST</code>\n\n"
+                "╔══════════════════════════╗\n"
+                "║         🛑 ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ 🛑           ║\n"
+                "╚══════════════════════════╝",
                 parse_mode="HTML")
             return
 
-        set_cd(uid)
+        # ★★★ API CALL WITH FREE SLOT ★★★
         name = msg.from_user.username or f"User_{uid}"
 
-        ok, r = api_attack(ip, port, dur)
+        ok, r = api_attack(ip, port, dur, slot=free_slot)
         if not ok:
-            safe_reply(msg, f"❌ <b>ꜰᴀɪʟᴇᴅ</b>\n<code>{escape_html(r[:300])}</code>", parse_mode="HTML"); return
+            safe_reply(msg, f"❌ <b>ꜰᴀɪʟᴇᴅ</b>\n<code>{escape_html(r[:300])}</code>", parse_mode="HTML")
+            return
+
+        # ★★★ ATTACK SUCCESS — Ab cooldown set karo ★★★
+        set_cd(uid)
 
         HEALTH["total_attacks"] += 1
         start_time = ist_now()
         end_time = start_time + timedelta(seconds=dur)
         attack_id = f"{uid}_{int(time.time()*1000)}"
         _stop_flags[attack_id] = False
+
+        print(f"✅ ATTACK STARTED: Slot {free_slot} | User {uid} | {ip}:{port} | {dur}s")
 
         def build_attack_caption():
             try:
@@ -1787,6 +1883,7 @@ def cmd_attack(msg):
                     + "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                     + f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
                     + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
+                    + f"  ◆ 🎰 ꜱʟᴏᴛ ➪ <b>{free_slot}</b>\n"
                     + f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
                     + f"  ◆ 🚀 ᴍᴇᴛʜᴏᴅ ➪ <b>{method_str}</b>\n"
                     + f"  ◆ 🌍 ɢᴇᴏ ➪ <code>{geo_str}</code>\n\n"
@@ -1840,7 +1937,8 @@ def cmd_attack(msg):
             active_attacks[attack_id] = {
                 'target': ip, 'port': port, 'duration': dur,
                 'user_id': uid, 'username': name,
-                'end_time': end_time, 'start_time': start_time
+                'end_time': end_time, 'start_time': start_time,
+                'slot': free_slot
             }
 
         _attack_messages[attack_id] = {
@@ -2034,7 +2132,6 @@ def cmd_attack(msg):
         print(f"❌ cmd_attack error: {e}")
         traceback.print_exc()
 
-
 # ============= STATUS =============
 def do_status(msg):
     try:
@@ -2139,6 +2236,8 @@ def do_status(msg):
                         rem_m = rem // 60; rem_s = rem % 60
                         el_m = elapsed // 60; el_s = elapsed % 60
 
+                        slot_num = safe_int(atk.get('slot', 0), 0)
+
                         txt += (
                             "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                             f"┃          🎯 𝗔𝗧𝗧𝗔𝗖𝗞 #{idx} 🎯              ┃\n"
@@ -2146,6 +2245,7 @@ def do_status(msg):
                             + f"  {bar} {pct}%\n"
                             + f"  {st}\n\n"
                             + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
+                            + f"  ◆ 🎰 ꜱʟᴏᴛ ➪ <b>{slot_num}</b>\n"
                             + f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(atk_start)} IST</code>\n"
                             + f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(atk_end)} IST</code>\n"
                             + f"  ◆ ⏳ ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{el_m}ᴍ {el_s}ꜱ</b>\n"
@@ -3218,8 +3318,29 @@ def do_stats(msg):
             "║                   🤖 𝗕𝗢𝗧 𝗢𝗡𝗟𝗜𝗡𝗘 🗳️               ║\n"
             "╚══════════════════════════╝"
         )
+
+        # ★★★ SLOT STATUS SECTION — NAYA ★★★
+        try:
+            total_slots = get_total_slots()
+            busy_slots = get_busy_slots_count()
+            free_slots = total_slots - busy_slots
+
+            txt += (
+                "\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃         🎰 𝗦𝗟𝗢𝗧 𝗦𝗧𝗔𝗧𝗨𝗦 🎰             ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ◆ 📊 ᴛᴏᴛᴀʟ ➪ <b>{total_slots}</b>\n"
+                f"  ◆ 🔴 ʙᴜꜱʏ ➪ <b>{busy_slots}</b>\n"
+                f"  ◆ 🟢 ꜰʀᴇᴇ ➪ <b>{free_slots}</b>\n\n"
+                "╔══════════════════════════╗\n"
+                "║         🎰 𝗦𝗟𝗢𝗧 𝗜𝗡𝗙𝗢 🎰             ║\n"
+                "╚══════════════════════════╝"
+            )
+        except Exception as se:
+            print(f"⚠️ Slot status error: {se}")
+
         safe_reply(msg, txt, parse_mode="HTML")
-    except Exception as e: print(f"❌ do_stats error: {e}")
+     except Exception as e: print(f"❌ do_stats error: {e}")
 
 @bot.message_handler(commands=['stats'])
 def cmd_stats(msg):
