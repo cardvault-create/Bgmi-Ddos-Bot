@@ -161,6 +161,7 @@ def load_data():
     default = {
         "users": {}, "keys": {}, "resellers": {},
         "admins": {BOT_OWNER_STR: {"added_at": ist_now().isoformat()}},
+        "super_admins": {BOT_OWNER_STR: {"added_at": ist_now().isoformat(), "added_by": "system"}},
         "approved_groups": {}, "attack_logs": [], "admin_logs": [],
         "banned_users": {}, "feedbacks": [],
         "stickers": [], "videos": [], "pyf_videos": [],
@@ -182,7 +183,7 @@ def load_data():
                 if isinstance(d, dict):
                     for k, v in default.items():
                         d.setdefault(k, v)
-                    for key in ["users", "keys", "resellers", "admins", "banned_users", "feedback_required", "pending_attacks"]:
+                    for key in ["users", "keys", "resellers", "admins", "super_admins", "banned_users", "feedback_required", "pending_attacks"]::
                         if not isinstance(d.get(key), dict): d[key] = {}
                     for key in ["attack_logs", "admin_logs", "stickers", "videos", "pyf_videos", "feedbacks"]:
                         if not isinstance(d.get(key), list): d[key] = []
@@ -200,6 +201,8 @@ def load_data():
                         d["settings"]["api_geolocation"] = DEFAULT_API_GEOLOCATION
                     if BOT_OWNER_STR not in d["admins"]:
                         d["admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat()}
+                    if BOT_OWNER_STR not in d["super_admins"]:
+                        d["super_admins"][BOT_OWNER_STR] = {"added_at": ist_now().isoformat(), "added_by": "system"}
                     return d
         except Exception as e:
             print(f"⚠️ Load data error: {e}")
@@ -298,6 +301,21 @@ def is_owner(uid):
     except Exception as e:
         print(f"is_owner error: {e}")
         return False
+
+def is_super_admin(uid):
+    """Check karta hai ki user SUPER ADMIN hai ya nahi (bot father + promoted admins)"""
+    try:
+        uid_int = int(uid)
+        if uid_int == BOT_OWNER:
+            return True
+        return str(uid_int) in ensure_dict(data.get("super_admins", {}))
+    except Exception as e:
+        print(f"is_super_admin error: {e}")
+        return False
+
+def is_any_admin(uid):
+    """Check karta hai ki user kisi bhi tarah ka admin hai (owner, super_admin, ya normal admin)"""
+    return is_owner(uid) or is_super_admin(uid)
 
 def is_reseller(uid):
     try:
@@ -494,6 +512,7 @@ def get_button_type(text):
             return all(k in t_clean for k in kws)
 
         if has("OWNER", "PANEL"): return "OWNER_PANEL"
+        if has("ADMIN", "PANEL"): return "ADMIN_PANEL"
         if has("GEN", "KEY"): return "GEN_KEY"
         if "BROADCAST" in t_clean: return "BROADCAST"
         if "SETTINGS" in t_clean: return "SETTINGS"
@@ -540,6 +559,9 @@ threading.Thread(target=api_health_check, daemon=True).start()
 def check_ban(msg):
     try:
         uid = msg.from_user.id
+        # ★ SUPER ADMIN / OWNER ko ban check se skip karo ★
+        if is_owner(uid) or is_super_admin(uid):
+            return False
         if is_banned(uid):
             ban_info = ensure_dict(data.get("banned_users", {})).get(str(uid), {})
             if isinstance(ban_info, dict):
@@ -622,6 +644,12 @@ def kb_main(uid):
         m = ReplyKeyboardMarkup(resize_keyboard=True)
         m.row("🔥 𝐀𝐓𝐓𝐀𝐂𝐊", "📊 𝐒𝐓𝐀𝐓𝐔𝐒")
         m.row("👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄", "👑 𝐎𝐖𝐍𝐄𝐑 𝐏𝐀𝐍𝐄𝐋")
+        m.row("⭐ 𝐀𝐃𝐌𝐈𝐍 𝐏𝐀𝐍𝐄𝐋")
+        return m
+    elif is_super_admin(uid):
+        m = ReplyKeyboardMarkup(resize_keyboard=True)
+        m.row("🔥 𝐀𝐓𝐓𝐀𝐂𝐊", "📊 𝐒𝐓𝐀𝐓𝐔𝐒")
+        m.row("👤 𝐏𝐑𝐎𝐅𝐈𝐋𝐄", "⭐ 𝐀𝐃𝐌𝐈𝐍 𝐏𝐀𝐍𝐄𝐋")
         return m
     elif is_reseller(uid) or has_valid_key(uid):
         m = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -637,6 +665,13 @@ def kb_owner():
     m.row("🔑 𝐆𝐄𝐍 𝐊𝐄𝐘", "👥 𝐔𝐒𝐄𝐑𝐒")
     m.row("📊 𝐒𝐓𝐀𝐓𝐒", "📢 𝐁𝐑𝐎𝐀𝐃𝐂𝐀𝐒𝐓")
     m.row("⚙️ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒", "❌ 𝐂𝐋𝐎𝐒𝐄")
+    return m
+def kb_admin():
+    """Admin panel keyboard — sirf limited commands"""
+    m = ReplyKeyboardMarkup(resize_keyboard=True)
+    m.row("👥 𝐔𝐒𝐄𝐑𝐒", "📊 𝐒𝐓𝐀𝐓𝐒")
+    m.row("📢 𝐁𝐑𝐎𝐀𝐃𝐂𝐀𝐒𝐓", "⭐ 𝐌𝐘 𝐏𝐀𝐍𝐄𝐋")
+    m.row("❌ 𝐂𝐋𝐎𝐒𝐄")
     return m
 
 # ============= KEY EXPIRY NOTIFIER =============
@@ -1249,7 +1284,22 @@ def handle_callbacks(call):
 
         if action == "ban":
             target_uid_str = str(target_uid)
-            if target_uid_str in ensure_dict(data.get("banned_users", {})):
+    
+        # ★ SUPER ADMIN / BOT FATHER KO BAN NAHI KAR SAKTE ★
+        try:
+            target_uid_int = int(target_uid)
+            if target_uid_int == BOT_OWNER or is_super_admin(target_uid_int):
+                try:
+                    bot.answer_callback_query(
+                        call.id,
+                        "🛡️ ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ/ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʜᴀɪ!\n\n❌ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!",
+                        show_alert=True
+                    )
+                    except: pass
+                    return
+                except: pass
+    
+                if target_uid_str in ensure_dict(data.get("banned_users", {})):
                 try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
                 except: pass
                 return
@@ -2919,6 +2969,33 @@ def cmd_ban(msg):
         p = msg.text.split(maxsplit=2)
         if len(p) < 2: safe_reply(msg, "⚠️ <code>/ban USER_ID [REASON]</code>", parse_mode="HTML"); return
         target_id = p[1]
+        
+        # ★ BOT FATHER / SUPER ADMIN KO BAN NAHI KAR SAKTE ★
+        try:
+            target_id_int = int(target_id)
+        except:
+            safe_reply(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ɪᴅ!</b>", parse_mode="HTML")
+            return
+        
+        if target_id_int == BOT_OWNER:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 👑           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⚠️ <b>ʙᴏᴛ ꜰᴀᴛʜᴇʀ ᴋᴏ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!</b>",
+                parse_mode="HTML")
+            return
+        
+        if is_super_admin(target_id_int):
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗥𝗢𝗧𝗘𝗖𝗧𝗘𝗗 ⭐       ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  🛡️ <b>ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ ʜᴀɪ — ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!</b>\n\n"
+                f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_id_int}</code>",
+                parse_mode="HTML")
+            return
+        
         reason = p[2] if len(p) > 2 else "ᴠɪᴏʟᴀᴛɪᴏɴ ᴏꜰ ᴛᴇʀᴍꜱ"
         data["banned_users"][target_id] = {
             "banned_at": ist_now().isoformat(),
@@ -3621,6 +3698,312 @@ def cmd_settings(msg):
         )
         safe_reply(msg, txt, parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_settings error: {e}")
+
+# ============================================================
+# ⭐ ADMIN MANAGEMENT SYSTEM ⭐
+# ============================================================
+
+@bot.message_handler(commands=['addadmin'])
+def cmd_addadmin(msg):
+    react_to_message(msg)
+    try:
+        uid = msg.from_user.id
+        # ★ SIRF BOT FATHER (OWNER) HI ADMIN DE SAKTA HAI ★
+        if uid != BOT_OWNER:
+            # Agar koi aur try kare toh premium error message
+            if is_super_admin(uid):
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║      🚫 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 𝗢𝗡𝗟𝗬 🚫      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ᴅᴇ ꜱᴀᴋᴛᴇ!</b>\n\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "  👑 <b>ꜱɪʀꜿ ʙᴏᴛ ꜰᴀᴛʜᴇʀ ᴀᴅᴍɪɴ ᴅᴇ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "  ◆ 👑 ʙᴏᴛ ꜰᴀᴛʜᴇʀ ɪᴅ ➪ <code>" + str(BOT_OWNER) + "</code>\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║         🛡️ 𝗧𝗛𝗜𝗦 𝗨𝗦𝗘𝗥 𝗜𝗦 𝗔 🛡️           ║\n"
+                    "║      𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 / 𝗔𝗗𝗠𝗜𝗡        ║\n"
+                    "╚══════════════════════════╝",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            else:
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║        🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫          ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⛔ <b>ᴀᴀᴘ ʙᴏᴛ ꜰᴀᴛʜᴇʀ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "  👑 <b>ꜱɪʀꜿ ʙᴏᴛ ꜰᴀᴛʜᴇʀ ᴀᴅᴍɪɴ ᴅᴇ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            return
+
+        p = msg.text.split(maxsplit=2)
+        if len(p) < 2:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║          ⭐ 𝗔𝗗𝗗 𝗔𝗗𝗠𝗜𝗡 ⭐            ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📝 <code>/addadmin USER_ID [NAME]</code>\n\n"
+                "  📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+                "  ➤ <code>/addadmin 123456789 Raju</code>",
+                parse_mode="HTML")
+            return
+
+        target_uid = p[1].strip()
+        custom_name = p[2].strip() if len(p) > 2 else "Admin"
+
+        # ★ VALIDATE USER ID ★
+        try:
+            target_uid_int = int(target_uid)
+        except:
+            safe_reply(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ɪᴅ!</b>", parse_mode="HTML")
+            return
+
+        # ★ BOT FATHER KO ADMIN NAHI BANA SAKTE ★
+        if target_uid_int == BOT_OWNER:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 👑           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⚠️ <b>ʙᴏᴛ ꜰᴀᴛʜᴇʀ ᴘᴇʜʟᴇ ꜱᴇ ʜɪ ꜱᴜᴘᴇʀ ᴀᴅᴍɪɴ ʜᴀɪ!</b>\n\n"
+                "  ◆ 👑 ʙᴏᴛ ꜰᴀᴛʜᴇʀ ➪ <code>" + str(BOT_OWNER) + "</code>",
+                parse_mode="HTML")
+            return
+
+        # ★ ALREADY ADMIN CHECK ★
+        if str(target_uid_int) in ensure_dict(data.get("super_admins", {})):
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║        ⚠️ 𝗔𝗟𝗥𝗘𝗔𝗗𝗬 𝗔𝗗𝗠𝗜𝗡 ⚠️        ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ℹ️ <b>ʏᴇʜ ᴜꜱᴇʀ ᴘᴇʜʟᴇ ꜱᴇ ᴀᴅᴍɪɴ ʜᴀɪ!</b>\n\n"
+                f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_uid_int}</code>",
+                parse_mode="HTML")
+            return
+
+        # ★ ADD ADMIN ★
+        data["super_admins"][str(target_uid_int)] = {
+            "added_at": ist_now().isoformat(),
+            "added_by": uid,
+            "name": custom_name
+        }
+        save_data(data)
+
+        # ★ SUCCESS MESSAGE (BOT FATHER KO) ★
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║       ✅ 𝗔𝗗𝗠𝗜𝗡 𝗔𝗗𝗗𝗘𝗗 ✅          ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  🎉 <b>ɴᴀʏᴀ ᴀᴅᴍɪɴ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴀᴅᴅ ʜᴏ ɢᴀʏᴀ!</b>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃              ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 ⭐             ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_uid_int}</code>\n"
+            f"  ◆ 📛 ɴᴀᴍᴇ ➪ <b>{escape_html(custom_name)}</b>\n"
+            f"  ◆ 📅 ᴀᴅᴅᴇᴅ ➪ <code>{ist_time_str()} IST</code>\n"
+            f"  ◆ 👑 ʙʏ ➪ <code>{uid}</code>\n\n"
+            "╔══════════════════════════╗\n"
+            "║           👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 👑              ║\n"
+            "╚══════════════════════════╝",
+            parse_mode="HTML")
+
+        # ★ NAYE ADMIN KO PREMIUM NOTIFICATION ★
+        try:
+            new_admin_msg = (
+                "╔══════════════════════════╗\n"
+                "║     ⭐ 𝗬𝗢𝗨 𝗔𝗥𝗘 𝗡𝗢𝗪 𝗔𝗗𝗠𝗜𝗡 ⭐     ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  🎉 <b>ᴄᴏɴɢʀᴀᴛᴜʟᴀᴛɪᴏɴꜱ!</b>\n\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "  ✅ <b>ᴀᴀᴘᴋᴏ ᴀᴅᴍɪɴ ʙᴀɴᴀ ᴅɪʏᴀ ɢᴀʏᴀ ʜᴀɪ</b>\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃           ⚡ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗢𝗪𝗘𝗥𝗦 ⚡            ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "  ◆ 👥 ᴜꜱᴇʀꜱ ᴠɪᴇᴡ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴏ\n"
+                "  ◆ 📊 ꜱᴛᴀᴛꜱ ᴅᴇᴋʜ ꜱᴀᴋᴛᴇ ʜᴏ\n"
+                "  ◆ 📢 ʙʀᴏᴀᴅᴄᴀꜱᴛ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴏ\n"
+                "  ◆ 🔑 ᴋᴇʏ ɢᴇɴ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴏ\n"
+                "  ◆ 🗝️ ᴋᴇʏ ʟɪꜱᴛ ᴅᴇᴋʜ ꜱᴀᴋᴛᴇ ʜᴏ\n\n"
+                "  ⚠️ <b>ɴᴏᴛᴇ:</b> ᴀᴀᴘ ᴋɪꜱɪ ᴋᴏ ʙᴀɴ/ᴜɴʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ\n"
+                "  ⚠️ <b>ɴᴏᴛᴇ:</b> ᴀᴀᴘ ᴋɪꜱɪ ᴋᴏ ᴀᴅᴍɪɴ ɴᴀʜɪ ʙᴀɴᴀ ꜱᴀᴋᴛᴇ\n\n"
+                f"  ◆ 👑 ʙᴏᴛ ꜰᴀᴛʜᴇʀ ➪ <code>{BOT_OWNER}</code>\n\n"
+                "╔══════════════════════════╗\n"
+                "║           ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐            ║\n"
+                "╚══════════════════════════╝"
+            )
+            bot.send_message(target_uid_int, new_admin_msg, parse_mode="HTML", reply_markup=kb_main(target_uid_int))
+            print(f"✅ Admin notification sent to {target_uid_int}")
+        except Exception as notify_err:
+            print(f"⚠️ Admin notify failed: {notify_err}")
+
+    except Exception as e:
+        print(f"❌ addadmin error: {e}")
+        traceback.print_exc()
+
+
+@bot.message_handler(commands=['removeadmin'])
+def cmd_removeadmin(msg):
+    react_to_message(msg)
+    try:
+        uid = msg.from_user.id
+        # ★ SIRF BOT FATHER HI ADMIN REMOVE KAR SAKTA HAI ★
+        if uid != BOT_OWNER:
+            if is_super_admin(uid):
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║      🚫 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 𝗢𝗡𝗟𝗬 🚫      ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ʀᴇᴍᴏᴠᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!</b>\n\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    "  👑 <b>ꜱɪʀꜿ ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʏᴇ ꜱᴀʙ ᴋᴀʀ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>\n"
+                    "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    "╔══════════════════════════╗\n"
+                    "║      🛡️ 𝗧𝗛𝗜𝗦 𝗨𝗦𝗘𝗥 𝗜𝗦 𝗔 🛡️           ║\n"
+                    "║       𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 𝗢𝗡𝗟𝗬          ║\n"
+                    "╚══════════════════════════╝",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            else:
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║        🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫          ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⛔ <b>ᴀᴀᴘ ʙᴏᴛ ꜰᴀᴛʜᴇʀ ɴᴀʜɪ ʜᴀɪ!</b>",
+                    parse_mode="HTML", reply_markup=dev_btn_kb())
+            return
+
+        p = msg.text.split()
+        if len(p) < 2:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║        ⭐ 𝗥𝗘𝗠𝗢𝗩𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐         ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📝 <code>/removeadmin USER_ID</code>\n\n"
+                "  📌 <b>ᴇxᴀᴍᴘʟᴇ:</b>\n"
+                "  ➤ <code>/removeadmin 123456789</code>",
+                parse_mode="HTML")
+            return
+
+        target_uid = p[1].strip()
+
+        try:
+            target_uid_int = int(target_uid)
+        except:
+            safe_reply(msg, "❌ <b>ɪɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ɪᴅ!</b>", parse_mode="HTML")
+            return
+
+        if target_uid_int == BOT_OWNER:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║      👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 👑           ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⚠️ <b>ʙᴏᴛ ꜰᴀᴛʜᴇʀ ᴋᴏ ʀᴇᴍᴏᴠᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!</b>",
+                parse_mode="HTML")
+            return
+
+        if str(target_uid_int) not in ensure_dict(data.get("super_admins", {})):
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║          ❌ 𝗡𝗢𝗧 𝗔𝗗𝗠𝗜𝗡 ❌           ║\n"
+                "╚══════════════════════════╝\n\n"
+                f"  ℹ️ <b>ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+                f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_uid_int}</code>",
+                parse_mode="HTML")
+            return
+
+        # ★ REMOVE ADMIN ★
+        admin_info = data["super_admins"].pop(str(target_uid_int), {})
+        save_data(data)
+
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║       ✅ 𝗔𝗗𝗠𝗜𝗡 𝗥𝗘𝗠𝗢𝗩𝗘𝗗 ✅         ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  🗑️ <b>ᴀᴅᴍɪɴ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ʀᴇᴍᴏᴠᴇ ʜᴏ ɢᴀʏᴀ!</b>\n\n"
+            f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{target_uid_int}</code>\n"
+            f"  ◆ 📛 ɴᴀᴍᴇ ➪ <b>{escape_html(admin_info.get('name', 'Admin'))}</b>\n"
+            f"  ◆ 📅 ʀᴇᴍᴏᴠᴇᴅ ➪ <code>{ist_time_str()} IST</code>",
+            parse_mode="HTML")
+
+        # ★ REMOVED ADMIN KO PREMIUM NOTIFICATION ★
+        try:
+            removed_msg = (
+                "╔══════════════════════════╗\n"
+                "║    ⚠️ 𝗔𝗗𝗠𝗜𝗡 𝗥𝗘𝗠𝗢𝗩𝗘𝗗 ⚠️        ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  🗑️ <b>ᴀᴀᴘᴋᴀ ᴀᴅᴍɪɴ ᴀᴄᴄᴇꜱꜱ ʜᴀᴛᴀ ᴅɪʏᴀ ɢᴀʏᴀ</b>\n\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                "  ⛔ <b>ᴀʙ ᴀᴀᴘ ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴜꜱᴇ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ</b>\n"
+                "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"  ◆ 👑 ʙᴏᴛ ꜰᴀᴛʜᴇʀ ➪ <code>{BOT_OWNER}</code>\n\n"
+                "╔══════════════════════════╗\n"
+                "║        🛡️ 𝗧𝗛𝗜𝗦 𝗨𝗦𝗘𝗥 𝗜𝗦 𝗔 🛡️          ║\n"
+                "║       𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 / 𝗔𝗗𝗠𝗜𝗡       ║\n"
+                "╚══════════════════════════╝"
+            )
+            bot.send_message(target_uid_int, removed_msg, parse_mode="HTML", reply_markup=kb_main(target_uid_int))
+            print(f"✅ Remove notification sent to {target_uid_int}")
+        except Exception as notify_err:
+            print(f"⚠️ Remove notify failed: {notify_err}")
+
+    except Exception as e:
+        print(f"❌ removeadmin error: {e}")
+        traceback.print_exc()
+
+
+@bot.message_handler(commands=['adminlist'])
+def cmd_adminlist(msg):
+    react_to_message(msg)
+    try:
+        uid = msg.from_user.id
+        # ★ SIRF BOT FATHER AUR ADMIN HI DEKH SAKTE HAIN ★
+        if not (is_owner(uid) or is_super_admin(uid)):
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║        🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫          ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>",
+                parse_mode="HTML")
+            return
+
+        admins = ensure_dict(data.get("super_admins", {}))
+        if not admins:
+            safe_reply(msg, "📂 <b>ᴋᴏɪ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ</b>", parse_mode="HTML")
+            return
+
+        txt = (
+            "╔══════════════════════════╗\n"
+            "║         ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗟𝗜𝗦𝗧 ⭐          ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  📊 <b>ᴛᴏᴛᴀʟ:</b> {len(admins)} ᴀᴅᴍɪɴꜱ\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃           👑 𝗔𝗟𝗟 𝗔𝗗𝗠𝗜𝗡𝗦 👑           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        )
+        for i, (aid, info) in enumerate(admins.items(), 1):
+            if not isinstance(info, dict):
+                info = {}
+            name = info.get("name", "Admin")
+            added_at = info.get("added_at", "")
+            dt = safe_parse_dt(added_at)
+            time_str = to_ist(dt).strftime('%d %b %Y, %I:%M %p') if dt else "N/A"
+
+            if str(aid) == BOT_OWNER_STR:
+                txt += f"  ◆ <b>{i:02d}.</b> 👑 <code>{aid}</code> (BOT FATHER)\n"
+            else:
+                txt += f"  ◆ <b>{i:02d}.</b> ⭐ <code>{aid}</code>\n"
+            txt += f"      ┣ 📛 {escape_html(name)}\n"
+            txt += f"      ┗ 📅 {time_str} IST\n\n"
+
+        txt += (
+            "\n╔══════════════════════════╗\n"
+            "║         👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 👑              ║\n"
+            "╚══════════════════════════╝"
+        )
+        safe_reply(msg, txt, parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ adminlist error: {e}")
         
 # ============================================================
 # ★★★ UNIVERSAL BUTTON HANDLER ★★★
@@ -3672,6 +4055,35 @@ def universal_button_handler(msg):
                 "⚡ ᴜꜱᴇ ʙᴜᴛᴛᴏɴꜱ ʙᴇʟᴏᴡ",
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
+
+        if btype == "ADMIN_PANEL":
+    if not (is_owner(uid) or is_super_admin(uid)):
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║            🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫            ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+            "  📌 <b>ꜱɪʀꜰ ᴀᴅᴍɪɴꜱ ʏᴇʜ ᴘᴀɴᴇʟ ᴋʜᴏʟ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>",
+            parse_mode="HTML")
+        return
+    safe_reply(msg,
+        "╔══════════════════════════╗\n"
+        "║            ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
+        "╚══════════════════════════╝\n\n"
+        "  ✅ <b>ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ!</b>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃           ⚡ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗢𝗣𝗧𝗜𝗢𝗡𝗦 ⚡         ┃\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "  ◆ 👥 /users ➪ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
+        "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+        "  ◆ 📢 /broadcast ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+        "  ◆ 🔑 /genkey ➪ ɢᴇɴᴋᴇʏ\n"
+        "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n\n"
+        "╔══════════════════════════╗\n"
+        "║              ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐             ║\n"
+        "╚══════════════════════════╝",
+        reply_markup=kb_admin(), parse_mode="HTML")
+    return
 
         if btype == "REDEEM":
             safe_reply(msg,
