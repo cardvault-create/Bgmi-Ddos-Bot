@@ -317,6 +317,10 @@ def is_any_admin(uid):
     """Check karta hai ki user kisi bhi tarah ka admin hai (owner, super_admin, ya normal admin)"""
     return is_owner(uid) or is_super_admin(uid)
 
+def has_admin_access(uid):
+    """Check karta hai ki user admin commands use kar sakta hai (bot father, super admin, ya owner)"""
+    return is_owner(uid) or is_super_admin(uid)
+
 def is_reseller(uid):
     try:
         r = ensure_dict(data.get("resellers", {})).get(str(uid))
@@ -1282,27 +1286,27 @@ def handle_callbacks(call):
             except: pass
             return
 
-if action == "ban":
-    target_uid_str = str(target_uid)
+        if action == "ban":
+            target_uid_str = str(target_uid)
 
-    # ★ SUPER ADMIN / BOT FATHER KO BAN NAHI KAR SAKTE ★
-    try:
-        target_uid_int = int(target_uid)
-        if target_uid_int == BOT_OWNER or is_super_admin(target_uid_int):
+            # ★ SUPER ADMIN / BOT FATHER KO BAN NAHI KAR SAKTE ★
             try:
-                bot.answer_callback_query(
-                    call.id,
-                    "🛡️ ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ/ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʜᴀɪ!\n\n❌ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!",
-                    show_alert=True
-                )
+                target_uid_int = int(target_uid)
+                if target_uid_int == BOT_OWNER or is_super_admin(target_uid_int):
+                    try:
+                        bot.answer_callback_query(
+                            call.id,
+                            "🛡️ ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ/ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʜᴀɪ!\n\n❌ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!",
+                            show_alert=True
+                        )
+                    except: pass
+                    return
             except: pass
-            return
-    except: pass
 
-    if target_uid_str in ensure_dict(data.get("banned_users", {})):
-        try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
-        except: pass
-        return
+            if target_uid_str in ensure_dict(data.get("banned_users", {})):
+                try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
+                except: pass
+                return
 
             data["banned_users"][target_uid_str] = {
                 "banned_at": ist_now().isoformat(),
@@ -2215,7 +2219,7 @@ def human_readable(seconds):
 
 def do_genkey(msg):
     try:
-        if not is_owner(msg.from_user.id): return
+        if not has_admin_access(msg.from_user.id): return
         p = msg.text.split()
         if len(p) < 2:
             safe_reply(msg,
@@ -2311,7 +2315,7 @@ def cmd_gen(msg):
 def cmd_listkeys(msg):
     react_to_message(msg)
     try:
-        if not is_owner(msg.from_user.id): return
+        if not has_admin_access(msg.from_user.id): return
         keys = ensure_dict(data.get("keys", {}))
         if not keys:
             safe_reply(msg,
@@ -2668,7 +2672,7 @@ def cmd_panel(msg):
 def do_users(msg):
     react_to_message(msg)
     try:
-        if not is_owner(msg.from_user.id): return
+        if not has_admin_access(msg.from_user.id): return
         if not ensure_dict(data.get("users", {})):
             safe_reply(msg, "📂 <b>ɴᴏ ᴜꜱᴇʀꜱ.</b>", parse_mode="HTML"); return
 
@@ -2773,7 +2777,7 @@ def cmd_users(msg):
 def cmd_broadcast(msg):
     react_to_message(msg)
     try:
-        if not is_owner(msg.from_user.id): return
+        if not has_admin_access(msg.from_user.id): return
         p = msg.text.split(maxsplit=1)
         if len(p) < 2:
             safe_reply(msg,
@@ -2881,7 +2885,7 @@ def cmd_broadcast(msg):
 def do_stats(msg):
     react_to_message(msg)
     try:
-        if not is_owner(msg.from_user.id): return
+        if not has_admin_access(msg.from_user.id): return
         used_keys = sum(1 for k, v in ensure_dict(data.get("keys", {})).items() if isinstance(v, dict) and v.get('used'))
         unused_keys = len(ensure_dict(data.get("keys", {}))) - used_keys
         uptime_sec = int((ist_now() - BOT_START_TIME).total_seconds())
@@ -4056,34 +4060,34 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
-if btype == "ADMIN_PANEL":
-    if not (is_owner(uid) or is_super_admin(uid)):
-        safe_reply(msg,
-            "╔══════════════════════════╗\n"
-            "║            🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫            ║\n"
-            "╚══════════════════════════╝\n\n"
-            "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
-            "  📌 <b>ꜱɪʀꜰ ᴀᴅᴍɪɴꜱ ʏᴇʜ ᴘᴀɴᴇʟ ᴋʜᴏʟ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>",
-            parse_mode="HTML")
-        return
-    safe_reply(msg,
-        "╔══════════════════════════╗\n"
-        "║            ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
-        "╚══════════════════════════╝\n\n"
-        "  ✅ <b>ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ!</b>\n\n"
-        "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-        "┃           ⚡ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗢𝗣𝗧𝗜𝗢𝗡𝗦 ⚡         ┃\n"
-        "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-        "  ◆ 👥 /users ➪ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
-        "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
-        "  ◆ 📢 /broadcast ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-        "  ◆ 🔑 /genkey ➪ ɢᴇɴᴋᴇʏ\n"
-        "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n\n"
-        "╔══════════════════════════╗\n"
-        "║              ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐             ║\n"
-        "╚══════════════════════════╝",
-        reply_markup=kb_admin(), parse_mode="HTML")
-    return
+        if btype == "ADMIN_PANEL":
+            if not (is_owner(uid) or is_super_admin(uid)):
+                safe_reply(msg,
+                    "╔══════════════════════════╗\n"
+                    "║            🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫            ║\n"
+                    "╚══════════════════════════╝\n\n"
+                    "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+                    "  📌 <b>ꜱɪʀꜰ ᴀᴅᴍɪɴꜱ ʏᴇʜ ᴘᴀɴᴇʟ ᴋʜᴏʟ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>",
+                    parse_mode="HTML")
+                return
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║            ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  ✅ <b>ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ!</b>\n\n"
+                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                "┃           ⚡ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗢𝗣𝗧𝗜𝗢𝗡𝗦 ⚡         ┃\n"
+                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                "  ◆ 👥 /users ➪ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
+                "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+                "  ◆ 📢 /broadcast ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+                "  ◆ 🔑 /genkey ➪ ɢᴇɴᴋᴇʏ\n"
+                "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n\n"
+                "╔══════════════════════════╗\n"
+                "║              ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐             ║\n"
+                "╚══════════════════════════╝",
+                reply_markup=kb_admin(), parse_mode="HTML")
+            return
 
         if btype == "REDEEM":
             safe_reply(msg,
@@ -4092,8 +4096,8 @@ if btype == "ADMIN_PANEL":
             return
 
         if btype == "GEN_KEY":
-            if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            if not has_admin_access(uid):
+                safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!"); return
             safe_reply(msg,
                 "  📝 <code>/genkey DURATION [AMOUNT] [NAME]</code>\n\n"
                 "  📌 <code>/genkey 1d 5</code>\n"
@@ -4102,20 +4106,20 @@ if btype == "ADMIN_PANEL":
             return
 
         if btype == "STATS":
-            if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            if not has_admin_access(uid):
+                safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!"); return
             do_stats(msg); return
 
         if btype == "USERS":
-            if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            if not has_admin_access(uid):
+                safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!"); return
             do_users(msg); return
 
         if btype == "BROADCAST":
-            if not is_owner(uid):
-                safe_reply(msg, "🚫 ᴏᴡɴᴇʀ ᴏɴʟʏ!"); return
+            if not has_admin_access(uid):
+                safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!"); return
             safe_reply(msg,
-                "  📝 <code>/broadcast Jᴏ Mᴇssᴀɢᴇ Bʜᴇɪɴᴀ Hᴀɪ Wᴏʜ Dᴀʟ Lᴀᴜᴅᴇ</code>",
+                "  📝 <code>/broadcast Jᴏ Mᴇssᴀɢᴇ Bʜᴇɪɴᴀ Hᴀɪ Wᴏʜ Dᴀʟ LᴀᴜᴅE</code>",
                 parse_mode="HTML")
             return
 
