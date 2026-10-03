@@ -3340,7 +3340,7 @@ def do_stats(msg):
             print(f"⚠️ Slot status error: {se}")
 
         safe_reply(msg, txt, parse_mode="HTML")
-     except Exception as e: print(f"❌ do_stats error: {e}")
+    except Exception as e: print(f"❌ do_stats error: {e}")
 
 @bot.message_handler(commands=['stats'])
 def cmd_stats(msg):
