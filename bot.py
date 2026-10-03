@@ -175,6 +175,15 @@ def load_data():
             "maintenance_msg": "Bot under maintenance.",
             "api_url": DEFAULT_API_URL, "api_token": DEFAULT_API_TOKEN,
             "api_method": DEFAULT_API_METHOD, "api_geolocation": DEFAULT_API_GEOLOCATION,
+            "api_slots": {
+                "0": {
+                    "url": DEFAULT_API_URL,
+                    "token": DEFAULT_API_TOKEN,
+                    "method": DEFAULT_API_METHOD,
+                    "geo": DEFAULT_API_GEOLOCATION
+                }
+            },
+            "active_slot": "0"
         }
     }
     if os.path.exists(DATA_FILE):
@@ -702,6 +711,7 @@ def get_button_type(text):
 
         if has("OWNER", "PANEL"): return "OWNER_PANEL"
         if has("ADMIN", "PANEL"): return "ADMIN_PANEL"
+        if has("MY", "PANEL"): return "MY_PANEL"
         if has("GEN", "KEY"): return "GEN_KEY"
         if "BROADCAST" in t_clean: return "BROADCAST"
         if "SETTINGS" in t_clean: return "SETTINGS"
@@ -793,25 +803,49 @@ def check_ban(msg):
     return False
 
 # ============= API =============
-def api_attack(ip, port, dur):
+def api_attack(ip, port, dur, slot=None):
+    """API attack — slot specify kar sakte ho, warna random available slot use karega"""
     try:
-        url = get_setting("api_url", DEFAULT_API_URL)
-        token = get_setting("api_token", DEFAULT_API_TOKEN)
-        method = get_setting("api_method", DEFAULT_API_METHOD)
-        geo = get_setting("api_geolocation", DEFAULT_API_GEOLOCATION)
+        # ★ SLOTS LOAD KARO ★
+        settings = ensure_dict(data.get("settings", {}))
+        api_slots = ensure_dict(settings.get("api_slots", {}))
 
+        # Purane format se migrate karo agar slots khaali hain
+        if not api_slots:
+            api_slots = {
+                "0": {
+                    "url": settings.get("api_url", DEFAULT_API_URL),
+                    "token": settings.get("api_token", DEFAULT_API_TOKEN),
+                    "method": settings.get("api_method", DEFAULT_API_METHOD),
+                    "geo": settings.get("api_geolocation", DEFAULT_API_GEOLOCATION)
+                }
+            }
+            settings["api_slots"] = api_slots
+            data["settings"] = settings
+            save_data(data)
+
+        # ★ SLOT CHOOSE KARO ★
+        if slot is not None and str(slot) in api_slots:
+            chosen_slot = str(slot)
+        else:
+            # Pehla available slot use karo (0 se start)
+            chosen_slot = "0"
+
+        slot_data = ensure_dict(api_slots.get(chosen_slot, {}))
+        url = slot_data.get("url", DEFAULT_API_URL)
+        token = slot_data.get("token", DEFAULT_API_TOKEN)
+        method = slot_data.get("method", DEFAULT_API_METHOD)
+        geo = slot_data.get("geo", DEFAULT_API_GEOLOCATION)
+
+        # Fallbacks
         if not url or not str(url).startswith("http"):
             url = DEFAULT_API_URL
-            set_setting("api_url", url)
         if not token or len(str(token)) < 10:
             token = DEFAULT_API_TOKEN
-            set_setting("api_token", token)
         if not method:
             method = DEFAULT_API_METHOD
-            set_setting("api_method", method)
         if not geo:
             geo = DEFAULT_API_GEOLOCATION
-            set_setting("api_geolocation", geo)
 
         req = f"{url}?token={token}&host={ip}&port={port}&time={dur}&method={method}&geolocation={geo}"
         start = time.time()
@@ -826,7 +860,7 @@ def api_attack(ip, port, dur):
     except Exception as e:
         HEALTH["api_failed"] += 1
         return False, str(e)
-
+        
 # ============= KEYBOARDS =============
 def kb_main(uid):
     if is_owner(uid):
@@ -2075,45 +2109,52 @@ def do_status(msg):
                 txt = ""
 
                 if running:
-                    atk = running[0]
-                    atk_start = atk.get('start_time', now)
-                    if not isinstance(atk_start, datetime): atk_start = now
-                    atk_end = atk.get('end_time', now)
-                    if not isinstance(atk_end, datetime): atk_end = now
-                    rem = max(0, int((atk_end - now).total_seconds()))
-                    dur = safe_int(atk.get('duration', 60), 60)
-                    elapsed = max(0, dur - rem)
-                    pct = min(100, int((elapsed / dur) * 100)) if dur > 0 else 0
-                    filled = int(pct / 10)
-                    bar = "▰" * filled + "▱" * (10 - filled)
-
-                    if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
-                    elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
-                    elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
-                    elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
-                    else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
-
-                    target = escape_html(f"{atk.get('target', 'N/A')}:{atk.get('port', 'N/A')}")
-                    uname = escape_html(atk.get('username', 'Unknown'))
-                    rem_m = rem // 60; rem_s = rem % 60
-                    el_m = elapsed // 60; el_s = elapsed % 60
-
                     txt += (
                         "╔══════════════════════════╗\n"
-                        "║           🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞 𝗦𝗧𝗔𝗧𝗨𝗦 🌐       ║\n"
+                        "║           🎯 𝗟𝗜𝗩𝗘 𝗔𝗧𝗧𝗔𝗖𝗞𝗦 🌐            ║\n"
                         "╚══════════════════════════╝\n\n"
-                        + f"  {bar} {pct}%\n"
-                        + f"  {st}\n\n"
-                        + "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                        + "┃               ♻️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 💈        ┃\n"
-                        + "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                        + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
-                        + f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(atk_start)} IST</code>\n"
-                        + f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(atk_end)} IST</code>\n"
-                        + f"  ◆ ⏳ ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{el_m}ᴍ {el_s}ꜱ</b>\n"
-                        + f"  ◆ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n"
-                        + f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
+                        + f"  ◆ 📊 ᴀᴄᴛɪᴠᴇ ᴀᴛᴛᴀᴄᴋꜱ ➪ <b>{len(running)}</b>\n\n"
                     )
+
+                    for idx, atk in enumerate(running[:10], 1):
+                        atk_start = atk.get('start_time', now)
+                        if not isinstance(atk_start, datetime): atk_start = now
+                        atk_end = atk.get('end_time', now)
+                        if not isinstance(atk_end, datetime): atk_end = now
+                        rem = max(0, int((atk_end - now).total_seconds()))
+                        dur = safe_int(atk.get('duration', 60), 60)
+                        elapsed = max(0, dur - rem)
+                        pct = min(100, int((elapsed / dur) * 100)) if dur > 0 else 0
+                        filled = int(pct / 10)
+                        bar = "▰" * filled + "▱" * (10 - filled)
+
+                        if pct < 20: st = "🔴 ᴊᴜꜱᴛ ꜱᴛᴀʀᴛᴇᴅ"
+                        elif pct < 50: st = "🟠 ɪɴ ᴘʀᴏɢʀᴇꜱꜱ"
+                        elif pct < 80: st = "🟡 ᴍᴏʀᴇ ᴛʜᴀɴ ʜᴀʟꜰ"
+                        elif pct < 100: st = "🟢 ᴀʟᴍᴏꜱᴛ ᴅᴏɴᴇ"
+                        else: st = "✅ ᴄᴏᴍᴘʟᴇᴛᴇ"
+
+                        target = escape_html(f"{atk.get('target', 'N/A')}:{atk.get('port', 'N/A')}")
+                        uname = escape_html(atk.get('username', 'Unknown'))
+                        rem_m = rem // 60; rem_s = rem % 60
+                        el_m = elapsed // 60; el_s = elapsed % 60
+
+                        txt += (
+                            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                            f"┃          🎯 𝗔𝗧𝗧𝗔𝗖𝗞 #{idx} 🎯              ┃\n"
+                            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                            + f"  {bar} {pct}%\n"
+                            + f"  {st}\n\n"
+                            + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
+                            + f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(atk_start)} IST</code>\n"
+                            + f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(atk_end)} IST</code>\n"
+                            + f"  ◆ ⏳ ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{el_m}ᴍ {el_s}ꜱ</b>\n"
+                            + f"  ◆ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n"
+                            + f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
+                        )
+
+                    if len(running) > 10:
+                        txt += f"  ... ᴀɴᴅ {len(running) - 10} ᴍᴏʀᴇ ᴀᴛᴛᴀᴄᴋꜱ\n\n"
 
                 method = escape_html(get_setting('api_method', 'UDP-BIG'))
                 geo = escape_html(get_setting('api_geolocation', 'ALL'))
@@ -2829,7 +2870,7 @@ def cmd_panel(msg):
         if not is_owner(msg.from_user.id): return
         safe_reply(msg,
             "╔══════════════════════════╗\n"
-            "║         📊 🅾︎🆆︎🅽︎🅴︎🆁︎ 🅿︎🅰︎🅽︎🅴︎🅻︎ 🔓        ║\n"
+            "║         📊 👑 𝗢𝗪𝗡𝗘𝗥 𝗣𝗔𝗡𝗘𝗟 👑         ║\n"
             "╚══════════════════════════╝\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
             "┃       ⚡ 𝗢𝗪𝗡𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🐦‍🔥          ┃\n"
@@ -2837,44 +2878,58 @@ def cmd_panel(msg):
             "  ◆ 👑 /panel ➪ ᴏᴡɴᴇʀ ᴘᴀɴᴇʟ\n"
             "  ◆ 👥 /users ➪ ʟɪᴠᴇ ᴜꜱᴇʀꜱ\n"
             "  ◆ 📊 /stats ➪ ꜱᴛᴀᴛꜱ\n"
-            "  ◆ 📢 /broadcast MSG\n"
-            "  ◆ 🚫 /ban ID REASON\n"
-            "  ◆ ✅ /unban ID\n"
-            "  ◆ 🔑 /genkey 1d 5\n"
-            "  ◆ 📡 /setapi URL TOKEN\n"
-            "  ◆ 🧪 /testapi\n"
+            "  ◆ 📢 /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+            "  ◆ 🚫 /ban ID REASON ➪ ʙᴀɴ\n"
+            "  ◆ ✅ /unban ID ➪ ᴜɴʙᴀɴ\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃      ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧 ⭐       ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ◆ ➕ /addadmin ID NAME ➪ ᴀᴅᴍɪɴ ᴀᴅᴅ\n"
+            "  ◆ ➖ /removeadmin ID ➪ ᴀᴅᴍɪɴ ʀᴇᴍᴏᴠᴇ\n"
+            "  ◆ 📋 /adminlist ➪ ᴀʟʟ ᴀᴅᴍɪɴꜱ\n"
+            "  ◆ 🔍 /mystatus ➪ ᴍʏ ᴀᴅᴍɪɴ ɪɴꜰᴏ\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃       🌐 𝗔𝗣𝗜 𝗦𝗟𝗢𝗧𝗦 🌐           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ◆ 📡 /setapi URL TOKEN ➪ ꜱʟᴏᴛ 1\n"
+            "  ◆ 📡 /setapi1 URL TOKEN ➪ ꜱʟᴏᴛ 2\n"
+            "  ◆ 📡 /setapi2 URL TOKEN ➪ ꜱʟᴏᴛ 3\n"
+            "  ◆ 📡 /setapi3 URL TOKEN ➪ ꜱʟᴏᴛ 4\n"
+            "  ◆ 📋 /listapis ➪ ꜱᴀʀᴇ ᴀᴘɪ\n"
+            "  ◆ 🧪 /testapi ➪ ᴛᴇꜱᴛ\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃        🔑 𝗞𝗘𝗬 𝗦𝗬𝗦𝗧𝗘𝗠 🔑           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ◆ 🔑 /genkey 1d 5 ➪ ᴋᴇʏ ɢᴇɴ\n"
+            "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n"
+            "  ◆ 🗑️ /delkey KEY ➪ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ\n"
+            "  ◆ 💥 /delallkeys ➪ ᴀʟʟ ᴅᴇʟᴇᴛᴇ\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃       ⚙️ 𝗕𝗢𝗧 𝗦𝗘𝗧𝗧𝗜𝗡𝗚𝗦 ⚙️           ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
             "  ◆ ⏱️ /setmaxtime SEC\n"
             "  ◆ ⏸️ /setcooldown SEC\n"
-            "  ◆ 🔧 /maintenance\n"
+            "  ◆ 🔧 /maintenance ➪ ᴛᴏɢɢʟᴇ\n"
             "  ◆ 📩 /feedback on|off|list\n"
-            "  ◆ ⚙️ /settings\n"
-            "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n"
-            "  ◆ 🌌 /delkey KEY ➪ ᴋᴇʏ ᴅᴇʟᴇᴛᴇ\n"
-            "  ◆ 🐼 /delallkeys ➪ ꜱᴀᴀʀɪ ᴜɴᴜꜱᴇᴅ ᴋᴇʏꜱ ᴅᴇʟᴇᴛᴇ\n\n"
+            "  ◆ ⚙️ /settings ➪ ꜱᴇᴛᴛɪɴɢꜱ\n\n"
             "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃        ❄ 𝗦𝗧𝗜𝗖𝗞𝗘𝗥 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🐻‍❄️      ┃\n"
+            "┃      🎨 𝗖𝗢𝗡𝗧𝗘𝗡𝗧 𝗠𝗔𝗡𝗔𝗚𝗘𝗥 🎨      ┃\n"
             "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "  ◆ 🎨 ꜱᴇɴᴅ ꜱᴛɪᴄᴋᴇʀ ➪ ᴀᴅᴅ\n"
+            "  ◆ ❄ ꜱᴛɪᴄᴋᴇʀ ➪ ꜱᴇɴᴅ ᴛᴏ ᴀᴅᴅ\n"
             "  ◆ 📋 /liststickers\n"
-            "  ◆ 🗑️ /removesticker NUM\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃           📹 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🎥        ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-            "  ◆ 🎬 ꜱᴇɴᴅ ᴠɪᴅᴇᴏ ➪ ᴀᴛᴛᴀᴄᴋ ᴍᴇ ᴀᴀʏᴇɢᴀ\n"
+            "  ◆ 🗑️ /removesticker NUM\n"
+            "  ◆ 📹 ᴠɪᴅᴇᴏ ➪ ꜱᴇɴᴅ ᴛᴏ ᴀᴅᴅ\n"
             "  ◆ 📋 /listvideo\n"
-            "  ◆ 🗑️ /delvideo NUM\n\n"
-            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-            "┃       🎬 𝗣𝗬𝗙 𝗩𝗜𝗗𝗘𝗢 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 📽️    ┃\n"
-            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ◆ 🗑️ /delvideo NUM\n"
             "  ◆ 🎬 /addpyf ➪ ᴘʏꜰ ᴀᴅᴅ\n"
-            "  ◆ 📋 /listpyf ➪ ʟɪꜱᴛ\n"
-            "  ◆ 🗑️ /delpyf NUM ➪ ʀᴇᴍᴏᴠᴇ\n\n"
+            "  ◆ 📋 /listpyf\n"
+            "  ◆ 🗑️ /delpyf NUM\n\n"
             "╔══════════════════════════╗\n"
-            "║                🦪 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 🦠              ║\n"
+            "║        👑 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗢𝗪𝗡𝗘𝗥 👑          ║\n"
             "╚══════════════════════════╝",
             parse_mode="HTML")
     except Exception as e: print(f"❌ cmd_panel error: {e}")
-
+        
 # ============= USERS LIVE =============
 def do_users(msg):
     react_to_message(msg)
@@ -3240,10 +3295,9 @@ def cmd_unban(msg):
         else: safe_reply(msg, "❌ ɴᴏᴛ ʙᴀɴɴᴇᴅ")
     except Exception as e: print(f"❌ cmd_unban error: {e}")
 
-# ============= SETAPI =============
-@bot.message_handler(commands=['setapi'])
-def cmd_setapi(msg):
-    react_to_message(msg)
+# ============= MULTI-API SLOT SYSTEM =============
+def _handle_setapi_slot(msg, slot_num):
+    """Slot-specific setapi handler"""
     try:
         if not is_owner(msg.from_user.id): return
         p = msg.text.split()
@@ -3252,25 +3306,161 @@ def cmd_setapi(msg):
                 "╔══════════════════════════╗\n"
                 "║              📡 𝗔𝗣𝗜 𝗦𝗘𝗧𝗨𝗣 𝗚𝗨𝗜𝗗𝗘 🛜           ║\n"
                 "╚══════════════════════════╝\n\n"
-                "  <code>/setapi URL TOKEN [METHOD] [GEO]</code>",
+                f"  ◆ 📌 ꜱʟᴏᴛ ➪ <b>{slot_num}</b>\n\n"
+                f"  <code>/setapi{slot_num if slot_num > 0 else ''} URL TOKEN [METHOD] [GEO]</code>\n\n"
+                "  ◆ ᴇxᴀᴍᴘʟᴇ:\n"
+                f"  <code>/setapi{slot_num if slot_num > 0 else ''} https://api.com/start TOKEN123 UDP-BIG ALL</code>",
                 parse_mode="HTML")
             return
 
-        set_setting("api_url", p[1]); set_setting("api_token", p[2])
-        if len(p) > 3: set_setting("api_method", p[3])
-        if len(p) > 4: set_setting("api_geolocation", p[4])
+        settings = ensure_dict(data.get("settings", {}))
+        api_slots = ensure_dict(settings.get("api_slots", {}))
+        slot_key = str(slot_num)
+
+        api_slots[slot_key] = {
+            "url": p[1],
+            "token": p[2],
+            "method": p[3] if len(p) > 3 else DEFAULT_API_METHOD,
+            "geo": p[4] if len(p) > 4 else DEFAULT_API_GEOLOCATION,
+            "added_at": ist_now().isoformat()
+        }
+        settings["api_slots"] = api_slots
+        data["settings"] = settings
+        save_data(data)
 
         safe_reply(msg,
             "╔══════════════════════════╗\n"
-            "║                  ✅ 𝗔𝗣𝗜 𝗨𝗣𝗗𝗔𝗧𝗘𝗗 ✅              ║\n"
+            "║              ☑️ 𝗔𝗣𝗜 𝗦𝗟𝗢𝗧 𝗨𝗣𝗗𝗔𝗧𝗘𝗗 ✅          ║\n"
             "╚══════════════════════════╝\n\n"
+            f"  ◆ 📌 ꜱʟᴏᴛ ➪ <b>{slot_key}</b>\n"
             f"  ◆ 🌐 ᴜʀʟ ➪ <code>{escape_html(p[1])}</code>\n"
             f"  ◆ 🔐 ᴛᴏᴋᴇɴ ➪ <code>{escape_html(p[2][:25])}...</code>\n"
-            f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(get_setting('api_method','UDP-BIG'))}</code>\n"
-            f"  ◆ 🌍 ɢᴇᴏ ➪ <code>{escape_html(get_setting('api_geolocation','ALL'))}</code>",
+            f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(api_slots[slot_key]['method'])}</code>\n"
+            f"  ◆ 🌍 ɢᴇᴏ ➪ <code>{escape_html(api_slots[slot_key]['geo'])}</code>\n\n"
+            f"  📊 ᴛᴏᴛᴀʟ ꜱʟᴏᴛꜱ ➪ <b>{len(api_slots)}</b>",
             parse_mode="HTML")
-    except Exception as e: print(f"❌ cmd_setapi error: {e}")
+    except Exception as e:
+        print(f"❌ _handle_setapi_slot error: {e}")
 
+
+@bot.message_handler(commands=['setapi'])
+def cmd_setapi(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 0)
+
+@bot.message_handler(commands=['setapi1'])
+def cmd_setapi1(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 1)
+
+@bot.message_handler(commands=['setapi2'])
+def cmd_setapi2(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 2)
+
+@bot.message_handler(commands=['setapi3'])
+def cmd_setapi3(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 3)
+
+@bot.message_handler(commands=['setapi4'])
+def cmd_setapi4(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 4)
+
+@bot.message_handler(commands=['setapi5'])
+def cmd_setapi5(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 5)
+
+@bot.message_handler(commands=['setapi6'])
+def cmd_setapi6(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 6)
+
+@bot.message_handler(commands=['setapi7'])
+def cmd_setapi7(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 7)
+
+@bot.message_handler(commands=['setapi8'])
+def cmd_setapi8(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 8)
+
+@bot.message_handler(commands=['setapi9'])
+def cmd_setapi9(msg):
+    react_to_message(msg)
+    _handle_setapi_slot(msg, 9)
+
+
+@bot.message_handler(commands=['listapis'])
+def cmd_listapis(msg):
+    react_to_message(msg)
+    try:
+        if not is_owner(msg.from_user.id): return
+        settings = ensure_dict(data.get("settings", {}))
+        api_slots = ensure_dict(settings.get("api_slots", {}))
+
+        if not api_slots:
+            safe_reply(msg,
+                "╔══════════════════════════╗\n"
+                "║         ♻️ 𝗔𝗣𝗜 𝗦𝗟𝗢𝗧𝗦 🌐             ║\n"
+                "╚══════════════════════════╝\n\n"
+                "  📂 <b>ᴋᴏɪ ᴀᴘɪ ꜱʟᴏᴛ ɴᴀʜɪ ʜᴀɪ</b>\n\n"
+                "  📌 ᴀᴅᴅ ᴋᴀʀɴᴇ ᴋᴇ ʟɪʏᴇ:\n"
+                "  ➤ <code>/setapi URL TOKEN</code>\n"
+                "  ➤ <code>/setapi1 URL TOKEN</code>\n"
+                "  ➤ <code>/setapi2 URL TOKEN</code>",
+                parse_mode="HTML")
+            return
+
+        txt = (
+            "╔══════════════════════════╗\n"
+            "║         📟 𝗔𝗣𝗜 𝗦𝗟𝗢𝗧𝗦 🗼             ║\n"
+            "╚══════════════════════════╝\n\n"
+            f"  📊 <b>ᴛᴏᴛᴀʟ ꜱʟᴏᴛꜱ:</b> {len(api_slots)}\n\n"
+        )
+
+        for slot_num in sorted(api_slots.keys(), key=lambda x: int(x) if str(x).isdigit() else 0):
+            slot_data = ensure_dict(api_slots.get(slot_num, {}))
+            url = slot_data.get("url", "N/A")
+            token = slot_data.get("token", "N/A")
+            method = slot_data.get("method", "N/A")
+            geo = slot_data.get("geo", "N/A")
+
+            # URL short karo
+            url_short = url[:45] + "..." if len(str(url)) > 45 else url
+            token_short = str(token)[:20] + "..." if len(str(token)) > 20 else str(token)
+
+            cmd_name = f"/setapi{slot_num}" if str(slot_num) != "0" else "/setapi"
+
+            txt += (
+                f"┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+                f"┃         🎰 𝗦𝗟𝗢𝗧 {slot_num} 📌              ┃\n"
+                f"┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+                f"  ◆ 🔗 ᴄᴍᴅ ➪ <code>{cmd_name}</code>\n"
+                f"  ◆ 🌐 ᴜʀʟ ➪ <code>{escape_html(str(url_short))}</code>\n"
+                f"  ◆ 🔐 ᴛᴏᴋᴇɴ ➪ <code>{escape_html(str(token_short))}</code>\n"
+                f"  ◆ 🎯 ᴍᴇᴛʜᴏᴅ ➪ <code>{escape_html(str(method))}</code>\n"
+                f"  ◆ 🌍 ɢᴇᴏ ➪ <code>{escape_html(str(geo))}</code>\n\n"
+            )
+
+        txt += (
+            "╔══════════════════════════╗\n"
+            "║      🚮 𝗛𝗢𝗪 𝗧𝗢 𝗔𝗗𝗗 𝗠𝗢𝗥𝗘 💡            ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  ➤ /setapi URL TOKEN (slot 0)\n"
+            "  ➤ /setapi1 URL TOKEN (slot 1)\n"
+            "  ➤ /setapi2 URL TOKEN (slot 2)\n"
+            "  ➤ /setapi3 URL TOKEN (slot 3)\n"
+            "  ➤ ... /setapi9 tak"
+        )
+
+        safe_reply(msg, txt, parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ cmd_listapis error: {e}")
+        
 # ============= TESTAPI =============
 @bot.message_handler(commands=['testapi'])
 def cmd_testapi(msg):
@@ -4215,7 +4405,71 @@ def cmd_adminlist(msg):
         safe_reply(msg, txt, parse_mode="HTML")
     except Exception as e:
         print(f"❌ adminlist error: {e}")
-        
+
+# ============================================================
+# ⭐ ADMIN MY STATUS — Admin apna info dekhe ⭐
+# ============================================================
+@bot.message_handler(commands=['mystatus'])
+def cmd_mystatus(msg):
+    react_to_message(msg)
+    try:
+        uid = msg.from_user.id
+        if not (is_owner(uid) or is_super_admin(uid)):
+            safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!")
+            return
+
+        # Bot Father check
+        if uid == BOT_OWNER:
+            role = "👑 𝗕𝗢𝗧 𝗙𝗔𝗧𝗛𝗘𝗥 (ᴏᴡɴᴇʀ)"
+            added_date = "ᴘᴇʀᴍᴀɴᴇɴᴛ"
+            added_by = "ꜱʏꜱᴛᴇᴍ"
+        else:
+            admin_info = ensure_dict(data.get("super_admins", {})).get(str(uid), {})
+            if not isinstance(admin_info, dict):
+                admin_info = {}
+            role = "⭐ 𝗦𝗨𝗣𝗘𝗥 𝗔𝗗𝗠𝗜𝗡"
+            added_at = admin_info.get("added_at", "")
+            dt = safe_parse_dt(added_at)
+            added_date = to_ist(dt).strftime('%d %b %Y, %I:%M:%S %p') + " IST" if dt else "N/A"
+            added_by = str(admin_info.get("added_by", "N/A"))
+            admin_name = admin_info.get("name", "Admin")
+            role = f"⭐ 𝗦𝗨𝗣𝗘𝗥 𝗔𝗗𝗠𝗜𝗡 ({escape_html(admin_name)})"
+
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║         ⭐ 𝗠𝗬 𝗔𝗗𝗠𝗜𝗡 𝗜𝗡𝗙𝗢 ⭐         ║\n"
+            "╚══════════════════════════╝\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃         👤 𝗔𝗗𝗠𝗜𝗡 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 📋          ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  ◆ 🆔 ᴜꜱᴇʀ ɪᴅ ➪ <code>{uid}</code>\n"
+            f"  ◆ 📛 ɴᴀᴍᴇ ➪ <b>{escape_html(msg.from_user.first_name or 'Admin')}</b>\n"
+            f"  ◆ 🔗 ᴜꜱᴇʀɴᴀᴍᴇ ➪ @{escape_html(msg.from_user.username or 'N/A')}\n"
+            f"  ◆ 🎭 ʀᴏʟᴇ ➪ {role}\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃         📅 𝗔𝗗𝗠𝗜𝗡 𝗦𝗜𝗡𝗖𝗘 📅            ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            f"  ◆ 📥 ᴀᴅᴅᴇᴅ ➪ <code>{added_date}</code>\n"
+            f"  ◆ 👑 ʙʏ ➪ <code>{added_by}</code>\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃        ⚡ 𝗬𝗢𝗨𝗥 𝗣𝗢𝗪𝗘𝗥𝗦 ⚡            ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ✅ /users, /stats, /broadcast\n"
+            "  ✅ /genkey, /listkeys\n"
+            "  ✅ /adminlist, /mystatus\n\n"
+            "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+            "┃        🚫 𝗡𝗢𝗧 𝗔𝗟𝗟𝗢𝗪𝗘𝗗 ⛔             ┃\n"
+            "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+            "  ❌ ᴋɪꜱɪ ᴋᴏ ʙᴀɴ/ᴜɴʙᴀɴ\n"
+            "  ❌ ᴀᴅᴍɪɴ ᴀᴅᴅ/ʀᴇᴍᴏᴠᴇ\n"
+            "  ❌ ᴀᴘɪ ꜱᴇᴛᴛɪɴɢꜱ\n\n"
+            "╔══════════════════════════╗\n"
+            "║         ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗢𝗪𝗘𝗥 ⭐             ║\n"
+            "╚══════════════════════════╝",
+            parse_mode="HTML")
+    except Exception as e:
+        print(f"❌ cmd_mystatus error: {e}")
+
 # ============================================================
 # ★★★ UNIVERSAL BUTTON HANDLER ★★★
 # ============================================================
@@ -4267,34 +4521,69 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
-        if btype == "ADMIN_PANEL":
-            if not (is_owner(uid) or is_super_admin(uid)):
-                safe_reply(msg,
-                    "╔══════════════════════════╗\n"
-                    "║            🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫            ║\n"
-                    "╚══════════════════════════╝\n\n"
-                    "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
-                    "  📌 <b>ꜱɪʀꜰ ᴀᴅᴍɪɴꜱ ʏᴇʜ ᴘᴀɴᴇʟ ᴋʜᴏʟ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>",
-                    parse_mode="HTML")
-                return
-            safe_reply(msg,
-                "╔══════════════════════════╗\n"
-                "║            ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
-                "╚══════════════════════════╝\n\n"
-                "  ✅ <b>ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ!</b>\n\n"
-                "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                "┃           ⚡ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗢𝗣𝗧𝗜𝗢𝗡𝗦 ⚡         ┃\n"
-                "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                "  ◆ 👥 /users ➪ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
-                "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
-                "  ◆ 📢 /broadcast ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
-                "  ◆ 🔑 /genkey ➪ ɢᴇɴᴋᴇʏ\n"
-                "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n\n"
-                "╔══════════════════════════╗\n"
-                "║              ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐             ║\n"
-                "╚══════════════════════════╝",
-                reply_markup=kb_admin(), parse_mode="HTML")
-            return
+if btype == "ADMIN_PANEL":
+    if not (is_owner(uid) or is_super_admin(uid)):
+        safe_reply(msg,
+            "╔══════════════════════════╗\n"
+            "║            🚫 𝗔𝗖𝗖𝗘𝗦𝗦 𝗗𝗘𝗡𝗜𝗘𝗗 🚫            ║\n"
+            "╚══════════════════════════╝\n\n"
+            "  ⛔ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ɴᴀʜɪ ʜᴀɪ!</b>\n\n"
+            "  📌 <b>ꜱɪʀꜰ ᴀᴅᴍɪɴꜱ ʏᴇʜ ᴘᴀɴᴇʟ ᴋʜᴏʟ ꜱᴀᴋᴛᴇ ʜᴀɪɴ</b>",
+            parse_mode="HTML")
+        return
+    safe_reply(msg,
+        "╔══════════════════════════╗\n"
+        "║            ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
+        "╚══════════════════════════╝\n\n"
+        "  ✅ <b>ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ ᴏᴘᴇɴᴇᴅ!</b>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃           ⚡ 𝗔𝗩𝗔𝗜𝗟𝗔𝗕𝗟𝗘 𝗢𝗣𝗧𝗜𝗢𝗡𝗦 ⚡         ┃\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "  ◆ 👥 /users ➪ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
+        "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+        "  ◆ 📢 /broadcast ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+        "  ◆ 🔑 /genkey ➪ ɢᴇɴᴋᴇʏ\n"
+        "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n\n"
+        "╔══════════════════════════╗\n"
+        "║              ⭐ 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔𝗗𝗠𝗜𝗡 ⭐             ║\n"
+        "╚══════════════════════════╝",
+        reply_markup=kb_admin(), parse_mode="HTML")
+    return
+
+# ★★★ MY PANEL — ADMIN APNI COMMANDS DEKHE ★★★
+if btype == "MY_PANEL":
+    if not (is_owner(uid) or is_super_admin(uid)):
+        safe_reply(msg, "🚫 ᴀᴅᴍɪɴ ᴏɴʟʏ!")
+        return
+    safe_reply(msg,
+        "╔══════════════════════════╗\n"
+        "║         ⭐ 𝗠𝗬 𝗣𝗔𝗡𝗘𝗟 ⭐              ║\n"
+        "╚══════════════════════════╝\n\n"
+        "  ✅ <b>ᴀᴀᴘ ᴀᴅᴍɪɴ ʜᴏ — ɴɪᴄʜᴇ ᴀᴀᴘᴋɪ ᴄᴏᴍᴍᴀɴᴅꜱ ʜᴀɪɴ</b>\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃        ⚡ 𝗔𝗗𝗠𝗜𝗡 𝗖𝗢𝗠𝗠𝗔𝗡𝗗𝗦 🐦‍🔥        ┃\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "  ◆ 👥 /users ➪ ʟɪᴠᴇ ᴜꜱᴇʀ ʟɪꜱᴛ\n"
+        "  ◆ 📊 /stats ➪ ʙᴏᴛ ꜱᴛᴀᴛꜱ\n"
+        "  ◆ 📢 /broadcast MSG ➪ ʙʀᴏᴀᴅᴄᴀꜱᴛ\n"
+        "  ◆ 🔑 /genkey 1d 5 ➪ ᴋᴇʏ ɢᴇɴ\n"
+        "  ◆ 🗝️ /listkeys ➪ ᴋᴇʏ ʟɪꜱᴛ\n"
+        "  ◆ 🔍 /mystatus ➪ ᴍʏ ᴀᴅᴍɪɴ ɪɴꜰᴏ\n"
+        "  ◆ 📅 /adminlist ➪ ᴀʟʟ ᴀᴅᴍɪɴꜱ\n\n"
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
+        "┃        ❌ 𝗬𝗢𝗨 𝗖𝗔𝗡𝗡𝗢𝗧 𝗗𝗢 ⛔             ┃\n"
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
+        "  ◆ 🚫 /ban ➪ ꜱɪʀꜰ ᴏᴡɴᴇʀ\n"
+        "  ◆ ✅ /unban ➪ ꜱɪʀꜰ ᴏᴡɴᴇʀ\n"
+        "  ◆ ⭐ /addadmin ➪ ꜱɪʀꜿ ʙᴏᴛ ꜰᴀᴛʜᴇʀ\n"
+        "  ◆ 🗑️ /removeadmin ➪ ꜱɪʀꜿ ʙᴏᴛ ꜰᴀᴛʜᴇʀ\n"
+        "  ◆ 📡 /setapi ➪ ꜱɪʀꜿ ᴏᴡɴᴇʀ\n"
+        "  ◆ ⚙️ /settings ➪ ꜱɪʀꜿ ᴏᴡɴᴇʀ\n\n"
+        "╔══════════════════════════╗\n"
+        "║          ⭐ 𝗔𝗗𝗠𝗜𝗡 𝗣𝗔𝗡𝗘𝗟 ⭐             ║\n"
+        "╚══════════════════════════╝",
+        reply_markup=kb_admin(), parse_mode="HTML")
+    return
 
         if btype == "REDEEM":
             safe_reply(msg,
