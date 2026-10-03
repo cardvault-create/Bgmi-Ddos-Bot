@@ -348,18 +348,18 @@ def _auto_resume_attack(attack_id, atk):
                 rem_m = rem // 60; rem_s = rem % 60
                 return (
                     "╔═════════════════════════╗\n"
-                    "║         🐣 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 🦜         ║\n"
+                    "║         🧪 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 🌡         ║\n"
                     "╚═════════════════════════╝\n\n"
                     f"  {bar} {pct}%\n  {st}\n\n"
-                    f"  ◆ 👤 @{escape_html(username)}\n"
-                    f"  ◆ 🎯 {target}:{port}\n"
-                    f"  ◆ ⏱️ {duration}ꜱ\n"
-                    f"  ◆ ▶️ {ist_time_str(start_time)} IST\n"
-                    f"  ◆ ⏹️ {ist_time_str(end_time)} IST\n"
-                    f"  ◆ ⏳ {elapsed}ꜱ\n"
-                    f"  ◆ ⏱️ {rem_m}ᴍ {rem_s}ꜱ\n\n"
+                    f"  ◆ 🦹 @{escape_html(username)}\n"
+                    f"  ◆ 🥷 {target}:{port}\n"
+                    f"  ◆ 🌍 {duration}ꜱ\n"
+                    f"  ◆ 🌷 {ist_time_str(start_time)} IST\n"
+                    f"  ◆ 🌻 {ist_time_str(end_time)} IST\n"
+                    f"  ◆ 🌸 {elapsed}ꜱ\n"
+                    f"  ◆ 🌼 {rem_m}ᴍ {rem_s}ꜱ\n\n"
                     "╔═════════════════════════╗\n"
-                    "║           🍭 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🥂          ║\n"
+                    "║           🌹 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🧤          ║\n"
                     "╚═════════════════════════╝"
                 )
             except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
@@ -370,7 +370,7 @@ def _auto_resume_attack(attack_id, atk):
                 now = ist_now()
                 if now >= end_time: break
                 if _stop_flags.get(attack_id, False): break
-                time.sleep(UPDATE_INTERVAL)
+                time.sleep(4)
                 now = ist_now()
                 if now >= end_time: break
                 if _stop_flags.get(attack_id, False): break
@@ -398,10 +398,10 @@ def _auto_resume_attack(attack_id, atk):
                     "╔═════════════════════════╗\n"
                     "║             ☑️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 ☑️       ║\n"
                     "╚═════════════════════════╝\n\n"
-                    f"  ◆ 👤 @{escape_html(username)}\n"
-                    f"  ◆ 🎯 {target}\n"
-                    f"  ◆ 🚪 {port}\n"
-                    f"  ◆ ⏱️ {rem_dur}ꜱ\n"
+                    f"  ◆ 💠 @{escape_html(username)}\n"
+                    f"  ◆ 👾 {target}\n"
+                    f"  ◆ ☢️ {port}\n"
+                    f"  ◆ 🦹 {rem_dur}ꜱ\n"
                 )
                 try:
                     bot.send_message(chat_id, complete_caption, parse_mode="HTML")
@@ -1187,7 +1187,7 @@ def cmd_start(msg):
             ("▰▰▰▰▰▱▱▱▱▱", 50, "50%", "⚙️ 𝙇𝙤𝙖𝙙𝙞𝙣𝙜 𝙥𝙧𝙤𝙛𝙞𝙡𝙚..."),
             ("▰▰▰▰▰▰▰▱▱▱", 70, "70%", "🔑 ᴄʜᴇᴄᴋɪɴɢ ᴋᴇʏ ꜱᴛᴀᴛᴜꜱ..."),
             ("▰▰▰▰▰▰▰▰▰▱", 90, "90%", "⏳ 𝘍𝘪𝘯𝘢𝘭𝘪𝘻𝘪𝘯𝘨..."),
-            ("▰▰▰▰▰▰▰▰▰▰", 100, "100%", "✅ Ｖｅｒｉｆｉｅｄ!"),
+            ("▰▰▰▰▰▰▰▰▰▰", 100, "100%", "☑️ Ｖｅｒｉｆｉｅｄ!"),
         ]
 
         for bar, pct_num, pct, status in steps:
@@ -1874,28 +1874,28 @@ def cmd_attack(msg):
 
                 return (
                     "╔═════════════════════════╗\n"
-                    "║         🐣 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 🦜         ║\n"
+                    "║         🧪 𝗔𝗧𝗧𝗔𝗖𝗞 𝗟𝗔𝗨𝗡𝗖𝗛𝗘𝗗 🌡         ║\n"
                     "╚═════════════════════════╝\n\n"
                     + f"  {bar} {pct}%\n"
                     + f"  {st}\n\n"
                     + "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    + "┃               ⚔️ 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 🪏        ┃\n"
+                    + "┃               🖲 𝗔𝗧𝗧𝗔𝗖𝗞 𝗗𝗘𝗧𝗔𝗜𝗟𝗦 📟        ┃\n"
                     + "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    + f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-                    + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
-                    + f"  ◆ 🎰 ꜱʟᴏᴛ ➪ <b>{free_slot}</b>\n"
-                    + f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-                    + f"  ◆ 🚀 ᴍᴇᴛʜᴏᴅ ➪ <b>{method_str}</b>\n"
+                    + f"  ◆ 🧸 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+                    + f"  ◆ 📈 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}:{port}</code>\n"
+                    + f"  ◆ 🛂 ꜱʟᴏᴛ ➪ <b>{free_slot}</b>\n"
+                    + f"  ◆ 🛜 ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+                    + f"  ◆ 📛 ᴍᴇᴛʜᴏᴅ ➪ <b>{method_str}</b>\n"
                     + f"  ◆ 🌍 ɢᴇᴏ ➪ <code>{geo_str}</code>\n\n"
                     + "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                    + "┃               🕰️ 𝗧𝗜𝗠𝗘 𝗧𝗥𝗔𝗖𝗞𝗜𝗡𝗚 ⏲️          ┃\n"
+                    + "┃               🫟 𝗧𝗜𝗠𝗘 𝗧𝗥𝗔𝗖𝗞𝗜𝗡𝗚 🎟          ┃\n"
                     + "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    + f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{start_str} IST</code>\n"
-                    + f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{end_str} IST</code>\n"
-                    + f"  ◆ ⏳ ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{elapsed}ꜱ</b>\n"
-                    + f"  ◆ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n\n"
+                    + f"  ◆ 🌷 ꜱᴛᴀʀᴛ ➪ <code>{start_str} IST</code>\n"
+                    + f"  ◆ 🌻 ᴇɴᴅ ➪ <code>{end_str} IST</code>\n"
+                    + f"  ◆ 🌸 ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{elapsed}ꜱ</b>\n"
+                    + f"  ◆ 🌼 ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n\n"
                     + "╔═════════════════════════╗\n"
-                    + "║           🍭 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 🥂          ║\n"
+                    + "║           💹 𝗔𝗧𝗧𝗔𝗖𝗞 𝗥𝗨𝗡𝗡𝗜𝗡𝗚 ♻️          ║\n"
                     + "╚═════════════════════════╝"
                 )
             except: return "💀 ᴀᴛᴛᴀᴄᴋ ʀᴜɴɴɪɴɢ..."
@@ -2052,12 +2052,12 @@ def cmd_attack(msg):
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     "┃               ♻️ 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 🏞️             ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-                    f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-                    f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-                    f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-                    f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-                    f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+                    f"  ◆ 🤽‍♀ ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+                    f"  ◆ 🏄‍♂ ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+                    f"  ◆ 🛰 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+                    f"  ◆ ⛵️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+                    f"  ◆ 🏜 ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+                    f"  ◆ 🎑 ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     "┃               📟 ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋           ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
@@ -2095,12 +2095,12 @@ def cmd_attack(msg):
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     "┃               ♻️ 𝗙𝗜𝗡𝗔𝗟 𝗥𝗘𝗣𝗢𝗥𝗧 🏞️             ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
-                    f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
-                    f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
-                    f"  ◆ 🚪 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
-                    f"  ◆ ⏱️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
-                    f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
-                    f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
+                    f"  ◆ 🤽‍♀ ᴜꜱᴇʀ ➪ <b>@{escape_html(name)}</b>\n"
+                    f"  ◆ 🏄‍♂ ᴛᴀʀɢᴇᴛ ➪ <code>{ip}</code>\n"
+                    f"  ◆ 🛰 ᴘᴏʀᴛ ➪ <code>{port}</code>\n"
+                    f"  ◆ ⛵️ ᴅᴜʀᴀᴛɪᴏɴ ➪ <b>{dur}ꜱ</b>\n"
+                    f"  ◆ 🏜 ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(start_time)} IST</code>\n"
+                    f"  ◆ 🎑 ᴇɴᴅ ➪ <code>{ist_time_str(end_time)} IST</code>\n\n"
                     "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
                     "┃              ☢️ ᴀᴛᴛᴀᴄᴋ ᴄᴏᴍᴍᴀɴᴅ 📋            ┃\n"
                     "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
@@ -2240,17 +2240,17 @@ def do_status(msg):
 
                         txt += (
                             "┏━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"
-                            f"┃          👾 𝗔𝗧𝗧𝗔𝗖𝗞 #{idx} 🍀              ┃\n"
+                            f"┃                   👾 𝗔𝗧𝗧𝗔𝗖𝗞 #1 🍀               ┃\n"
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"
                             + f"  {bar} {pct}%\n"
                             + f"  {st}\n\n"
-                            + f"  ◆ 🎯 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
-                            + f"  ◆ 🎰 ꜱʟᴏᴛ ➪ <b>{slot_num}</b>\n"
-                            + f"  ◆ ▶️ ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(atk_start)} IST</code>\n"
-                            + f"  ◆ ⏹️ ᴇɴᴅ ➪ <code>{ist_time_str(atk_end)} IST</code>\n"
-                            + f"  ◆ ⏳ ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{el_m}ᴍ {el_s}ꜱ</b>\n"
-                            + f"  ◆ ⏱️ ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n"
-                            + f"  ◆ 👤 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
+                            + f"  ◆ 🎑 ᴛᴀʀɢᴇᴛ ➪ <code>{target}</code>\n"
+                            + f"  ◆ 🤽‍♀ ꜱʟᴏᴛ ➪ <b>{slot_num}</b>\n"
+                            + f"  ◆ 🦋 ꜱᴛᴀʀᴛ ➪ <code>{ist_time_str(atk_start)} IST</code>\n"
+                            + f"  ◆ 🪲 ᴇɴᴅ ➪ <code>{ist_time_str(atk_end)} IST</code>\n"
+                            + f"  ◆ 🪼 ᴇʟᴀᴘꜱᴇᴅ ➪ <b>{el_m}ᴍ {el_s}ꜱ</b>\n"
+                            + f"  ◆ 🐸 ʀᴇᴍᴀɪɴɪɴɢ ➪ <b>{rem_m}ᴍ {rem_s}ꜱ</b>\n"
+                            + f"  ◆ 🦎 ᴜꜱᴇʀ ➪ <b>@{uname}</b>\n\n"
                         )
 
                     if len(running) > 10:
