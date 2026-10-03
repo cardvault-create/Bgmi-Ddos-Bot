@@ -183,7 +183,7 @@ def load_data():
                 if isinstance(d, dict):
                     for k, v in default.items():
                         d.setdefault(k, v)
-                    for key in ["users", "keys", "resellers", "admins", "super_admins", "banned_users", "feedback_required", "pending_attacks"]::
+                    for key in ["users", "keys", "resellers", "admins", "super_admins", "banned_users", "feedback_required", "pending_attacks"]:
                         if not isinstance(d.get(key), dict): d[key] = {}
                     for key in ["attack_logs", "admin_logs", "stickers", "videos", "pyf_videos", "feedbacks"]:
                         if not isinstance(d.get(key), list): d[key] = []
@@ -1282,27 +1282,27 @@ def handle_callbacks(call):
             except: pass
             return
 
-        if action == "ban":
-            target_uid_str = str(target_uid)
-    
-        # ★ SUPER ADMIN / BOT FATHER KO BAN NAHI KAR SAKTE ★
-        try:
-            target_uid_int = int(target_uid)
-            if target_uid_int == BOT_OWNER or is_super_admin(target_uid_int):
-                try:
-                    bot.answer_callback_query(
-                        call.id,
-                        "🛡️ ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ/ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʜᴀɪ!\n\n❌ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!",
-                        show_alert=True
-                    )
-                    except: pass
-                    return
-                except: pass
-    
-                if target_uid_str in ensure_dict(data.get("banned_users", {})):
-                try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
-                except: pass
-                return
+if action == "ban":
+    target_uid_str = str(target_uid)
+
+    # ★ SUPER ADMIN / BOT FATHER KO BAN NAHI KAR SAKTE ★
+    try:
+        target_uid_int = int(target_uid)
+        if target_uid_int == BOT_OWNER or is_super_admin(target_uid_int):
+            try:
+                bot.answer_callback_query(
+                    call.id,
+                    "🛡️ ʏᴇʜ ᴜꜱᴇʀ ᴀᴅᴍɪɴ/ʙᴏᴛ ꜰᴀᴛʜᴇʀ ʜᴀɪ!\n\n❌ ʙᴀɴ ɴᴀʜɪ ᴋᴀʀ ꜱᴀᴋᴛᴇ!",
+                    show_alert=True
+                )
+            except: pass
+            return
+    except: pass
+
+    if target_uid_str in ensure_dict(data.get("banned_users", {})):
+        try: bot.answer_callback_query(call.id, "⚠️ AʟRᴇᴀDʏ BᴀNᴇD!", show_alert=True)
+        except: pass
+        return
 
             data["banned_users"][target_uid_str] = {
                 "banned_at": ist_now().isoformat(),
@@ -4056,7 +4056,7 @@ def universal_button_handler(msg):
                 reply_markup=kb_owner(), parse_mode="HTML")
             return
 
-        if btype == "ADMIN_PANEL":
+if btype == "ADMIN_PANEL":
     if not (is_owner(uid) or is_super_admin(uid)):
         safe_reply(msg,
             "╔══════════════════════════╗\n"
